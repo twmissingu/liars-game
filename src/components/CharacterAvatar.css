@@ -1,0 +1,325 @@
+/**
+ * 角色头像组件样式
+ * Code Geass: Liar's Game - Phase 2
+ */
+
+/* 基础样式 */
+.character-avatar {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.character-avatar--clickable {
+  cursor: pointer;
+}
+
+/* 尺寸定义 */
+.character-avatar--small .character-avatar__image {
+  width: 40px;
+  height: 40px;
+}
+
+.character-avatar--medium .character-avatar__image {
+  width: 64px;
+  height: 64px;
+}
+
+.character-avatar--large .character-avatar__image {
+  width: 96px;
+  height: 96px;
+}
+
+.character-avatar--xlarge .character-avatar__image {
+  width: 128px;
+  height: 128px;
+}
+
+/* 头像图片容器 */
+.character-avatar__image {
+  position: relative;
+  border-radius: 50%;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 占位符（色块/文字） */
+.character-avatar__placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--character-color, #666) 0%, #1a1a2e 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 50%;
+  border: 3px solid var(--character-color, #666);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.character-avatar--clickable:hover .character-avatar__placeholder {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 0 20px var(--character-color, #666);
+}
+
+/* 选中状态光环 */
+.character-avatar--selected .character-avatar__placeholder {
+  border-color: #fff;
+  box-shadow: 
+    0 0 0 4px var(--character-color, #666),
+    0 0 30px var(--character-color, #666);
+}
+
+.character-avatar__glow {
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent,
+    var(--character-color, #666),
+    transparent
+  );
+  animation: glow-rotate 3s linear infinite;
+  opacity: 0.6;
+  z-index: -1;
+}
+
+@keyframes glow-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 动画效果 */
+.character-avatar--animate .character-avatar__placeholder {
+  animation: avatar-breathe 2s ease-in-out infinite;
+}
+
+@keyframes avatar-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+/* 光环效果 */
+.character-avatar__ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--character-color, #666);
+  border-right-color: var(--character-color, #666);
+  animation: ring-spin 2s linear infinite;
+}
+
+@keyframes ring-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 粒子效果 */
+.character-avatar__particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.character-avatar__particles::before,
+.character-avatar__particles::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--character-color, #666);
+  border-radius: 50%;
+  opacity: 0;
+  animation: particle-float 3s ease-out infinite;
+}
+
+.character-avatar__particles::before {
+  top: 0;
+  left: 50%;
+  animation-delay: 0s;
+}
+
+.character-avatar__particles::after {
+  bottom: 0;
+  right: 50%;
+  animation-delay: 1.5s;
+}
+
+@keyframes particle-float {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-30px) scale(0);
+  }
+}
+
+/* 技能图标 */
+.character-avatar__skill {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 24px;
+  height: 24px;
+  background: #1a1a2e;
+  border: 2px solid var(--character-color, #666);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+.character-avatar--small .character-avatar__skill {
+  width: 16px;
+  height: 16px;
+  font-size: 8px;
+  bottom: -2px;
+  right: -2px;
+}
+
+.character-avatar--large .character-avatar__skill,
+.character-avatar--xlarge .character-avatar__skill {
+  width: 32px;
+  height: 32px;
+  font-size: 16px;
+}
+
+/* 信息区域 */
+.character-avatar__info {
+  margin-top: 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.character-avatar__name {
+  font-weight: bold;
+  font-size: 14px;
+  color: #fff;
+}
+
+.character-avatar__faction {
+  font-size: 11px;
+  color: #888;
+}
+
+/* ==================== 技能指示器 ==================== */
+
+.skill-indicator {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.skill-indicator--small {
+  width: 32px;
+  height: 32px;
+}
+
+.skill-indicator--medium {
+  width: 48px;
+  height: 48px;
+}
+
+.skill-indicator__icon {
+  font-size: 20px;
+  opacity: 0.5;
+  transition: all 0.3s ease;
+}
+
+.skill-indicator--small .skill-indicator__icon {
+  font-size: 14px;
+}
+
+.skill-indicator--available .skill-indicator__icon,
+.skill-indicator--passive .skill-indicator__icon {
+  opacity: 1;
+}
+
+.skill-indicator__status {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+}
+
+.skill-indicator__cooldown {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  background: #444;
+  border-radius: 50%;
+  font-size: 10px;
+  color: #aaa;
+}
+
+.skill-indicator__uses {
+  font-size: 10px;
+  color: #00FF88;
+  font-weight: bold;
+}
+
+/* 技能激活脉冲 */
+.skill-indicator--active {
+  background: rgba(139, 0, 255, 0.3);
+}
+
+.skill-indicator--active .skill-indicator__icon {
+  opacity: 1;
+  animation: skill-pulse 1s ease-in-out infinite;
+}
+
+.skill-indicator__pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  border: 2px solid #8B00FF;
+  animation: pulse-ring 1.5s ease-out infinite;
+}
+
+@keyframes skill-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* 可用状态 */
+.skill-indicator--available {
+  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  cursor: pointer;
+}
+
+.skill-indicator--available:hover {
+  background: rgba(0, 255, 136, 0.2);
+  transform: scale(1.05);
+}
