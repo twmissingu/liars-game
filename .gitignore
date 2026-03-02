@@ -1,5 +1,5 @@
-# 构建输出
-dist
+# 构建输出 (允许dist用于GitHub Pages)
+# dist
 dist-ssr
 *.local
 
