@@ -62,6 +62,8 @@ export interface Character {
   personality: string;
   pose: string;
   accessories: string[];
+  skillName: string;
+  skillDescription: string;
 }
 
 // ============================================
@@ -85,6 +87,20 @@ export interface GameState {
   currentTurn?: 'player' | 'opponent';
   lastAction?: string;
   difficulty?: Difficulty;
+  // 1v3模式
+  aiPlayers?: AIPlayerState[];
+  liarCard?: CardRank | null;
+  selectedCards?: string[];
+}
+
+export interface AIPlayerState {
+  id: string;
+  name: string;
+  character: CharacterId;
+  hp: number;
+  maxHp: number;
+  handCount: number;
+  isActive: boolean;
 }
 
 // ============================================
@@ -110,6 +126,10 @@ export interface GameTableProps {
   onPlayCard: (cardId: string) => void;
   onPass: () => void;
   onChallenge: () => void;
+  onBackToMenu?: () => void;
+  onToggleCardSelection?: (cardId: string) => void;
+  onConfirmPlay?: (claimedRank: CardRank) => void;
+  onLelouchSkill?: (newRank: CardRank) => void;
 }
 
 export interface ResultScreenProps {
@@ -160,6 +180,7 @@ export interface GeassResult {
   message: string;
   damage: number;
   funnyAction?: string;
+  isImmune?: boolean;
 }
 
 export interface PlayerStats {
@@ -190,3 +211,38 @@ export const FUNNY_ACTIONS: FunnyAction[] = [
   { id: 6, emoji: '🍕', description: '声称自己是披萨的化身', soundType: 'sfx-funny-pizza' },
   { id: 7, emoji: '🦋', description: '追逐不存在的蝴蝶', soundType: 'sfx-funny-butterfly' },
 ];
+
+// ============================================
+// 角色技能类型
+// ============================================
+
+export interface CharacterSkill {
+  id: string;
+  name: string;
+  description: string;
+  effect: () => void;
+}
+
+// 鲁鲁修：绝对命令 - 强制指定骗子牌
+export interface LelouchSkill extends CharacterSkill {
+  type: 'absolute_command';
+  forceLiarCard: (rank: CardRank) => void;
+}
+
+// C.C.：不老不死 - 50%免疫Geass
+export interface CCSkill extends CharacterSkill {
+  type: 'immortal';
+  immunityChance: number;
+}
+
+// 朱雀：生存本能 - HP≤1时Geass概率减半
+export interface SuzakuSkill extends CharacterSkill {
+  type: 'survival_instinct';
+  resistanceMultiplier: number;
+}
+
+// 卡莲：红莲突击 - 可出1-4张牌
+export interface KallenSkill extends CharacterSkill {
+  type: 'red_lotus_assault';
+  maxCardsPerTurn: number;
+}

@@ -1,58 +1,108 @@
 /**
  * Code Geass: Liar's Game - 游戏主界面（牌桌）
- * 黑金主题牌桌 + Geass纹路装饰
+ * 1v3人机对战 + 骗子牌显示 + 角色技能
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { CharacterRenderer } from '../components/characters';
-import type { Card, CharacterId, FunnyAction } from '../types';
+import type { Card, CardRank, CharacterId, FunnyAction } from '../types';
 
 interface GameTableProps {
-  gameState: {
-    selectedCharacter: CharacterId | null;
-    playerHand: Card[];
-    opponentHand: Card[];
-    tableCards: Card[];
-    currentRound: number;
-    playerScore: number;
-    opponentScore: number;
-    playerHP: number;
-    opponentHP: number;
-    maxHP: number;
-    currentTurn: 'player' | 'opponent';
-    lastAction: string;
-  };
-  onPlayCard: (cardId: string) => void;
+  gameState: any;
+  selectedCards: string[];
+  selectedCharacter: CharacterId | null;
+  onToggleCardSelection: (cardId: string) => void;
+  onConfirmPlay: (claimedRank: CardRank) => void;
   onPass: () => void;
   onChallenge: () => void;
+  onBackToMenu: () => void;
+  onLelouchSkill?: (newRank: CardRank) => void;
   gameLog?: string[];
   funnyAction?: FunnyAction | null;
+  isProcessing?: boolean;
 }
+
+const CARD_RANKS: CardRank[] = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
 export const GameTable: React.FC<GameTableProps> = ({
   gameState,
-  onPlayCard,
+  selectedCards,
+  selectedCharacter,
+  onToggleCardSelection,
+  onConfirmPlay,
   onPass,
   onChallenge,
+  onBackToMenu,
+  onLelouchSkill,
   gameLog = [],
   funnyAction,
+  isProcessing = false,
 }) => {
+  const [showRankSelector, setShowRankSelector] = useState(false);
+  const [showLelouchSkill, setShowLelouchSkill] = useState(false);
+
+  if (!gameState) return null;
+
   const { 
-    selectedCharacter, 
-    playerHand, 
-    tableCards, 
-    currentRound, 
-    playerScore, 
-    opponentScore, 
-    playerHP, 
-    opponentHP, 
-    maxHP, 
-    currentTurn, 
-    lastAction 
+    phase,
+    liarCard,
+    playerStats,
+    aiPlayers,
+    turnState,
+    lastAction,
   } = gameState;
+
+  const isPlayerTurn = phase === 'player_turn';
+  const isChallengePhase = phase === 'challenge';
+  const currentPlayerId = turnState?.lastPlayerId;
+  const isPlayerLastPlayed = currentPlayerId === 'player';
+
+  const playerHand = gameState.playerHand || [];
+  const tableCards = turnState?.tableCards || [];
+  const currentRound = turnState?.turnNumber || 1;
+
+  // 获取当前AI（最后出牌的）
+  const lastAI = currentPlayerId && currentPlayerId !== 'player' 
+    ? aiPlayers?.find((ai: any) => ai.id === currentPlayerId)
+    : null;
+
+  const handlePlayClick = () => {
+    if (selectedCards.length > 0) {
+      setShowRankSelector(true);
+    }
+  };
+
+  const handleRankSelect = (rank: CardRank) => {
+    setShowRankSelector(false);
+    onConfirmPlay(rank);
+  };
+
+  const handleLelouchSkillClick = () => {
+    setShowLelouchSkill(true);
+  };
+
+  const handleLelouchRankSelect = (rank: CardRank) => {
+    setShowLelouchSkill(false);
+    onLelouchSkill?.(rank);
+  };
+
+  const getSuitSymbol = (suit: string): string => {
+    const symbols: Record<string, string> = {
+      spades: '♠',
+      hearts: '♥',
+      clubs: '♣',
+      diamonds: '♦',
+    };
+    return symbols[suit] || suit;
+  };
+
+  const getSuitColor = (suit: string): string => {
+    return suit === 'hearts' || suit === 'diamonds' ? '#dc2626' : '#1a1a24';
+  };
 
   return (
     <div className="cg-game-table">
+      {/* 背景 */}
       <div className="cg-table-bg">
         <div className="cg-table-bg-gradient" />
         <div className="cg-table-pattern">
@@ -72,79 +122,77 @@ export const GameTable: React.FC<GameTableProps> = ({
         </div>
       </div>
 
+      {/* 顶部栏 */}
       <header className="cg-table-header">
+        <div className="cg-header-left">
+          <button className="cg-back-to-menu" onClick={onBackToMenu}>
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+            </svg>
+            主页面
+          </button>
+        </div>
+
         <div className="cg-round-info">
           <span className="cg-round-label">回合</span>
-          <span className="cg-round-value">{currentRound}/5</span>
+          <span className="cg-round-value">{currentRound}</span>
         </div>
 
-        <div className="cg-score-board">
-          <div className="cg-score cg-player-score">
-            <span className="cg-score-label">玩家</span>
-            <span className="cg-score-value">{playerScore}</span>
-          </div>
-          
-          <div className="cg-score-divider">:</div>
-          
-          <div className="cg-score cg-opponent-score">
-            <span className="cg-score-value">{opponentScore}</span>
-            <span className="cg-score-label">对手</span>
-          </div>
+        <div className="cg-liar-card-display">
+          <span className="cg-liar-label">骗子牌</span>
+          <span className="cg-liar-value">{liarCard || '?'}</span>
         </div>
 
-        <div className="cg-hp-display">
-          <div className="cg-hp-bar">
-            <span className="cg-hp-label">HP</span>
-            <div className="cg-hp-hearts">
-              {Array.from({ length: maxHP || 3 }).map((_, i) => (
-                <span key={i} className={`cg-hp-heart ${i < (playerHP || 3) ? 'active' : ''}`}>
-                  {i < (playerHP || 3) ? '❤️' : '🖤'}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="cg-opponent-area">
-        <div className="cg-opponent-hand">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="cg-card cg-card-back">
-              <div className="cg-card-pattern">
-                <svg viewBox="0 0 40 60">
-                  <rect width="40" height="60" fill="#1a1a24" />
-                  <path
-                    d="M20 10 L23 22 L35 25 L23 28 L20 40 L17 28 L5 25 L17 22 Z"
-                    fill="none"
-                    stroke="#dc2626"
-                    strokeWidth="1"
-                    opacity="0.5"
-                  />
-                </svg>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="cg-opponent-avatar">
-          <div className={`cg-avatar-frame ${currentTurn === 'opponent' ? 'cg-avatar-active' : ''}`}>
-            <CharacterRenderer
-              characterId="cc"
-              size={80}
-              animationState={currentTurn === 'opponent' ? 'breathing' : 'idle'}
-            />
-          </div>
-          <div className="cg-opponent-name">C.C.</div>
-          <div className="cg-opponent-hp">
-            {Array.from({ length: maxHP || 3 }).map((_, i) => (
-              <span key={i} className="cg-hp-heart-small">
-                {i < (opponentHP || 3) ? '❤️' : '🖤'}
+        <div className="cg-player-hp">
+          <span className="cg-hp-label">HP</span>
+          <div className="cg-hp-hearts">
+            {Array.from({ length: playerStats?.maxHp || 3 }).map((_, i) => (
+              <span key={i} className={`cg-hp-heart ${i < (playerStats?.hp || 0) ? 'active' : ''}`}>
+                {i < (playerStats?.hp || 0) ? '❤️' : '🖤'}
               </span>
             ))}
           </div>
         </div>
+      </header>
+
+      {/* AI区域 */}
+      <div className="cg-ai-area">
+        {aiPlayers?.map((ai: any, index: number) => (
+          <div 
+            key={ai.id} 
+            className={`cg-ai-player ${!ai.isActive || ai.stats.hp <= 0 ? 'eliminated' : ''} ${
+              currentPlayerId === ai.id ? 'current' : ''
+            }`}
+            style={{ animationDelay: `${index * 0.1}s` }}
+          >
+            <div className="cg-ai-avatar">
+              <CharacterRenderer
+                characterId={ai.character}
+                size={60}
+                animationState={currentPlayerId === ai.id ? 'breathing' : 'idle'}
+              />
+              {ai.isActive && ai.stats.hp > 0 && (
+                <div className="cg-ai-hand-count">
+                  {ai.hand?.length || 0}
+                </div>
+              )}
+            </div>
+            <div className="cg-ai-info">
+              <div className="cg-ai-name">{ai.name}</div>
+              <div className="cg-ai-hp">
+                {Array.from({ length: ai.stats.maxHp }).map((_, i) => (
+                  <span key={i} className="cg-hp-heart-small">
+                    {i < ai.stats.hp ? '❤️' : '🖤'}
+                  </span>
+                ))}
+              </div>
+              {!ai.isActive && <span className="cg-eliminated-tag">淘汰</span>}
+            </div>
+          </div>
+        ))}
       </div>
 
+      {/* 桌面中央 */}
       <div className="cg-table-center">
         <div className="cg-table-surface">
           <div className="cg-table-felt">
@@ -179,26 +227,42 @@ export const GameTable: React.FC<GameTableProps> = ({
             </div>
 
             <div className="cg-play-area">
-              {tableCards.length === 0 ? (
-                <div className="cg-play-placeholder">
-                  <span>出牌区域</span>
+              {turnState?.playedCards ? (
+                <div className="cg-played-cards">
+                  <div className="cg-played-by">
+                    {turnState.playedCards.playerId === 'player' ? '你' : 
+                      aiPlayers?.find((ai: any) => ai.id === turnState.playedCards?.playerId)?.name}
+                    出了
+                  </div>
+                  <div className="cg-played-cards-list">
+                    {turnState.playedCards.actualCards.map((card: Card, index: number) => (
+                      <div 
+                        key={card.id}
+                        className="cg-card cg-card-played"
+                        style={{ 
+                          transform: `rotate(${(index - turnState.playedCards!.actualCards.length / 2) * 5}deg) translateY(${index * -5}px)`,
+                        }}
+                      >
+                        <div className="cg-card-content">
+                          <span className="cg-card-rank">{card.rank}</span>
+                          <span className="cg-card-suit" style={{ color: getSuitColor(card.suit) }}>
+                            {getSuitSymbol(card.suit)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="cg-claimed-rank">
+                    声称: {turnState.playedCards.claimedRank}
+                  </div>
+                </div>
+              ) : tableCards.length > 0 ? (
+                <div className="cg-table-cards-count">
+                  桌面有 {tableCards.length} 张牌
                 </div>
               ) : (
-                <div className="cg-played-cards">
-                  {tableCards.map((card, index) => (
-                    <div 
-                      key={card.id}
-                      className="cg-card cg-card-played"
-                      style={{ 
-                        transform: `rotate(${(index - tableCards.length / 2) * 5}deg) translateY(${index * -5}px)`,
-                      }}
-                    >
-                      <div className="cg-card-content">
-                        <span className="cg-card-rank">{card.rank}</span>
-                        <span className="cg-card-suit">{getSuitSymbol(card.suit)}</span>
-                      </div>
-                    </div>
-                  ))}
+                <div className="cg-play-placeholder">
+                  <span>出牌区域</span>
                 </div>
               )}
             </div>
@@ -221,6 +285,7 @@ export const GameTable: React.FC<GameTableProps> = ({
         </div>
       </div>
 
+      {/* 游戏日志 */}
       <div className="cg-game-log">
         {gameLog.map((log, index) => (
           <div key={index} className="cg-log-entry">
@@ -229,63 +294,161 @@ export const GameTable: React.FC<GameTableProps> = ({
         ))}
       </div>
 
+      {/* 玩家区域 */}
       <div className="cg-player-area">
-        <div className="cg-player-avatar">
-          <div className={`cg-avatar-frame ${currentTurn === 'player' ? 'cg-avatar-active' : ''}`}>
+        <div className="cg-player-info">
+          <div className="cg-player-avatar">
             {selectedCharacter && (
               <CharacterRenderer
                 characterId={selectedCharacter}
-                size={80}
-                animationState={currentTurn === 'player' ? 'breathing' : 'idle'}
+                size={70}
+                animationState={isPlayerTurn ? 'breathing' : 'idle'}
               />
             )}
           </div>
-          <div className="cg-player-name">玩家</div>
+          <div className="cg-player-details">
+            <div className="cg-player-name">玩家</div>
+            {selectedCharacter === 'lelouch' && isPlayerTurn && (
+              <button 
+                className="cg-skill-button"
+                onClick={handleLelouchSkillClick}
+                disabled={isProcessing}
+              >
+                绝对命令
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="cg-player-hand">
-          {playerHand.map((card, index) => (
-            <button
-              key={card.id}
-              className={`cg-card cg-card-front ${currentTurn !== 'player' ? 'disabled' : ''}`}
-              onClick={() => currentTurn === 'player' && onPlayCard(card.id)}
-              style={{
-                transform: `translateX(${(index - playerHand.length / 2) * 30}px)`,
-              }}
-              disabled={currentTurn !== 'player'}
-            >
-              <div className="cg-card-inner">
-                <div className="cg-card-rank cg-card-rank-tl">{card.rank}</div>
-                <div className="cg-card-suit-center">{getSuitSymbol(card.suit)}</div>
-                <div className="cg-card-rank cg-card-rank-br">{card.rank}</div>
-              </div>
-            </button>
-          ))}
+          {playerHand.map((card: Card, index: number) => {
+            const isSelected = selectedCards.includes(card.id);
+            return (
+              <button
+                key={card.id}
+                className={`cg-card cg-card-front ${isSelected ? 'selected' : ''} ${!isPlayerTurn || isProcessing ? 'disabled' : ''}`}
+                onClick={() => onToggleCardSelection(card.id)}
+                style={{
+                  transform: `translateX(${(index - playerHand.length / 2) * 35}px) ${isSelected ? 'translateY(-20px)' : ''}`,
+                }}
+                disabled={!isPlayerTurn || isProcessing}
+              >
+                <div className="cg-card-inner">
+                  <div className="cg-card-rank cg-card-rank-tl" style={{ color: getSuitColor(card.suit) }}>
+                    {card.rank}
+                  </div>
+                  <div className="cg-card-suit-center" style={{ color: getSuitColor(card.suit) }}>
+                    {getSuitSymbol(card.suit)}
+                  </div>
+                  <div className="cg-card-rank cg-card-rank-br" style={{ color: getSuitColor(card.suit) }}>
+                    {card.rank}
+                  </div>
+                </div>
+                {isSelected && <div className="cg-card-selected-indicator">✓</div>}
+              </button>
+            );
+          })}
         </div>
       </div>
 
+      {/* 操作栏 */}
       <div className="cg-action-bar">
-        <button 
-          className="cg-action-button cg-button-pass" 
-          onClick={onPass}
-          disabled={currentTurn !== 'player'}
-        >
-          <span>跳过</span>
-        </button>
+        {isPlayerTurn && selectedCards.length > 0 && (
+          <button 
+            className="cg-action-button cg-button-play"
+            onClick={handlePlayClick}
+            disabled={isProcessing}
+          >
+            <span>出牌 ({selectedCards.length})</span>
+          </button>
+        )}
+
+        {isPlayerTurn && selectedCards.length === 0 && (
+          <button 
+            className="cg-action-button cg-button-pass"
+            onClick={onPass}
+            disabled={isProcessing}
+          >
+            <span>跳过</span>
+          </button>
+        )}
         
-        <button 
-          className="cg-action-button cg-button-challenge cg-button-geass" 
-          onClick={onChallenge}
-          disabled={currentTurn !== 'player' || tableCards.length === 0}
-        >
-          <span className="cg-button-icon">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-            </svg>
-          </span>
-          <span>质疑</span>
-        </button>
+        {isChallengePhase && !isPlayerLastPlayed && lastAI?.isActive && (
+          <>
+            <button 
+              className="cg-action-button cg-button-challenge cg-button-geass"
+              onClick={onChallenge}
+              disabled={isProcessing}
+            >
+              <span className="cg-button-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                </svg>
+              </span>
+              <span>质疑</span>
+            </button>
+            <button 
+              className="cg-action-button cg-button-pass"
+              onClick={onPass}
+              disabled={isProcessing}
+            >
+              <span>不质疑</span>
+            </button>
+          </>
+        )}
+
+        {isChallengePhase && isPlayerLastPlayed && (
+          <div className="cg-waiting-text">等待AI决策...</div>
+        )}
+
+        {!isPlayerTurn && !isChallengePhase && (
+          <div className="cg-waiting-text">AI回合中...</div>
+        )}
       </div>
+
+      {/* 点数选择弹窗 */}
+      {showRankSelector && (
+        <div className="cg-modal-overlay">
+          <div className="cg-modal">
+            <h3>选择声称的点数</h3>
+            <div className="cg-rank-grid">
+              {CARD_RANKS.map(rank => (
+                <button
+                  key={rank}
+                  className={`cg-rank-button ${rank === liarCard ? 'is-liar' : ''}`}
+                  onClick={() => handleRankSelect(rank)}
+                >
+                  {rank}
+                  {rank === liarCard && <span className="cg-liar-badge">骗子</span>}
+                </button>
+              ))}
+            </div>
+            <button className="cg-modal-close" onClick={() => setShowRankSelector(false)}>取消</button>
+          </div>
+        </div>
+      )}
+
+      {/* 鲁鲁修技能弹窗 */}
+      {showLelouchSkill && (
+        <div className="cg-modal-overlay">
+          <div className="cg-modal">
+            <h3>绝对命令 - 选择新的骗子牌</h3>
+            <div className="cg-rank-grid">
+              {CARD_RANKS.map(rank => (
+                <button
+                  key={rank}
+                  className={`cg-rank-button ${rank === liarCard ? 'current' : ''}`}
+                  onClick={() => handleLelouchRankSelect(rank)}
+                >
+                  {rank}
+                  {rank === liarCard && <span className="cg-current-badge">当前</span>}
+                </button>
+              ))}
+            </div>
+            <button className="cg-modal-close" onClick={() => setShowLelouchSkill(false)}>取消</button>
+          </div>
+        </div>
+      )}
 
       <style>{`
         .cg-game-table {
@@ -297,6 +460,7 @@ export const GameTable: React.FC<GameTableProps> = ({
           display: flex;
           flex-direction: column;
           overflow: hidden;
+          font-family: 'Noto Sans SC', sans-serif;
         }
 
         .cg-table-bg {
@@ -344,83 +508,73 @@ export const GameTable: React.FC<GameTableProps> = ({
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 0.75rem 1.5rem;
+          padding: 0.75rem 1rem;
           background: linear-gradient(180deg, rgba(10, 10, 15, 0.9) 0%, transparent 100%);
+          gap: 1rem;
         }
 
-        .cg-round-info {
+        .cg-header-left {
+          display: flex;
+          align-items: center;
+        }
+
+        .cg-back-to-menu {
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+          padding: 0.4rem 0.75rem;
+          font-size: 0.8rem;
+          color: #a1a1aa;
+          background: rgba(26, 26, 36, 0.8);
+          border: 1px solid #3f3f46;
+          border-radius: 0.375rem;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .cg-back-to-menu:hover {
+          color: #f5f5f5;
+          border-color: #d4af37;
+        }
+
+        .cg-back-to-menu svg {
+          width: 16px;
+          height: 16px;
+        }
+
+        .cg-round-info, .cg-liar-card-display, .cg-player-hp {
           display: flex;
           align-items: center;
           gap: 0.5rem;
+          padding: 0.4rem 0.75rem;
+          background: rgba(26, 26, 36, 0.8);
+          border: 1px solid #3f3f46;
+          border-radius: 0.5rem;
         }
 
-        .cg-round-label {
-          font-family: 'Noto Sans SC', sans-serif;
-          font-size: 0.875rem;
+        .cg-round-label, .cg-hp-label {
+          font-size: 0.75rem;
           color: #71717a;
         }
 
         .cg-round-value {
           font-family: 'Cinzel', serif;
-          font-size: 1.25rem;
+          font-size: 1.1rem;
           font-weight: 600;
           color: #d4af37;
         }
 
-        .cg-score-board {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          padding: 0.5rem 1rem;
-          background: rgba(26, 26, 36, 0.8);
-          border: 1px solid #3f3f46;
-          border-radius: 0.5rem;
-        }
-
-        .cg-score {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
-
-        .cg-score-label {
+        .cg-liar-label {
           font-size: 0.75rem;
-          color: #71717a;
+          color: #dc2626;
         }
 
-        .cg-score-value {
+        .cg-liar-value {
           font-family: 'Cinzel', serif;
           font-size: 1.25rem;
           font-weight: 700;
-          color: #f5f5f5;
-        }
-
-        .cg-score-divider {
-          font-family: 'Cinzel', serif;
-          font-size: 1.25rem;
-          color: #d4af37;
-        }
-
-        .cg-hp-display {
-          display: flex;
-          align-items: center;
-        }
-
-        .cg-hp-bar {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.25rem 0.75rem;
-          background: rgba(26, 26, 36, 0.8);
-          border: 1px solid #3f3f46;
-          border-radius: 0.5rem;
-        }
-
-        .cg-hp-label {
-          font-family: 'Cinzel', serif;
-          font-size: 0.75rem;
           color: #dc2626;
-          font-weight: 600;
+          text-shadow: 0 0 10px rgba(220, 38, 38, 0.5);
         }
 
         .cg-hp-hearts {
@@ -430,60 +584,104 @@ export const GameTable: React.FC<GameTableProps> = ({
 
         .cg-hp-heart {
           font-size: 1rem;
+          opacity: 0.3;
+          transition: opacity 0.3s;
         }
 
-        .cg-hp-heart-small {
-          font-size: 0.75rem;
+        .cg-hp-heart.active {
+          opacity: 1;
         }
 
-        .cg-opponent-area {
+        .cg-ai-area {
           position: relative;
           z-index: 1;
           display: flex;
-          align-items: center;
           justify-content: center;
-          gap: 2rem;
+          gap: 1.5rem;
           padding: 0.5rem;
+          flex-wrap: wrap;
         }
 
-        .cg-opponent-avatar,
-        .cg-player-avatar {
+        .cg-ai-player {
           display: flex;
           flex-direction: column;
           align-items: center;
           gap: 0.25rem;
-        }
-
-        .cg-avatar-frame {
-          padding: 0.375rem;
-          background: linear-gradient(135deg, #1a1a24 0%, #252532 100%);
-          border: 2px solid #3f3f46;
-          border-radius: 50%;
+          padding: 0.5rem;
+          background: rgba(26, 26, 36, 0.6);
+          border: 1px solid #3f3f46;
+          border-radius: 0.75rem;
           transition: all 0.3s ease;
+          animation: fadeInDown 0.5s ease;
         }
 
-        .cg-avatar-active {
+        .cg-ai-player.current {
           border-color: #d4af37;
-          box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+          box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
         }
 
-        .cg-opponent-name,
-        .cg-player-name {
-          font-family: 'Noto Sans SC', sans-serif;
-          font-size: 0.75rem;
-          color: #a1a1aa;
+        .cg-ai-player.eliminated {
+          opacity: 0.4;
+          filter: grayscale(1);
         }
 
-        .cg-opponent-hp {
-          display: flex;
-          gap: 0.125rem;
+        @keyframes fadeInDown {
+          from {
+            opacity: 0;
+            transform: translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
-        .cg-opponent-hand,
-        .cg-player-hand {
+        .cg-ai-avatar {
+          position: relative;
+        }
+
+        .cg-ai-hand-count {
+          position: absolute;
+          bottom: -5px;
+          right: -5px;
+          width: 22px;
+          height: 22px;
           display: flex;
           align-items: center;
           justify-content: center;
+          background: #dc2626;
+          color: white;
+          font-size: 0.75rem;
+          font-weight: 600;
+          border-radius: 50%;
+        }
+
+        .cg-ai-info {
+          text-align: center;
+        }
+
+        .cg-ai-name {
+          font-size: 0.8rem;
+          color: #f5f5f5;
+          font-weight: 500;
+        }
+
+        .cg-ai-hp {
+          display: flex;
+          gap: 0.125rem;
+          justify-content: center;
+        }
+
+        .cg-hp-heart-small {
+          font-size: 0.7rem;
+        }
+
+        .cg-eliminated-tag {
+          font-size: 0.65rem;
+          color: #71717a;
+          background: #1a1a24;
+          padding: 0.1rem 0.3rem;
+          border-radius: 0.25rem;
         }
 
         .cg-table-center {
@@ -493,14 +691,14 @@ export const GameTable: React.FC<GameTableProps> = ({
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 1rem;
+          padding: 0.5rem;
           min-height: 0;
         }
 
         .cg-table-surface {
           position: relative;
           width: 100%;
-          max-width: 500px;
+          max-width: 450px;
           aspect-ratio: 16/10;
         }
 
@@ -545,8 +743,8 @@ export const GameTable: React.FC<GameTableProps> = ({
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
-          width: 120px;
-          height: 120px;
+          width: 100px;
+          height: 100px;
           opacity: 0.5;
         }
 
@@ -561,31 +759,61 @@ export const GameTable: React.FC<GameTableProps> = ({
           left: 50%;
           transform: translate(-50%, -50%);
           display: flex;
+          flex-direction: column;
           align-items: center;
           justify-content: center;
+          gap: 0.5rem;
         }
 
         .cg-play-placeholder {
-          padding: 1.5rem 3rem;
+          padding: 1rem 2rem;
           border: 2px dashed rgba(212, 175, 55, 0.3);
           border-radius: 0.5rem;
         }
 
         .cg-play-placeholder span {
-          font-family: 'Noto Sans SC', sans-serif;
           font-size: 0.875rem;
           color: rgba(212, 175, 55, 0.5);
         }
 
         .cg-played-cards {
           display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .cg-played-by {
+          font-size: 0.75rem;
+          color: #d4af37;
+          background: rgba(10, 10, 15, 0.8);
+          padding: 0.25rem 0.75rem;
+          border-radius: 0.375rem;
+        }
+
+        .cg-played-cards-list {
+          display: flex;
           align-items: center;
           justify-content: center;
+          gap: 0.25rem;
+        }
+
+        .cg-claimed-rank {
+          font-size: 0.75rem;
+          color: #a1a1aa;
+          background: rgba(10, 10, 15, 0.8);
+          padding: 0.25rem 0.75rem;
+          border-radius: 0.375rem;
+        }
+
+        .cg-table-cards-count {
+          font-size: 0.875rem;
+          color: #a1a1aa;
         }
 
         .cg-funny-action {
           position: absolute;
-          top: 10%;
+          top: 5%;
           left: 50%;
           transform: translateX(-50%);
           background: rgba(220, 38, 38, 0.9);
@@ -612,48 +840,50 @@ export const GameTable: React.FC<GameTableProps> = ({
         }
 
         .cg-funny-text {
-          font-family: 'Noto Sans SC', sans-serif;
           font-size: 0.875rem;
           color: white;
           font-weight: 600;
+          white-space: nowrap;
         }
 
         .cg-last-action {
           position: absolute;
-          bottom: 10%;
+          bottom: 8%;
           left: 50%;
           transform: translateX(-50%);
-          font-family: 'Noto Sans SC', sans-serif;
-          font-size: 0.875rem;
+          font-size: 0.8rem;
           color: #d4af37;
           background: rgba(10, 10, 15, 0.8);
-          padding: 0.5rem 1rem;
+          padding: 0.4rem 0.75rem;
           border-radius: 0.375rem;
           white-space: nowrap;
+          max-width: 90%;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         .cg-game-log {
           position: absolute;
-          left: 1rem;
+          left: 0.5rem;
           top: 50%;
           transform: translateY(-50%);
-          width: 180px;
-          max-height: 200px;
+          width: 160px;
+          max-height: 180px;
           overflow-y: auto;
-          background: rgba(10, 10, 15, 0.8);
+          background: rgba(10, 10, 15, 0.85);
           border: 1px solid #3f3f46;
           border-radius: 0.5rem;
-          padding: 0.75rem;
+          padding: 0.5rem;
           z-index: 5;
         }
 
         .cg-log-entry {
-          font-family: 'Noto Sans SC', sans-serif;
-          font-size: 0.75rem;
+          font-size: 0.7rem;
           color: #a1a1aa;
-          margin-bottom: 0.375rem;
-          padding-bottom: 0.375rem;
+          margin-bottom: 0.25rem;
+          padding-bottom: 0.25rem;
           border-bottom: 1px solid rgba(63, 63, 70, 0.5);
+          line-height: 1.4;
         }
 
         .cg-log-entry:last-child {
@@ -667,10 +897,62 @@ export const GameTable: React.FC<GameTableProps> = ({
           position: relative;
           z-index: 1;
           display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.5rem;
+        }
+
+        .cg-player-info {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+        }
+
+        .cg-player-avatar {
+          padding: 0.25rem;
+          background: linear-gradient(135deg, #1a1a24 0%, #252532 100%);
+          border: 2px solid #3f3f46;
+          border-radius: 50%;
+        }
+
+        .cg-player-details {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+        }
+
+        .cg-player-name {
+          font-size: 0.875rem;
+          color: #f5f5f5;
+          font-weight: 500;
+        }
+
+        .cg-skill-button {
+          padding: 0.3rem 0.6rem;
+          font-size: 0.7rem;
+          color: #0a0a0f;
+          background: linear-gradient(135deg, #b8941f 0%, #d4af37 100%);
+          border: none;
+          border-radius: 0.25rem;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .cg-skill-button:hover:not(:disabled) {
+          box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+        }
+
+        .cg-skill-button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .cg-player-hand {
+          display: flex;
           align-items: center;
           justify-content: center;
-          gap: 2rem;
-          padding: 0.5rem;
+          height: 90px;
         }
 
         .cg-card {
@@ -681,38 +963,44 @@ export const GameTable: React.FC<GameTableProps> = ({
           border-radius: 0.375rem;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
           border: none;
-        }
-
-        .cg-card-back {
-          background: linear-gradient(135deg, #1a1a24 0%, #252532 100%);
-          border: 1px solid #3f3f46;
-        }
-
-        .cg-card-pattern {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 25px;
-          height: 37px;
+          transition: all 0.3s ease;
         }
 
         .cg-card-front {
           background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
           border: 1px solid #cbd5e1;
           cursor: pointer;
-          transition: all 0.3s ease;
         }
 
         .cg-card-front:hover:not(.disabled) {
-          transform: translateY(-15px) scale(1.1) !important;
           box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+          z-index: 10;
+        }
+
+        .cg-card-front.selected {
+          box-shadow: 0 0 0 2px #d4af37, 0 10px 20px rgba(0, 0, 0, 0.4);
           z-index: 10;
         }
 
         .cg-card-front.disabled {
           opacity: 0.6;
           cursor: not-allowed;
+        }
+
+        .cg-card-selected-indicator {
+          position: absolute;
+          top: -8px;
+          right: -8px;
+          width: 20px;
+          height: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #d4af37;
+          color: #0a0a0f;
+          font-size: 0.75rem;
+          font-weight: 700;
+          border-radius: 50%;
         }
 
         .cg-card-inner {
@@ -728,9 +1016,8 @@ export const GameTable: React.FC<GameTableProps> = ({
 
         .cg-card-rank {
           font-family: 'Cinzel', serif;
-          font-size: 0.75rem;
+          font-size: 0.7rem;
           font-weight: 700;
-          color: #1a1a24;
         }
 
         .cg-card-rank-tl {
@@ -751,7 +1038,7 @@ export const GameTable: React.FC<GameTableProps> = ({
         }
 
         .cg-card-played {
-          position: absolute;
+          position: relative;
         }
 
         .cg-card-content {
@@ -770,16 +1057,16 @@ export const GameTable: React.FC<GameTableProps> = ({
           align-items: center;
           justify-content: center;
           gap: 1rem;
-          padding: 0.75rem;
+          padding: 0.5rem;
           background: linear-gradient(0deg, rgba(10, 10, 15, 0.9) 0%, transparent 100%);
+          min-height: 50px;
         }
 
         .cg-action-button {
           display: flex;
           align-items: center;
           gap: 0.5rem;
-          padding: 0.625rem 1.25rem;
-          font-family: 'Noto Sans SC', sans-serif;
+          padding: 0.5rem 1rem;
           font-size: 0.875rem;
           font-weight: 600;
           border: none;
@@ -802,6 +1089,16 @@ export const GameTable: React.FC<GameTableProps> = ({
           background: linear-gradient(135deg, #52525b 0%, #71717a 100%);
         }
 
+        .cg-button-play {
+          background: linear-gradient(135deg, #15803d 0%, #22c55e 100%);
+          color: white;
+        }
+
+        .cg-button-play:hover:not(:disabled) {
+          background: linear-gradient(135deg, #166534 0%, #16a34a 100%);
+          box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+        }
+
         .cg-button-challenge {
           background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%);
           color: #f5f5f5;
@@ -817,13 +1114,127 @@ export const GameTable: React.FC<GameTableProps> = ({
           height: 18px;
         }
 
+        .cg-waiting-text {
+          font-size: 0.875rem;
+          color: #71717a;
+          animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+          0%, 100% { opacity: 0.5; }
+          50% { opacity: 1; }
+        }
+
+        .cg-modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.8);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 100;
+        }
+
+        .cg-modal {
+          background: linear-gradient(135deg, #1a1a24 0%, #252532 100%);
+          border: 1px solid #3f3f46;
+          border-radius: 1rem;
+          padding: 1.5rem;
+          max-width: 400px;
+          width: 90%;
+        }
+
+        .cg-modal h3 {
+          margin: 0 0 1rem;
+          font-family: 'Cinzel', serif;
+          font-size: 1.1rem;
+          color: #d4af37;
+          text-align: center;
+        }
+
+        .cg-rank-grid {
+          display: grid;
+          grid-template-columns: repeat(7, 1fr);
+          gap: 0.5rem;
+          margin-bottom: 1rem;
+        }
+
+        .cg-rank-button {
+          padding: 0.5rem;
+          font-size: 1rem;
+          font-weight: 600;
+          color: #f5f5f5;
+          background: #252532;
+          border: 1px solid #3f3f46;
+          border-radius: 0.375rem;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          position: relative;
+        }
+
+        .cg-rank-button:hover {
+          border-color: #d4af37;
+          background: #3f3f46;
+        }
+
+        .cg-rank-button.is-liar {
+          border-color: #dc2626;
+          color: #dc2626;
+        }
+
+        .cg-rank-button.current {
+          border-color: #d4af37;
+          color: #d4af37;
+        }
+
+        .cg-liar-badge, .cg-current-badge {
+          position: absolute;
+          bottom: -8px;
+          left: 50%;
+          transform: translateX(-50%);
+          font-size: 0.5rem;
+          padding: 0.1rem 0.3rem;
+          border-radius: 0.25rem;
+          white-space: nowrap;
+        }
+
+        .cg-liar-badge {
+          background: #dc2626;
+          color: white;
+        }
+
+        .cg-current-badge {
+          background: #d4af37;
+          color: #0a0a0f;
+        }
+
+        .cg-modal-close {
+          width: 100%;
+          padding: 0.5rem;
+          font-size: 0.875rem;
+          color: #a1a1aa;
+          background: transparent;
+          border: 1px solid #3f3f46;
+          border-radius: 0.375rem;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .cg-modal-close:hover {
+          border-color: #d4af37;
+          color: #f5f5f5;
+        }
+
         @media (max-width: 768px) {
           .cg-game-log {
             display: none;
           }
           
           .cg-table-surface {
-            max-width: 350px;
+            max-width: 320px;
           }
           
           .cg-card {
@@ -832,23 +1243,25 @@ export const GameTable: React.FC<GameTableProps> = ({
           }
           
           .cg-table-logo {
-            width: 80px;
-            height: 80px;
+            width: 70px;
+            height: 70px;
+          }
+
+          .cg-ai-area {
+            gap: 0.5rem;
+          }
+
+          .cg-ai-player {
+            padding: 0.25rem;
+          }
+
+          .cg-rank-grid {
+            grid-template-columns: repeat(4, 1fr);
           }
         }
       `}</style>
     </div>
   );
 };
-
-function getSuitSymbol(suit: string): string {
-  const symbols: Record<string, string> = {
-    spades: '♠',
-    hearts: '♥',
-    clubs: '♣',
-    diamonds: '♦',
-  };
-  return symbols[suit] || suit;
-}
 
 export default GameTable;

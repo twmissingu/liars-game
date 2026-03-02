@@ -76,6 +76,9 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
                 <div className="cg-character-info">
                   <h3 className="cg-character-name">{character.name}</h3>
                   <p className="cg-character-name-en">{character.nameEn}</p>
+                  <div className="cg-character-skill">
+                    <span className="cg-skill-name">{character.skillName}</span>
+                  </div>
                 </div>
 
                 {isSelected && (
@@ -103,14 +106,10 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
             <div className="cg-detail-frame">
               <div className="cg-detail-content">
                 <p className="cg-detail-description">{selectedCharacter.description}</p>
-                <div className="cg-detail-traits">
-                  <span className="cg-trait-label">性格:</span>
-                  <span className="cg-trait-value">
-                    {selectedCharacter.personality === 'calculating' && '深谋远虑'}
-                    {selectedCharacter.personality === 'mysterious' && '神秘莫测'}
-                    {selectedCharacter.personality === 'passionate' && '热血正义'}
-                    {selectedCharacter.personality === 'tsundere' && '傲娇坚强'}
-                  </span>
+                <div className="cg-detail-skill">
+                  <span className="cg-skill-label">技能:</span>
+                  <span className="cg-skill-value">{selectedCharacter.skillName}</span>
+                  <p className="cg-skill-desc">{selectedCharacter.skillDescription}</p>
                 </div>
               </div>
 
@@ -433,11 +432,24 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
         }
 
         .cg-character-name-en {
-          margin: 0;
+          margin: 0 0 0.25rem;
           font-family: 'Cinzel', serif;
           font-size: 0.75rem;
           color: #71717a;
           letter-spacing: 0.1em;
+        }
+
+        .cg-character-skill {
+          margin-top: 0.25rem;
+        }
+
+        .cg-skill-name {
+          font-size: 0.7rem;
+          color: #d4af37;
+          background: rgba(212, 175, 55, 0.1);
+          padding: 0.15rem 0.5rem;
+          border-radius: 0.25rem;
+          border: 1px solid rgba(212, 175, 55, 0.3);
         }
 
         .cg-selected-indicator {
@@ -497,21 +509,33 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
           line-height: 1.6;
         }
 
-        .cg-detail-traits {
+        .cg-detail-skill {
           display: flex;
+          flex-wrap: wrap;
           align-items: center;
           gap: 0.5rem;
         }
 
-        .cg-trait-label {
+        .cg-skill-label {
           font-size: 0.75rem;
           color: #71717a;
         }
 
-        .cg-trait-value {
+        .cg-skill-value {
           font-size: 0.75rem;
           color: #d4af37;
-          font-weight: 500;
+          font-weight: 600;
+          background: rgba(212, 175, 55, 0.1);
+          padding: 0.2rem 0.5rem;
+          border-radius: 0.25rem;
+          border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .cg-skill-desc {
+          width: 100%;
+          margin: 0.25rem 0 0;
+          font-size: 0.75rem;
+          color: #a1a1aa;
         }
 
         .cg-confirm-button {

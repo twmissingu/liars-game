@@ -123,10 +123,17 @@ class SoundManager {
           src: [url],
           volume: config.volume * this.getVolumeMultiplier(soundType),
           loop: config.loop,
-          html5: true, // 使用HTML5 Audio以获得更好的流媒体支持
-          preload: soundType.startsWith('bgm-'), // 只预加载BGM
+          html5: true,
+          preload: true, // 预加载所有音效
           onloaderror: (id, err) => {
             console.warn(`Failed to load sound: ${soundType}`, err);
+          },
+          onplayerror: (id, err) => {
+            console.warn(`Failed to play sound: ${soundType}`, err);
+            // 尝试恢复
+            this.sounds.get(soundType)?.once('unlock', () => {
+              this.sounds.get(soundType)?.play();
+            });
           },
         });
         

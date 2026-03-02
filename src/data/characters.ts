@@ -1,6 +1,6 @@
 /**
  * Code Geass: Liar's Game - 角色数据
- * Q版角色占位版定义
+ * 包含角色技能和描述
  */
 
 import type { Character } from '../types';
@@ -13,10 +13,12 @@ export const characters: Character[] = [
     color: '#4c1d95',        // 深紫色
     secondaryColor: '#1e1b4b', // 更深紫
     accentColor: '#dc2626',  // Geass红
-    description: '黑色骑士团的领袖，拥有Geass之力',
+    description: '黑色骑士团的领袖，拥有Geass之力。可以强制改变骗子牌。',
     personality: 'calculating',
     pose: '思考姿势 - 单手托腮，眼神锐利',
     accessories: ['眼罩（遮住Geass之眼）', '黑色披风', '金色装饰'],
+    skillName: '绝对命令',
+    skillDescription: '可以强制指定骗子牌为任意点数',
   },
   {
     id: 'cc',
@@ -25,10 +27,12 @@ export const characters: Character[] = [
     color: '#15803d',        // 绿色
     secondaryColor: '#14532d', // 深绿
     accentColor: '#fbbf24',  // 金色
-    description: '赋予鲁鲁修Geass的神秘少女',
+    description: '赋予鲁鲁修Geass的神秘少女。50%概率免疫Geass效果。',
     personality: 'mysterious',
     pose: '慵懒姿势 - 手持披萨，侧躺',
     accessories: ['披萨', '白色拘束服', '绿色长发'],
+    skillName: '不老不死',
+    skillDescription: '50%概率免疫Geass效果',
   },
   {
     id: 'suzaku',
@@ -37,10 +41,12 @@ export const characters: Character[] = [
     color: '#f8fafc',        // 白色
     secondaryColor: '#cbd5e1', // 浅灰
     accentColor: '#3b82f6',  // 蓝色
-    description: '圆桌骑士，鲁鲁修的挚友也是宿敌',
+    description: '圆桌骑士，鲁鲁修的挚友也是宿敌。HP≤1时Geass概率减半。',
     personality: 'passionate',
     pose: '热血姿势 - 握拳，充满干劲',
     accessories: ['骑士制服', '兰斯洛特徽章', '白色披风'],
+    skillName: '生存本能',
+    skillDescription: 'HP≤1时，Geass命中概率减半',
   },
   {
     id: 'kallen',
@@ -49,10 +55,12 @@ export const characters: Character[] = [
     color: '#dc2626',        // 红色
     secondaryColor: '#991b1b', // 深红
     accentColor: '#fbbf24',  // 金色
-    description: '黑色骑士团的王牌驾驶员',
+    description: '黑色骑士团的王牌驾驶员。每回合可出1-4张牌。',
     personality: 'tsundere',
     pose: '傲娇姿势 - 双臂交叉，侧头',
     accessories: ['红色头巾', '驾驶服', '红莲徽章'],
+    skillName: '红莲突击',
+    skillDescription: '每回合可出1-4张牌',
   },
 ];
 
@@ -115,3 +123,13 @@ export const characterAnimations = {
     easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
   },
 } as const;
+
+// 获取角色技能描述
+export function getCharacterSkillDescription(characterId: string): { name: string; description: string } {
+  const character = characters.find(c => c.id === characterId);
+  if (!character) return { name: '', description: '' };
+  return {
+    name: character.skillName,
+    description: character.skillDescription,
+  };
+}

@@ -33,6 +33,7 @@ export type {
   Card,
   Character,
   GameState,
+  AIPlayerState,
   MainMenuProps,
   CharacterSelectProps,
   GameTableProps,

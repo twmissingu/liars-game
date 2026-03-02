@@ -2,26 +2,26 @@
  * Code Geass: Liar's Game - 工具函数
  */
 
-import type { Card, CharacterId } from '../types/game.types';
+import type { Card, CharacterId, CardSuit, CardRank } from '../types/game.types';
 
 // ============================================
 // 卡牌工具函数
 // ============================================
 
 /**
- * 创建一副标准扑克牌
+ * 创建一副标准扑克牌（52张）
  */
 export const createDeck = (): Card[] => {
-  const suits: Card['suit'][] = ['spades', 'hearts', 'clubs', 'diamonds'];
-  const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+  const suits: CardSuit[] = ['spades', 'hearts', 'clubs', 'diamonds'];
+  const ranks: CardRank[] = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
   const deck: Card[] = [];
 
   for (const suit of suits) {
     for (let i = 0; i < ranks.length; i++) {
       deck.push({
-        id: `${suit}-${ranks[i]}`,
-        suit: suit as any,
-        rank: ranks[i] as any,
+        id: `${suit}-${ranks[i]}-${Math.random().toString(36).substr(2, 9)}`,
+        suit: suit,
+        rank: ranks[i],
         value: i + 1,
         isRevealed: false,
       });
@@ -44,22 +44,30 @@ export const shuffleDeck = (deck: Card[]): Card[] => {
 };
 
 /**
- * 发牌
+ * 发牌 - 1v3模式，每人5张
  */
-export const dealCards = (deck: Card[], handSize: number = 5): { playerHand: Card[]; opponentHand: Card[]; remaining: Card[] } => {
+export const dealCards = (deck: Card[], handSize: number = 5): { 
+  playerHand: Card[]; 
+  ai1Hand: Card[];
+  ai2Hand: Card[];
+  ai3Hand: Card[];
+  remaining: Card[];
+} => {
   const shuffled = shuffleDeck(deck);
   const playerHand = shuffled.slice(0, handSize);
-  const opponentHand = shuffled.slice(handSize, handSize * 2);
-  const remaining = shuffled.slice(handSize * 2);
+  const ai1Hand = shuffled.slice(handSize, handSize * 2);
+  const ai2Hand = shuffled.slice(handSize * 2, handSize * 3);
+  const ai3Hand = shuffled.slice(handSize * 3, handSize * 4);
+  const remaining = shuffled.slice(handSize * 4);
 
-  return { playerHand, opponentHand, remaining };
+  return { playerHand, ai1Hand, ai2Hand, ai3Hand, remaining };
 };
 
 /**
  * 获取花色符号
  */
-export const getSuitSymbol = (suit: Card['suit']): string => {
-  const symbols: Record<Card['suit'], string> = {
+export const getSuitSymbol = (suit: CardSuit): string => {
+  const symbols: Record<CardSuit, string> = {
     spades: '♠',
     hearts: '♥',
     clubs: '♣',
@@ -71,7 +79,7 @@ export const getSuitSymbol = (suit: Card['suit']): string => {
 /**
  * 获取花色颜色
  */
-export const getSuitColor = (suit: Card['suit']): string => {
+export const getSuitColor = (suit: CardSuit): string => {
   return suit === 'hearts' || suit === 'diamonds' ? '#dc2626' : '#0a0a0f';
 };
 
@@ -103,6 +111,31 @@ export const getCharacterName = (characterId: CharacterId): string => {
     kallen: '卡莲',
   };
   return names[characterId];
+};
+
+/**
+ * 获取角色技能信息
+ */
+export const getCharacterSkill = (characterId: CharacterId): { name: string; description: string } => {
+  const skills: Record<CharacterId, { name: string; description: string }> = {
+    lelouch: {
+      name: '绝对命令',
+      description: '可以强制指定骗子牌为任意点数',
+    },
+    cc: {
+      name: '不老不死',
+      description: '50%概率免疫Geass效果',
+    },
+    suzaku: {
+      name: '生存本能',
+      description: 'HP≤1时，Geass命中概率减半',
+    },
+    kallen: {
+      name: '红莲突击',
+      description: '每回合可出1-4张牌',
+    },
+  };
+  return skills[characterId];
 };
 
 // ============================================
@@ -160,32 +193,6 @@ export const storage = {
     } catch (e) {
       console.error('Failed to clear localStorage:', e);
     }
-  },
-};
-
-// ============================================
-// 音效工具（占位）
-// ============================================
-
-export const soundEffects = {
-  playCard: () => {
-    // TODO: 实现出牌音效
-    console.log('Playing card sound');
-  },
-
-  win: () => {
-    // TODO: 实现胜利音效
-    console.log('Playing win sound');
-  },
-
-  lose: () => {
-    // TODO: 实现失败音效
-    console.log('Playing lose sound');
-  },
-
-  buttonClick: () => {
-    // TODO: 实现按钮点击音效
-    console.log('Playing button click sound');
   },
 };
 
