@@ -248,27 +248,38 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
 
         @media (max-width: 768px) {
           .cg-character-select {
-            overflow-y: auto;
+            position: absolute;
+            overflow-y: scroll;
             -webkit-overflow-scrolling: touch;
           }
           
           .cg-select-content {
             height: auto;
-            min-height: 100vh;
+            min-height: 100%;
             padding: 1rem;
+            padding-bottom: 200px;
           }
           
           .cg-character-grid {
             grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
+            gap: 0.75rem;
           }
           
           .cg-character-card {
-            padding: 1rem 0.5rem;
+            padding: 0.75rem 0.5rem;
           }
           
           .cg-character-preview {
-            transform: scale(0.8);
+            transform: scale(0.7);
+            margin-bottom: 0.5rem;
+          }
+          
+          .cg-character-name {
+            font-size: 0.9rem;
+          }
+          
+          .cg-character-name-en {
+            font-size: 0.65rem;
           }
           
           .cg-character-detail {
@@ -276,26 +287,51 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
             bottom: 0;
             left: 0;
             right: 0;
-            background: linear-gradient(180deg, transparent 0%, #0a0a0f 20%);
-            padding: 2rem 1rem 1rem;
-            z-index: 10;
+            background: #0a0a0f;
+            border-top: 2px solid #d4af37;
+            padding: 1rem;
+            z-index: 100;
+            box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.5);
           }
           
           .cg-detail-frame {
-            flex-direction: column;
-            gap: 1rem;
-            padding: 1rem;
+            flex-direction: row;
+            gap: 0.75rem;
+            padding: 0.75rem;
           }
           
           .cg-detail-content {
-            text-align: center;
+            flex: 1;
+            text-align: left;
+          }
+          
+          .cg-detail-description {
+            font-size: 0.75rem;
+            margin-bottom: 0.5rem;
+          }
+          
+          .cg-detail-traits {
+            font-size: 0.7rem;
           }
           
           .cg-confirm-button {
-            width: 100%;
-            justify-content: center;
-            padding: 1rem;
-            font-size: 1rem;
+            flex-shrink: 0;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.9rem;
+            white-space: nowrap;
+          }
+          
+          .cg-select-header {
+            margin-bottom: 1rem;
+          }
+          
+          .cg-select-title {
+            font-size: 1.25rem;
+          }
+          
+          .cg-back-button {
+            padding: 0.4rem 0.75rem;
+            font-size: 0.8rem;
           }
         }
 

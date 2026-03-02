@@ -2,8 +2,8 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/geass-icon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="./geass-icon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Code Geass: Liar's Game</title>
     <meta name="description" content="Code Geass: Liar's Game - 布里塔尼亚的谎言对决" />
     <!-- Google Fonts -->
@@ -15,6 +15,7 @@
         margin: 0;
         padding: 0;
         box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
       }
       
       html, body {
@@ -22,6 +23,7 @@
         height: 100%;
         overflow: hidden;
         background: #0a0a0f;
+        font-family: 'Noto Sans SC', sans-serif;
       }
       
       #root {
@@ -51,8 +53,8 @@
       }
       
       .loading-geass {
-        width: 100px;
-        height: 100px;
+        width: 80px;
+        height: 80px;
         animation: rotateGeass 2s linear infinite;
       }
       
@@ -64,13 +66,13 @@
       .loading-text {
         margin-top: 1rem;
         font-family: 'Cinzel', serif;
-        font-size: 1rem;
+        font-size: 0.875rem;
         color: #d4af37;
-        letter-spacing: 0.3em;
+        letter-spacing: 0.2em;
       }
     </style>
-    <script type="module" crossorigin src="/liars-game/assets/index-COUmm7EW.js"></script>
-    <link rel="stylesheet" crossorigin href="/liars-game/assets/index-CIarEH_O.css">
+    <script type="module" crossorigin src="./assets/index-BnGB5LAq.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CIarEH_O.css">
   </head>
   <body>
     <div id="root"></div>
@@ -87,10 +89,10 @@
       <div class="loading-text">LOADING...</div>
     </div>
     <script>
-      // 隐藏加载动画
-      window.addEventListener('load', () => {
-        setTimeout(() => {
-          document.getElementById('loading').classList.add('hidden');
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          var loading = document.getElementById('loading');
+          if (loading) loading.classList.add('hidden');
         }, 1000);
       });
     </script>
