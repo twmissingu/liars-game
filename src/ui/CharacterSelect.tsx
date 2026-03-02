@@ -183,8 +183,10 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
           width: 100%;
           max-width: 900px;
           height: 100%;
+          max-height: 100vh;
           padding: 2rem;
           box-sizing: border-box;
+          overflow-y: auto;
         }
 
         .cg-select-header {
@@ -383,8 +385,9 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
         }
 
         .cg-character-detail {
-          margin-top: auto;
+          margin-top: 1rem;
           padding-top: 1rem;
+          flex-shrink: 0;
         }
 
         .cg-detail-frame {
