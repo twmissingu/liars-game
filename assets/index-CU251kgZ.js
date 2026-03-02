@@ -409,8 +409,10 @@ Error generating stack: `+i.message+`
           width: 100%;
           max-width: 900px;
           height: 100%;
+          max-height: 100vh;
           padding: 2rem;
           box-sizing: border-box;
+          overflow-y: auto;
         }
 
         .cg-select-header {
@@ -609,8 +611,9 @@ Error generating stack: `+i.message+`
         }
 
         .cg-character-detail {
-          margin-top: auto;
+          margin-top: 1rem;
           padding-top: 1rem;
+          flex-shrink: 0;
         }
 
         .cg-detail-frame {
@@ -1662,4 +1665,4 @@ Error generating stack: `+i.message+`
           color: #f5f5f5;
         }
       `})]})};function fp(e){return{spades:"♠",hearts:"♥",clubs:"♣",diamonds:"♦"}[e]||e}const pp=ri.createRoot(document.getElementById("root"));pp.render(u.jsx(Ft.StrictMode,{children:u.jsx(dp,{})}));
-//# sourceMappingURL=index-Bzv1zt3-.js.map
+//# sourceMappingURL=index-CU251kgZ.js.map
