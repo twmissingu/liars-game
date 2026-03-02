@@ -247,8 +247,55 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
         }
 
         @media (max-width: 768px) {
+          .cg-character-select {
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+          }
+          
+          .cg-select-content {
+            height: auto;
+            min-height: 100vh;
+            padding: 1rem;
+          }
+          
           .cg-character-grid {
             grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+          }
+          
+          .cg-character-card {
+            padding: 1rem 0.5rem;
+          }
+          
+          .cg-character-preview {
+            transform: scale(0.8);
+          }
+          
+          .cg-character-detail {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, transparent 0%, #0a0a0f 20%);
+            padding: 2rem 1rem 1rem;
+            z-index: 10;
+          }
+          
+          .cg-detail-frame {
+            flex-direction: column;
+            gap: 1rem;
+            padding: 1rem;
+          }
+          
+          .cg-detail-content {
+            text-align: center;
+          }
+          
+          .cg-confirm-button {
+            width: 100%;
+            justify-content: center;
+            padding: 1rem;
+            font-size: 1rem;
           }
         }
 
