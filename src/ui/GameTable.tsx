@@ -22,7 +22,7 @@ interface GameTableProps {
   isProcessing?: boolean;
 }
 
-const CARD_RANKS: CardRank[] = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+const CARD_RANKS: CardRank[] = ['Q', 'K', 'A']; // Liar's Bar只使用Q、K、A
 
 export const GameTable: React.FC<GameTableProps> = ({
   gameState,

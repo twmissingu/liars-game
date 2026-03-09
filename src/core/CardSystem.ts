@@ -1,10 +1,10 @@
 /**
  * 牌组系统 - CardSystem.ts
- * 标准52张扑克牌 + 骗子牌机制
+ * Liar's Bar规则：只使用Q、K、A（12张牌）
  */
 
 export type CardSuit = 'spades' | 'hearts' | 'clubs' | 'diamonds';
-export type CardRank = 'A' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | 'J' | 'Q' | 'K';
+export type CardRank = 'Q' | 'K' | 'A'; // Liar's Bar只使用Q、K、A
 
 export interface Card {
   id: string;
@@ -19,12 +19,12 @@ export class CardSystem {
   private liarCard: CardRank | null = null;
 
   /**
-   * 生成52张标准扑克牌
+   * 生成Liar's Bar牌组（12张：4花色 × Q/K/A）
    */
   generateDeck(): Card[] {
     this.cards = [];
     const suits: CardSuit[] = ['spades', 'hearts', 'clubs', 'diamonds'];
-    const ranks: CardRank[] = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+    const ranks: CardRank[] = ['Q', 'K', 'A']; // 只使用Q、K、A
 
     for (const suit of suits) {
       for (let i = 0; i < ranks.length; i++) {
@@ -32,7 +32,7 @@ export class CardSystem {
           id: `${suit}-${ranks[i]}-${Math.random().toString(36).substr(2, 9)}`,
           suit: suit,
           rank: ranks[i],
-          value: i + 1,
+          value: i + 1, // Q=1, K=2, A=3
           owner: null,
         });
       }
@@ -53,7 +53,7 @@ export class CardSystem {
   }
 
   /**
-   * 发牌 - 玩家和3个AI各5张牌
+   * 发牌 - 玩家和3个AI各发牌（Liar's Bar共12张牌，每人3张）
    */
   dealCards(): { 
     playerCards: Card[]; 
@@ -62,7 +62,7 @@ export class CardSystem {
     ai3Cards: Card[];
     remaining: Card[];
   } {
-    if (this.cards.length !== 52) {
+    if (this.cards.length !== 12) {
       throw new Error('牌组未初始化或牌数不正确');
     }
 
@@ -71,45 +71,45 @@ export class CardSystem {
     const ai2Cards: Card[] = [];
     const ai3Cards: Card[] = [];
 
-    // 玩家拿前5张
-    for (let i = 0; i < 5; i++) {
+    // 玩家拿前3张
+    for (let i = 0; i < 3; i++) {
       const card = this.cards[i];
       card.owner = 'player';
       playerCards.push(card);
     }
 
-    // AI1拿接下来5张
-    for (let i = 5; i < 10; i++) {
+    // AI1拿接下来3张
+    for (let i = 3; i < 6; i++) {
       const card = this.cards[i];
       card.owner = 'ai';
       ai1Cards.push(card);
     }
 
-    // AI2拿接下来5张
-    for (let i = 10; i < 15; i++) {
+    // AI2拿接下来3张
+    for (let i = 6; i < 9; i++) {
       const card = this.cards[i];
       card.owner = 'ai2';
       ai2Cards.push(card);
     }
 
-    // AI3拿接下来5张
-    for (let i = 15; i < 20; i++) {
+    // AI3拿接下来3张
+    for (let i = 9; i < 12; i++) {
       const card = this.cards[i];
       card.owner = 'ai3';
       ai3Cards.push(card);
     }
 
-    // 剩余32张留在牌堆
-    const remaining = this.cards.slice(20);
+    // 没有剩余牌
+    const remaining: Card[] = [];
 
     return { playerCards, ai1Cards, ai2Cards, ai3Cards, remaining };
   }
 
   /**
-   * 随机指定骗子牌 (A-K)
+   * 随机指定骗子牌 (Q/K/A)
    */
   setLiarCard(): CardRank {
-    const ranks: CardRank[] = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+    const ranks: CardRank[] = ['Q', 'K', 'A'];
     this.liarCard = ranks[Math.floor(Math.random() * ranks.length)];
     return this.liarCard;
   }

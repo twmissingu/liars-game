@@ -33,11 +33,11 @@ export type GamePhase =
 export type Difficulty = 'easy' | 'normal' | 'hard';
 
 // ============================================
-// 卡牌类型
+// 卡牌类型 - Liar's Bar规则：只使用Q、K、A
 // ============================================
 
 export type CardSuit = 'spades' | 'hearts' | 'clubs' | 'diamonds';
-export type CardRank = 'A' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | 'J' | 'Q' | 'K';
+export type CardRank = 'Q' | 'K' | 'A'; // Liar's Bar只使用Q、K、A
 
 export interface Card {
   id: string;

@@ -9,11 +9,12 @@ import type { Card, CharacterId, CardSuit, CardRank } from '../types/game.types'
 // ============================================
 
 /**
- * 创建一副标准扑克牌（52张）
+ * 创建一副Liar's Bar扑克牌（只包含Q、K、A，共12张）
+ * 规则：4种花色 × 3种点数(Q/K/A) = 12张牌
  */
 export const createDeck = (): Card[] => {
   const suits: CardSuit[] = ['spades', 'hearts', 'clubs', 'diamonds'];
-  const ranks: CardRank[] = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+  const ranks: CardRank[] = ['Q', 'K', 'A']; // Liar's Bar只使用Q、K、A
   const deck: Card[] = [];
 
   for (const suit of suits) {
@@ -22,7 +23,7 @@ export const createDeck = (): Card[] => {
         id: `${suit}-${ranks[i]}-${Math.random().toString(36).substr(2, 9)}`,
         suit: suit,
         rank: ranks[i],
-        value: i + 1,
+        value: i + 1, // Q=1, K=2, A=3
         isRevealed: false,
       });
     }
