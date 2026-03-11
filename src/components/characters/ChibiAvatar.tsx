@@ -12,9 +12,9 @@ export const ChibiAvatar: React.FC<ChibiAvatarProps> = ({
   size = 80,
   animationState = 'idle'
 }) => {
-  // 使用随机头像
+  // 使用随机头像 - GitHub Pages 路径
   const avatarNumber = Math.floor(Math.random() * 4) + 1;
-  const avatarSrc = `/avatars/${characterId}/${avatarNumber}.png`;
+  const avatarSrc = `/liars-game/avatars/${characterId}/${avatarNumber}.png`;
   
   return (
     <img 
