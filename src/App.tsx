@@ -604,9 +604,12 @@ const App: React.FC = () => {
           transform: translateY(-2px);
         }
 
-        .cg-settings-content, .cg-help-content {
+        .cg-help-content {
           max-width: 600px;
           text-align: left;
+          max-height: 70vh;
+          overflow-y: auto;
+          padding-right: 1rem;
         }
 
         .cg-setting-item {
