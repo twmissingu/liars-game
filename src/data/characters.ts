@@ -124,6 +124,12 @@ export const characterAnimations = {
   },
 } as const;
 
+// 获取角色名称
+export function getCharacterName(characterId: string): string {
+  const character = characters.find(c => c.id === characterId);
+  return character?.name || '玩家';
+}
+
 // 获取角色技能描述
 export function getCharacterSkillDescription(characterId: string): { name: string; description: string } {
   const character = characters.find(c => c.id === characterId);

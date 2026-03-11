@@ -8,7 +8,7 @@ import { MainMenu } from './ui/MainMenu';
 import { CharacterSelect } from './ui/CharacterSelect';
 import { GameTable } from './ui/GameTable';
 import { ResultScreen } from './ui/ResultScreen';
-import { characters } from './data/characters';
+import { characters, getCharacterName } from './data/characters';
 import { soundManager, playSound, playBGM, stopBGM } from './audio';
 import { GameEngine } from './core/GameEngine';
 import type { 
@@ -146,7 +146,8 @@ const App: React.FC = () => {
       const newState = engine.playerPlayCards();
       setGameState(newState);
       setSelectedCards([]);
-      addLog(`你出了 ${newState.turnState.playedCards?.cardIds.length} 张牌，声称是骗子牌 ${newState.liarCard}`);
+      const playerName = getCharacterName(selectedCharacter);
+      addLog(`${playerName} 出了 ${newState.turnState.playedCards?.cardIds.length} 张牌，声称是骗子牌 ${newState.liarCard}`);
       
       // 延迟后AI决策
       setTimeout(() => {
@@ -157,7 +158,7 @@ const App: React.FC = () => {
     } finally {
       setIsProcessing(false);
     }
-  }, [selectedCards, isProcessing, addLog]);
+  }, [selectedCards, isProcessing, addLog, selectedCharacter]);
 
   // AI质疑处理
   const processAIChallenge = useCallback(() => {
