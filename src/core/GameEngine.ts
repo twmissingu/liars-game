@@ -106,11 +106,15 @@ export class GameEngine {
     // 设定骗子牌
     const liarCard = this.cardSystem.setLiarCard();
     
+    // 随机选择起始玩家 (0=玩家, 1=AI1, 2=AI2, 3=AI3)
+    const startingPlayerIndex = Math.floor(Math.random() * 4);
+    
     this.state = {
       ...this.createInitialState(),
-      phase: 'player_turn',
+      phase: startingPlayerIndex === 0 ? 'player_turn' : 'ai_turn',
       liarCard,
       playerCharacter,
+      currentPlayerIndex: startingPlayerIndex,
       playerHand: playerCards, // 保存玩家手牌
       aiPlayers: [
         { id: 'ai', name: 'C.C.', character: 'cc', hand: ai1Cards, stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 }, isActive: true },
@@ -143,14 +147,17 @@ export class GameEngine {
     // 设定新的骗子牌
     const liarCard = this.cardSystem.setLiarCard();
     
+    // 随机选择起始玩家
+    const startingPlayerIndex = Math.floor(Math.random() * 4);
+    
     // 更新状态
     this.state.playerHand = playerCards;
     this.state.aiPlayers[0].hand = ai1Cards;
     this.state.aiPlayers[1].hand = ai2Cards;
     this.state.aiPlayers[2].hand = ai3Cards;
     this.state.liarCard = liarCard;
-    this.state.phase = 'player_turn';
-    this.state.currentPlayerIndex = 0;
+    this.state.phase = startingPlayerIndex === 0 ? 'player_turn' : 'ai_turn';
+    this.state.currentPlayerIndex = startingPlayerIndex;
     this.state.playerSelectedCards = [];
     this.state.turnState = {
       ...this.state.turnState,

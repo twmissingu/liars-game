@@ -86,13 +86,27 @@ const App: React.FC = () => {
       
       setGameState(initialState);
       setSelectedCards([]);
+      
+      // 判断谁先手
+      const isPlayerFirst = initialState.currentPlayerIndex === 0;
+      const firstPlayerName = isPlayerFirst ? getCharacterName(selectedCharacter) : 
+        initialState.aiPlayers[initialState.currentPlayerIndex - 1]?.name;
+      
       setGameLog([
         '游戏开始！',
         `骗子牌是: ${initialState.liarCard}`,
+        `${firstPlayerName} 先手！`,
         '选择1-3张牌打出，自动声称是骗子牌。'
       ]);
       setCurrentScreen('game-table');
       playBGM('bgm-game');
+      
+      // 如果AI先手，自动执行AI回合
+      if (!isPlayerFirst) {
+        setTimeout(() => {
+          processAITurn();
+        }, 1500);
+      }
     }
   }, [selectedCharacter]);
 
@@ -236,10 +250,24 @@ const App: React.FC = () => {
         const resetState = gameEngineRef.current.resetRound();
         setGameState(resetState);
         setSelectedCards([]);
+        
+        // 判断谁先手
+        const isPlayerFirst = resetState.currentPlayerIndex === 0;
+        const firstPlayerName = isPlayerFirst ? getCharacterName(selectedCharacter) : 
+          resetState.aiPlayers[resetState.currentPlayerIndex - 1]?.name;
+        
         addLog(`牌局重置！新的骗子牌是 ${resetState.liarCard}`);
+        addLog(`${firstPlayerName} 先手！`);
+        
+        // 如果AI先手，自动执行AI回合
+        if (!isPlayerFirst) {
+          setTimeout(() => {
+            processAITurn();
+          }, 1500);
+        }
       }
     }, 2500);
-  }, [addLog]);
+  }, [addLog, selectedCharacter]);
 
   // 继续下一回合
   const continueToNextTurn = useCallback(() => {
