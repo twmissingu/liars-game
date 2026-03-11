@@ -461,12 +461,6 @@ export class GameEngine {
   private executeGeass(loser: 'player' | 'ai' | 'ai2' | 'ai3', hitChanceBoost: number = 0): GeassResult {
     let geassResult: GeassResult;
     
-    // 计算卡莲技能加成
-    let hitChanceBoost = 0;
-    if (kallenBoost) {
-      hitChanceBoost = 0.2; // +20%命中率
-    }
-    
     if (loser === 'player') {
       // 玩家受伤 - 使用新技能系统
       geassResult = this.geassSystem.performGeass('player', this.state.playerStats, this.playerCharacter, hitChanceBoost);
