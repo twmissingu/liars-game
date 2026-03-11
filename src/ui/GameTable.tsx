@@ -5,14 +5,14 @@
 
 import React, { useState } from 'react';
 import { CharacterRenderer } from '../components/characters';
-import type { Card, CardRank, CharacterId, FunnyAction } from '../types';
+import type { Card, CharacterId, FunnyAction } from '../types';
 
 interface GameTableProps {
   gameState: any;
   selectedCards: string[];
   selectedCharacter: CharacterId | null;
   onToggleCardSelection: (cardId: string) => void;
-  onConfirmPlay: (claimedRank: CardRank) => void;
+  onConfirmPlay: () => void;  // 修改为无参数，直接出牌
   onPass: () => void;
   onChallenge: () => void;
   onBackToMenu: () => void;
@@ -38,7 +38,6 @@ export const GameTable: React.FC<GameTableProps> = ({
   funnyAction,
   isProcessing = false,
 }) => {
-  const [showRankSelector, setShowRankSelector] = useState(false);
   const [showLelouchSkill, setShowLelouchSkill] = useState(false);
 
   if (!gameState) return null;
@@ -68,13 +67,9 @@ export const GameTable: React.FC<GameTableProps> = ({
 
   const handlePlayClick = () => {
     if (selectedCards.length > 0) {
-      setShowRankSelector(true);
+      // 直接出牌，不需要选择声称点数
+      onConfirmPlay();
     }
-  };
-
-  const handleRankSelect = (rank: CardRank) => {
-    setShowRankSelector(false);
-    onConfirmPlay(rank);
   };
 
   const handleLelouchSkillClick = () => {
@@ -407,28 +402,6 @@ export const GameTable: React.FC<GameTableProps> = ({
           <div className="cg-waiting-text">AI回合中...</div>
         )}
       </div>
-
-      {/* 点数选择弹窗 */}
-      {showRankSelector && (
-        <div className="cg-modal-overlay">
-          <div className="cg-modal">
-            <h3>选择声称的点数</h3>
-            <div className="cg-rank-grid">
-              {CARD_RANKS.map(rank => (
-                <button
-                  key={rank}
-                  className={`cg-rank-button ${rank === liarCard ? 'is-liar' : ''}`}
-                  onClick={() => handleRankSelect(rank)}
-                >
-                  {rank}
-                  {rank === liarCard && <span className="cg-liar-badge">骗子</span>}
-                </button>
-              ))}
-            </div>
-            <button className="cg-modal-close" onClick={() => setShowRankSelector(false)}>取消</button>
-          </div>
-        </div>
-      )}
 
       {/* 鲁鲁修技能弹窗 */}
       {showLelouchSkill && (

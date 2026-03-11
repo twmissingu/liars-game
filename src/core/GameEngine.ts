@@ -226,8 +226,9 @@ export class GameEngine {
 
   /**
    * 玩家出牌
+   * 不再传递声称点数，自动声称是骗子牌
    */
-  playerPlayCards(claimedRank: CardRank): GameState {
+  playerPlayCards(): GameState {
     if (this.state.phase !== 'player_turn') {
       throw new Error('不是玩家回合');
     }
@@ -259,6 +260,9 @@ export class GameEngine {
       this.state.playerStats.kallenCardCount = cardIds.length; // 记录出牌张数
     }
     
+    // 自动声称是骗子牌
+    const claimedRank = this.state.liarCard!;
+
     this.state = {
       ...this.state,
       phase: 'challenge',
@@ -273,7 +277,7 @@ export class GameEngine {
         },
         lastPlayerId: 'player',
       },
-      lastAction: `玩家出了 ${cardIds.length} 张牌，声称是 ${claimedRank}${isPlayerOutOfCards ? '（玩家手牌已出完！）' : ''}`,
+      lastAction: `玩家出了 ${cardIds.length} 张牌，声称是骗子牌 ${claimedRank}${isPlayerOutOfCards ? '（玩家手牌已出完！）' : ''}`,
     };
 
     return this.state;

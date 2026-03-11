@@ -133,7 +133,7 @@ const App: React.FC = () => {
   }, [isProcessing]);
 
   // 玩家确认出牌
-  const handleConfirmPlay = useCallback((claimedRank: CardRank) => {
+  const handleConfirmPlay = useCallback(() => {
     if (!gameEngineRef.current || selectedCards.length === 0 || isProcessing) return;
     
     setIsProcessing(true);
@@ -142,10 +142,11 @@ const App: React.FC = () => {
     const engine = gameEngineRef.current;
     
     try {
-      const newState = engine.playerPlayCards(claimedRank);
+      // 不再传递声称点数，直接出牌（自动声称是骗子牌）
+      const newState = engine.playerPlayCards();
       setGameState(newState);
       setSelectedCards([]);
-      addLog(`你出了 ${newState.turnState.playedCards?.cardIds.length} 张牌，声称是 ${claimedRank}`);
+      addLog(`你出了 ${newState.turnState.playedCards?.cardIds.length} 张牌，声称是骗子牌 ${newState.liarCard}`);
       
       // 延迟后AI决策
       setTimeout(() => {
@@ -461,13 +462,14 @@ const App: React.FC = () => {
                 <ul>
                   <li>每人初始5张牌（Q/K/A + 小丑牌），轮流出牌</li>
                   <li>每回合随机指定一张"骗子牌"（Q/K/A）</li>
-                  <li>出牌时声称是骗子牌（可以撒谎）</li>
-                  <li>下家可以选择<strong>质疑</strong>或<strong>跟牌</strong></li>
-                  <li>质疑后翻牌验证：撒谎者受惩罚，说真话则质疑者受惩罚</li>
-                  <li>惩罚：触发Geass判定，基础命中率33%，命中则HP-1</li>
+                  <li><strong>出牌：</strong>选择1-3张牌打出，自动声称是骗子牌</li>
+                  <li><strong>质疑：</strong>下家可以选择相信或质疑</li>
+                  <li>质疑后翻牌验证：</li>
+                  <li>• 出的牌<strong>确实是</strong>骗子牌 → 质疑者撒谎，受惩罚</li>
+                  <li>• 出的牌<strong>不是</strong>骗子牌 → 你撒谎，受惩罚</li>
+                  <li><strong>惩罚：</strong>触发Geass判定，命中则HP-1，然后牌局重置</li>
                   <li>HP归零被淘汰，最后存活者获胜</li>
                   <li>手牌出完且未被质疑成功，直接获胜</li>
-                  <li>惩罚后牌局重置，重新洗牌发牌</li>
                 </ul>
               </section>
               
