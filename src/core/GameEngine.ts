@@ -260,14 +260,19 @@ export class GameEngine {
     
     if (liarCards.length > 0 && Math.random() > 0.3) {
       // 有骗子牌，大概率出真的
-      const count = Math.min(maxAiCards, liarCards.length, Math.floor(Math.random() * maxAiCards) + 1);
+      const count = Math.max(1, Math.min(maxAiCards, liarCards.length, Math.floor(Math.random() * maxAiCards) + 1));
       selectedCards = liarCards.slice(0, count);
       claimedRank = liarCard;
     } else {
       // 出其他牌，撒谎
-      const count = Math.min(maxAiCards, otherCards.length, Math.floor(Math.random() * maxAiCards) + 1);
+      const count = Math.max(1, Math.min(maxAiCards, otherCards.length, Math.floor(Math.random() * maxAiCards) + 1));
       selectedCards = otherCards.slice(0, count);
       claimedRank = liarCard; // 声称是骗子牌
+    }
+    
+    // 如果没有可选的牌，从所有手牌中选1张
+    if (selectedCards.length === 0 && aiCards.length > 0) {
+      selectedCards = [aiCards[0]];
     }
 
     const cardIds = selectedCards.map(c => c.id);
