@@ -253,6 +253,11 @@ export class GameEngine {
     // 检查玩家是否出完牌
     const isPlayerOutOfCards = this.state.playerHand.length === 0;
     
+    // 卡莲技能：红莲二式 - 出3张及以上时标记爆发状态
+    if (this.playerCharacter === 'kallen' && cardIds.length >= 3) {
+      this.state.playerStats.kallenBoostActive = true;
+    }
+    
     this.state = {
       ...this.state,
       phase: 'challenge',
@@ -455,22 +460,15 @@ export class GameEngine {
     let geassResult: GeassResult;
     
     if (loser === 'player') {
-      // 玩家受伤 - 检查是否是C.C.或朱雀
-      const isCC = this.playerCharacter === 'cc';
-      const isSuzaku = this.playerCharacter === 'suzaku';
-      const isLowHP = isSuzaku && this.state.playerStats.hp <= 1;
-      
-      geassResult = this.geassSystem.performGeass('player', this.state.playerStats, isCC, isLowHP);
+      // 玩家受伤 - 使用新技能系统
+      geassResult = this.geassSystem.performGeass('player', this.state.playerStats, this.playerCharacter);
       this.state.playerStats = geassResult.newStats;
     } else {
-      // AI受伤 - 检查AI角色
+      // AI受伤 - 使用新技能系统
       const aiIndex = this.state.aiPlayers.findIndex(ai => ai.id === loser);
       const ai = this.state.aiPlayers[aiIndex];
-      const isCC = ai.character === 'cc';
-      const isSuzaku = ai.character === 'suzaku';
-      const isLowHP = isSuzaku && ai.stats.hp <= 1;
       
-      geassResult = this.geassSystem.performGeass(loser, ai.stats, isCC, isLowHP);
+      geassResult = this.geassSystem.performGeass(loser, ai.stats, ai.character);
       ai.stats = geassResult.newStats;
       
       // 检查AI是否被淘汰

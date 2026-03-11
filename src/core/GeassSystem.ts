@@ -7,20 +7,24 @@ import type { CardRank } from './CardSystem';
 
 export interface PlayerStats {
   hp: number;
-  maxHp: number;
-  geassSuccessCount: number;
-  geassFailCount: number;
-  geassImmunity?: boolean; // C.C.技能：免疫Geass
-  geassResistance?: number; // 朱雀技能：Geass抗性
+   maxHp: number;
+   geassSuccessCount: number;
+   geassFailCount: number;
+   // 技能相关状态
+   ccReviveUsed?: boolean;      // C.C.是否已使用复活
+   suzakuCounterActive?: boolean; // 朱雀反击是否激活
+   kallenBoostActive?: boolean;   // 卡莲爆发是否激活
 }
 
 export interface GeassResult {
   hit: boolean;
-  damage: number;
-  newStats: PlayerStats;
-  funnyAction?: string;
-  message: string;
-  isImmune?: boolean; // 是否免疫
+   damage: number;
+   newStats: PlayerStats;
+   funnyAction?: string;
+   message: string;
+   isImmune?: boolean;
+   isRevived?: boolean;  // C.C.复活
+   isCounter?: boolean;  // 朱雀反击
 }
 
 export const FUNNY_ACTIONS = [
@@ -35,41 +39,57 @@ export const FUNNY_ACTIONS = [
 ];
 
 export class GeassSystem {
-  private randomSeed: number = 0;
-
   /**
    * 执行Geass判定
    * @param target 目标玩家
    * @param targetStats 目标玩家状态
-   * @param isCC 是否是C.C.（50%免疫）
-   * @param isSuzakuLowHP 朱雀是否HP≤1（抗性提升）
+   * @param character 角色ID
    */
   performGeass(
     target: 'player' | 'ai' | 'ai2' | 'ai3',
     targetStats: PlayerStats,
-    isCC: boolean = false,
-    isSuzakuLowHP: boolean = false
+    character: 'lelouch' | 'cc' | 'suzaku' | 'kallen' | null = null
   ): GeassResult {
     let hitChance = 1 / 3; // 基础1/3概率
 
-    // C.C.技能：50%免疫Geass
-    if (isCC) {
-      const immuneRoll = Math.random();
-      if (immuneRoll < 0.5) {
+    // ========== C.C.技能：Code之力（复活） ==========
+    // 第一次受到致命伤害时，有50%概率复活并免疫本次伤害
+    if (character === 'cc' && !targetStats.ccReviveUsed) {
+      const reviveRoll = Math.random();
+      if (reviveRoll < 0.5) {
         return {
           hit: false,
           damage: 0,
-          newStats: targetStats,
-          message: 'C.C.的不老不死之力免疫了Geass！',
-          isImmune: true,
+          newStats: { ...targetStats, ccReviveUsed: true },
+          message: 'C.C.发动Code之力！从死亡边缘复活并免疫本次Geass！',
+          isRevived: true,
         };
       }
     }
 
-    // 朱雀技能：HP≤1时Geass概率减半
-    if (isSuzakuLowHP) {
-      hitChance = hitChance / 2;
+    // ========== 朱雀技能：枢木剑术（反击） ==========
+    // 受到Geass时有25%概率反击，让攻击者承受伤害
+    if (character === 'suzaku') {
+      const counterRoll = Math.random();
+      if (counterRoll < 0.25) {
+        return {
+          hit: false,
+          damage: 0,
+          newStats: targetStats,
+          message: '朱雀发动枢木剑术！完美闪避并准备反击！',
+          isCounter: true,
+        };
+      }
+      // 朱雀有15%基础闪避率
+      hitChance -= 0.15;
     }
+
+    // ========== 卡莲技能：红莲二式（爆发） ==========
+    // 卡莲没有防御技能，但出牌时可以爆发（在出牌逻辑中处理）
+    // 这里只处理Geass命中判定
+
+    // 确保概率在合理范围
+    hitChance = Math.max(0.1, Math.min(0.9, hitChance));
 
     // 计算是否命中
     const roll = Math.random();
@@ -107,6 +127,7 @@ export class GeassSystem {
 
   /**
    * 鲁鲁修技能：绝对命令 - 强制指定骗子牌
+   * 每局限用1次，可以强制改变当前骗子牌
    */
   lelouchAbsoluteCommand(newRank: CardRank): { success: boolean; message: string } {
     return {
@@ -116,22 +137,24 @@ export class GeassSystem {
   }
 
   /**
-   * 卡莲技能：红莲突击 - 检查是否可以出多张牌
+   * C.C.技能：Code之力 - 获取技能描述
    */
-  kallenRedLotusAssault(cardCount: number): { allowed: boolean; maxCards: number; message: string } {
-    const maxCards = 4;
-    if (cardCount > maxCards) {
-      return {
-        allowed: false,
-        maxCards,
-        message: `红莲突击最多只能出${maxCards}张牌`,
-      };
-    }
-    return {
-      allowed: true,
-      maxCards,
-      message: `红莲突击！出了${cardCount}张牌`,
-    };
+  getCCSkillDescription(): string {
+    return 'Code之力：首次受到致命伤害时，50%概率复活并免疫本次伤害（每局限1次）';
+  }
+
+  /**
+   * 朱雀技能：枢木剑术 - 获取技能描述
+   */
+  getSuzakuSkillDescription(): string {
+    return '枢木剑术：受到Geass时25%概率反击，15%基础闪避率';
+  }
+
+  /**
+   * 卡莲技能：红莲二式 - 获取技能描述
+   */
+  getKallenSkillDescription(): string {
+    return '红莲二式：可出1-4张牌，出3张及以上时Geass命中率+20%（高风险高回报）';
   }
 }
 

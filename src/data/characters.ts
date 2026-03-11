@@ -27,12 +27,12 @@ export const characters: Character[] = [
     color: '#15803d',        // 绿色
     secondaryColor: '#14532d', // 深绿
     accentColor: '#fbbf24',  // 金色
-    description: '赋予鲁鲁修Geass的神秘少女。50%概率免疫Geass效果。',
+    description: '赋予鲁鲁修Geass的神秘少女。首次濒死时50%概率复活。',
     personality: 'mysterious',
     pose: '慵懒姿势 - 手持披萨，侧躺',
     accessories: ['披萨', '白色拘束服', '绿色长发'],
-    skillName: '不老不死',
-    skillDescription: '50%概率免疫Geass效果',
+    skillName: 'Code之力',
+    skillDescription: '首次受到致命伤害时，50%概率复活并免疫本次伤害',
   },
   {
     id: 'suzaku',
@@ -41,12 +41,12 @@ export const characters: Character[] = [
     color: '#f8fafc',        // 白色
     secondaryColor: '#cbd5e1', // 浅灰
     accentColor: '#3b82f6',  // 蓝色
-    description: '圆桌骑士，鲁鲁修的挚友也是宿敌。HP≤1时Geass概率减半。',
+    description: '圆桌骑士，拥有超凡的战斗技巧。受到Geass时25%概率反击。',
     personality: 'passionate',
     pose: '热血姿势 - 握拳，充满干劲',
     accessories: ['骑士制服', '兰斯洛特徽章', '白色披风'],
-    skillName: '生存本能',
-    skillDescription: 'HP≤1时，Geass命中概率减半',
+    skillName: '枢木剑术',
+    skillDescription: '受到Geass时25%概率反击，15%基础闪避率',
   },
   {
     id: 'kallen',
@@ -55,12 +55,12 @@ export const characters: Character[] = [
     color: '#dc2626',        // 红色
     secondaryColor: '#991b1b', // 深红
     accentColor: '#fbbf24',  // 金色
-    description: '黑色骑士团的王牌驾驶员。每回合可出1-4张牌。',
+    description: '黑色骑士团的王牌驾驶员。可出1-4张牌，出3张及以上时高风险高回报。',
     personality: 'tsundere',
     pose: '傲娇姿势 - 双臂交叉，侧头',
     accessories: ['红色头巾', '驾驶服', '红莲徽章'],
-    skillName: '红莲突击',
-    skillDescription: '每回合可出1-4张牌',
+    skillName: '红莲二式',
+    skillDescription: '可出1-4张牌，出3张及以上时Geass命中率+20%',
   },
 ];
 

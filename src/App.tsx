@@ -204,8 +204,10 @@ const App: React.FC = () => {
         addLog(`Geass命中！${funnyAction.emoji} ${newState.geassResult.message}`);
       } else {
         playSound('sfx-geass-miss');
-        if (newState.geassResult.isImmune) {
-          addLog(`Geass被免疫！${newState.geassResult.message}`);
+        if (newState.geassResult.isRevived) {
+          addLog(`🔄 ${newState.geassResult.message}`);
+        } else if (newState.geassResult.isCounter) {
+          addLog(`⚔️ ${newState.geassResult.message}`);
         } else {
           addLog('Geass未命中！');
         }
@@ -472,9 +474,9 @@ const App: React.FC = () => {
                 <h3>角色技能</h3>
                 <ul>
                   <li><strong>鲁鲁修</strong>: 绝对命令 - 可强制改变骗子牌</li>
-                  <li><strong>C.C.</strong>: 不老不死 - 50%概率免疫Geass</li>
-                  <li><strong>朱雀</strong>: 生存本能 - HP≤1时Geass抗性提升</li>
-                  <li><strong>卡莲</strong>: 红莲突击 - 可一次出1-4张牌</li>
+                  <li><strong>C.C.</strong>: Code之力 - 首次濒死时50%概率复活</li>
+                  <li><strong>朱雀</strong>: 枢木剑术 - 受Geass时25%反击，15%闪避</li>
+                  <li><strong>卡莲</strong>: 红莲二式 - 可出1-4张，出3张+时高风险高回报</li>
                 </ul>
               </section>
               
