@@ -136,7 +136,6 @@ export const GameTable: React.FC<GameTableProps> = ({
               <div className="cg-table-inner">
                 {turnState?.playedCards ? (
                   <div className="cg-played">
-                    <div>{turnState.playedCards.playerId === 'player' ? playerName : aiPlayers?.find((a: any) => a.id === turnState.playedCards?.playerId)?.name} 出了 {turnState.playedCards.cardIds.length} 张牌</div>
                     <div className="cg-cards">
                       {turnState.playedCards.actualCards.map((c: Card, i: number) => (
                         <div key={c.id} className="cg-card-small">

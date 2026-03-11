@@ -59,17 +59,24 @@ export class GeassSystem {
     hitChance += hitChanceBoost;
 
     // ========== C.C.技能：Code之力（复活） ==========
-    // 第一次受到致命伤害时，有50%概率复活并免疫本次伤害
+    // 第一次受到致命伤害时（HP会减少到0），有50%概率复活并免疫本次伤害
     if (character === 'cc' && !targetStats.ccReviveUsed) {
-      const reviveRoll = Math.random();
-      if (reviveRoll < 0.5) {
-        return {
-          hit: false,
-          damage: 0,
-          newStats: { ...targetStats, ccReviveUsed: true },
-          message: 'C.C.发动Code之力！从死亡边缘复活并免疫本次Geass！',
-          isRevived: true,
-        };
+      // 先计算是否会命中
+      const roll = Math.random();
+      const willHit = roll < hitChance;
+      
+      // 如果会命中且会导致HP归零，触发复活
+      if (willHit && targetStats.hp <= 1) {
+        const reviveRoll = Math.random();
+        if (reviveRoll < 0.5) {
+          return {
+            hit: false,
+            damage: 0,
+            newStats: { ...targetStats, ccReviveUsed: true },
+            message: 'C.C.发动Code之力！从死亡边缘复活并免疫本次Geass！',
+            isRevived: true,
+          };
+        }
       }
     }
 
