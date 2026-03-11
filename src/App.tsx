@@ -122,21 +122,15 @@ const App: React.FC = () => {
     
     if (state.phase !== 'player_turn') return;
     
-    // 卡莲可以选多张，其他角色只能选1张
-    const maxCards = selectedCharacter === 'kallen' ? 4 : 1;
+    // 同时更新 gameEngine 中的选中状态
+    engine.toggleCardSelection(cardId);
     
-    setSelectedCards(prev => {
-      if (prev.includes(cardId)) {
-        return prev.filter(id => id !== cardId);
-      }
-      if (prev.length >= maxCards) {
-        return selectedCharacter === 'kallen' ? prev : [cardId];
-      }
-      return [...prev, cardId];
-    });
+    // 从 engine 获取最新的选中状态来更新 UI
+    const newState = engine.getState();
+    setSelectedCards(newState.playerSelectedCards);
     
     playSound('sfx-button-click');
-  }, [selectedCharacter, isProcessing]);
+  }, [isProcessing]);
 
   // 玩家确认出牌
   const handleConfirmPlay = useCallback((claimedRank: CardRank) => {
