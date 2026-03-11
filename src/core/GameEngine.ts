@@ -284,7 +284,7 @@ export class GameEngine {
         },
         lastPlayerId: 'player',
       },
-      lastAction: `玩家出了 ${cardIds.length} 张牌，声称是骗子牌 ${claimedRank}${isPlayerOutOfCards ? '（玩家手牌已出完！）' : ''}`,
+      lastAction: `玩家出了 ${cardIds.length} 张牌${isPlayerOutOfCards ? '（玩家手牌已出完！）' : ''}`,
     };
 
     return this.state;
@@ -363,7 +363,7 @@ export class GameEngine {
         },
         lastPlayerId: aiId,
       },
-      lastAction: `${ai.name}出了 ${cardIds.length} 张牌，声称是 ${claimedRank}${isAIOutOfCards ? '（' + ai.name + '手牌已出完！）' : ''}`,
+      lastAction: `${ai.name}出了 ${cardIds.length} 张牌${isAIOutOfCards ? '（' + ai.name + '手牌已出完！）' : ''}`,
     };
 
     return this.state;

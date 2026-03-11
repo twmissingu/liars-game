@@ -161,7 +161,7 @@ const App: React.FC = () => {
       setGameState(newState);
       setSelectedCards([]);
       const playerName = getCharacterName(selectedCharacter);
-      addLog(`${playerName} 出了 ${newState.turnState.playedCards?.cardIds.length} 张牌，声称是骗子牌 ${newState.liarCard}`);
+      addLog(`${playerName} 出了 ${newState.turnState.playedCards?.cardIds.length} 张牌`);
       
       // 延迟后AI决策
       setTimeout(() => {
