@@ -494,6 +494,20 @@ const App: React.FC = () => {
               </section>
               
               <section className="cg-help-section">
+                <h3>🎯 骗子牌（Liar Card）</h3>
+                <ul>
+                  <li><strong>什么是骗子牌？</strong></li>
+                  <li>每轮游戏随机指定 Q、K、A 中的一张作为"骗子牌"</li>
+                  <li>出牌时你可以声称出的牌是骗子牌（可能是真话，也可能是撒谎）</li>
+                  <li>下家可以选择相信你，或者质疑你</li>
+                  <li><strong>质疑后翻牌：</strong></li>
+                  <li>• 你出的牌确实是骗子牌 → 质疑者撒谎，受惩罚</li>
+                  <li>• 你出的牌不是骗子牌 → 你撒谎，受惩罚</li>
+                  <li><strong>小丑牌：</strong>可以当作任意骗子牌使用，是赖子牌</li>
+                </ul>
+              </section>
+              
+              <section className="cg-help-section">
                 <h3>🃏 特殊牌</h3>
                 <ul>
                   <li><strong>小丑牌（Joker）</strong>：万能牌，可以当作任意骗子牌使用</li>
