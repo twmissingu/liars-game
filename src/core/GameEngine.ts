@@ -253,8 +253,8 @@ export class GameEngine {
     // 检查玩家是否出完牌
     const isPlayerOutOfCards = this.state.playerHand.length === 0;
     
-    // 卡莲技能：红莲二式 - 出3张及以上时标记爆发状态
-    if (this.playerCharacter === 'kallen' && cardIds.length >= 3) {
+    // 卡莲技能：红莲二式 - 出2张及以上时标记（被质疑且质疑失败时Geass命中率+20%）
+    if (this.playerCharacter === 'kallen' && cardIds.length >= 2) {
       this.state.playerStats.kallenBoostActive = true;
     }
     
@@ -455,20 +455,30 @@ export class GameEngine {
 
   /**
    * 执行Geass判定
+   * @param kallenBoost 卡莲技能：出2张+且质疑失败时，命中率+20%
    */
-  private executeGeass(loser: 'player' | 'ai' | 'ai2' | 'ai3'): GeassResult {
+  private executeGeass(loser: 'player' | 'ai' | 'ai2' | 'ai3', kallenBoost: boolean = false): GeassResult {
     let geassResult: GeassResult;
+    
+    // 计算卡莲技能加成
+    let hitChanceBoost = 0;
+    if (kallenBoost) {
+      hitChanceBoost = 0.2; // +20%命中率
+    }
     
     if (loser === 'player') {
       // 玩家受伤 - 使用新技能系统
-      geassResult = this.geassSystem.performGeass('player', this.state.playerStats, this.playerCharacter);
+      geassResult = this.geassSystem.performGeass('player', this.state.playerStats, this.playerCharacter, hitChanceBoost);
       this.state.playerStats = geassResult.newStats;
     } else {
       // AI受伤 - 使用新技能系统
       const aiIndex = this.state.aiPlayers.findIndex(ai => ai.id === loser);
       const ai = this.state.aiPlayers[aiIndex];
       
-      geassResult = this.geassSystem.performGeass(loser, ai.stats, ai.character);
+      // 检查是否是卡莲且触发了技能
+      const aiKallenBoost = ai.character === 'kallen' && ai.stats.kallenBoostActive;
+      
+      geassResult = this.geassSystem.performGeass(loser, ai.stats, ai.character, hitChanceBoost || (aiKallenBoost ? 0.2 : 0));
       ai.stats = geassResult.newStats;
       
       // 检查AI是否被淘汰
@@ -503,7 +513,15 @@ export class GameEngine {
     };
 
     // 执行Geass判定
-    const geassResult = this.executeGeass(loser);
+    // 卡莲技能：出2张+且质疑失败（撒谎被揭穿）时，Geass命中率+20%
+    const playedBy = playedCards.playerId;
+    const isKallenBoost = playedBy === 'player' 
+      ? (this.playerCharacter === 'kallen' && this.state.playerStats.kallenBoostActive && wasLie)
+      : (this.state.aiPlayers.find(ai => ai.id === playedBy)?.character === 'kallen' && 
+         this.state.aiPlayers.find(ai => ai.id === playedBy)?.stats.kallenBoostActive && 
+         wasLie);
+    
+    const geassResult = this.executeGeass(loser, isKallenBoost || false);
     this.state.geassResult = geassResult;
 
     // 检查游戏结束

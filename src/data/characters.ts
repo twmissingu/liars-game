@@ -55,12 +55,12 @@ export const characters: Character[] = [
     color: '#dc2626',        // 红色
     secondaryColor: '#991b1b', // 深红
     accentColor: '#fbbf24',  // 金色
-    description: '黑色骑士团的王牌驾驶员。可出1-4张牌，出3张及以上时高风险高回报。',
+    description: '黑色骑士团的王牌驾驶员。可出1-4张牌，出2张及以上时质疑失败有额外惩罚。',
     personality: 'tsundere',
     pose: '傲娇姿势 - 双臂交叉，侧头',
     accessories: ['红色头巾', '驾驶服', '红莲徽章'],
     skillName: '红莲二式',
-    skillDescription: '可出1-4张牌，出3张及以上时Geass命中率+20%',
+    skillDescription: '可出1-4张牌，出2张及以上时被质疑且质疑失败，Geass命中率+20%',
   },
 ];
 

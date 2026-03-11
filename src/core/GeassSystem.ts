@@ -44,13 +44,18 @@ export class GeassSystem {
    * @param target 目标玩家
    * @param targetStats 目标玩家状态
    * @param character 角色ID
+   * @param hitChanceBoost 命中率加成（如卡莲技能）
    */
   performGeass(
     target: 'player' | 'ai' | 'ai2' | 'ai3',
     targetStats: PlayerStats,
-    character: 'lelouch' | 'cc' | 'suzaku' | 'kallen' | null = null
+    character: 'lelouch' | 'cc' | 'suzaku' | 'kallen' | null = null,
+    hitChanceBoost: number = 0
   ): GeassResult {
     let hitChance = 1 / 3; // 基础1/3概率
+    
+    // 应用命中率加成
+    hitChance += hitChanceBoost;
 
     // ========== C.C.技能：Code之力（复活） ==========
     // 第一次受到致命伤害时，有50%概率复活并免疫本次伤害
@@ -154,7 +159,7 @@ export class GeassSystem {
    * 卡莲技能：红莲二式 - 获取技能描述
    */
   getKallenSkillDescription(): string {
-    return '红莲二式：可出1-4张牌，出3张及以上时Geass命中率+20%（高风险高回报）';
+    return '红莲二式：可出1-4张牌，出2张及以上时被质疑且质疑失败，Geass命中率+20%';
   }
 }
 
