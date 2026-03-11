@@ -68,7 +68,7 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
                 <div className="cg-character-preview">
                   <ChibiAvatar
                     characterId={character.id}
-                    size={150}
+                    size={300}
                   />
                 </div>
 

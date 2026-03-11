@@ -88,7 +88,7 @@ export const GameTable: React.FC<GameTableProps> = ({
   const renderCharacter = (name: string, characterId: CharacterId | null, hp: number, cardCount: number, color: string, isTop: boolean = false) => (
     <div className={`cg-character ${isTop ? 'cg-character-top' : ''}`}>
       <div className="cg-character-avatar">
-        {characterId && <ChibiAvatar characterId={characterId} size={80} />}
+        {characterId && <ChibiAvatar characterId={characterId} size={160} />}
       </div>
       <div className="cg-character-info">
         <div className="cg-character-name" style={{ color }}>{name}</div>

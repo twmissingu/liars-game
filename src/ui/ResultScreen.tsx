@@ -128,7 +128,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
           <div className="cg-character-showcase">
             <ChibiAvatar
               characterId={resultCharacter}
-              size={200}
+              size={300}
             />
             
             {/* 角色光环效果 */}

@@ -9,10 +9,10 @@ interface ChibiAvatarProps {
 
 export const ChibiAvatar: React.FC<ChibiAvatarProps> = ({ 
   characterId, 
-  size = 80,
+  size = 160,
   animationState = 'idle'
 }) => {
-  // 使用随机头像 - 使用相对路径让 vite 自动处理 base 路径
+  // 使用缩略图 - 尺寸为显示尺寸的一半，保持清晰且加载快
   const avatarNumber = Math.floor(Math.random() * 4) + 1;
   const avatarSrc = `avatars/${characterId}/${avatarNumber}.png`;
   
@@ -23,9 +23,8 @@ export const ChibiAvatar: React.FC<ChibiAvatarProps> = ({
       style={{ 
         width: size, 
         height: size, 
-        borderRadius: '50%',
-        objectFit: 'cover',
-        border: '3px solid #d4af37'
+        borderRadius: '8px',
+        objectFit: 'cover'
       }}
     />
   );
