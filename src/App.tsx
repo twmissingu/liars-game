@@ -476,7 +476,7 @@ const App: React.FC = () => {
                   <li><strong>鲁鲁修</strong>: 绝对命令 - 可强制改变骗子牌</li>
                   <li><strong>C.C.</strong>: Code之力 - 首次濒死时50%概率复活</li>
                   <li><strong>朱雀</strong>: 枢木剑术 - 受Geass时25%反击，15%闪避</li>
-                  <li><strong>卡莲</strong>: 红莲二式 - 可出1-4张，出2张+被质疑失败时Geass+20%</li>
+                  <li><strong>卡莲</strong>: 红莲二式 - 可出1-4张，出2张+被质疑失败时Geass命中率=20%×N</li>
                 </ul>
               </section>
               

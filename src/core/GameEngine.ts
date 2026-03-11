@@ -253,9 +253,10 @@ export class GameEngine {
     // 检查玩家是否出完牌
     const isPlayerOutOfCards = this.state.playerHand.length === 0;
     
-    // 卡莲技能：红莲二式 - 出2张及以上时标记（被质疑且质疑失败时Geass命中率+20%）
+    // 卡莲技能：红莲二式 - 记录出牌张数
     if (this.playerCharacter === 'kallen' && cardIds.length >= 2) {
       this.state.playerStats.kallenBoostActive = true;
+      this.state.playerStats.kallenCardCount = cardIds.length; // 记录出牌张数
     }
     
     this.state = {
@@ -513,15 +514,24 @@ export class GameEngine {
     };
 
     // 执行Geass判定
-    // 卡莲技能：出2张+且质疑失败（撒谎被揭穿）时，Geass命中率+20%
+    // 卡莲技能：出2张+且质疑失败（撒谎被揭穿）时，Geass命中率 = 20% × 出牌张数
     const playedBy = playedCards.playerId;
-    const isKallenBoost = playedBy === 'player' 
-      ? (this.playerCharacter === 'kallen' && this.state.playerStats.kallenBoostActive && wasLie)
-      : (this.state.aiPlayers.find(ai => ai.id === playedBy)?.character === 'kallen' && 
-         this.state.aiPlayers.find(ai => ai.id === playedBy)?.stats.kallenBoostActive && 
-         wasLie);
+    let kallenHitChance = 0;
     
-    const geassResult = this.executeGeass(loser, isKallenBoost || false);
+    if (wasLie) {
+      if (playedBy === 'player' && this.playerCharacter === 'kallen' && this.state.playerStats.kallenBoostActive) {
+        const cardCount = this.state.playerStats.kallenCardCount || 2;
+        kallenHitChance = 0.2 * cardCount; // 20% × N
+      } else if (playedBy !== 'player') {
+        const ai = this.state.aiPlayers.find(ai => ai.id === playedBy);
+        if (ai?.character === 'kallen' && ai.stats.kallenBoostActive) {
+          const cardCount = ai.stats.kallenCardCount || 2;
+          kallenHitChance = 0.2 * cardCount; // 20% × N
+        }
+      }
+    }
+    
+    const geassResult = this.executeGeass(loser, kallenHitChance);
     this.state.geassResult = geassResult;
 
     // 检查游戏结束

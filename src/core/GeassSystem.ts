@@ -11,9 +11,10 @@ export interface PlayerStats {
    geassSuccessCount: number;
    geassFailCount: number;
    // 技能相关状态
-   ccReviveUsed?: boolean;      // C.C.是否已使用复活
+   ccReviveUsed?: boolean;        // C.C.是否已使用复活
    suzakuCounterActive?: boolean; // 朱雀反击是否激活
    kallenBoostActive?: boolean;   // 卡莲爆发是否激活
+   kallenCardCount?: number;      // 卡莲出牌张数（用于计算命中率）
 }
 
 export interface GeassResult {
@@ -159,7 +160,7 @@ export class GeassSystem {
    * 卡莲技能：红莲二式 - 获取技能描述
    */
   getKallenSkillDescription(): string {
-    return '红莲二式：可出1-4张牌，出2张及以上时被质疑且质疑失败，Geass命中率+20%';
+    return '红莲二式：可出1-4张牌，出2张+被质疑且质疑失败，Geass命中率=20%×出牌张数';
   }
 }
 
