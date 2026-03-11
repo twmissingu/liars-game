@@ -96,7 +96,7 @@ const App: React.FC = () => {
         '游戏开始！',
         `骗子牌是: ${initialState.liarCard}`,
         `${firstPlayerName} 先手！`,
-        '选择1-3张牌打出，自动声称是骗子牌。'
+        '选择1-3张牌打出。'
       ]);
       setCurrentScreen('game-table');
       playBGM('bgm-game');
