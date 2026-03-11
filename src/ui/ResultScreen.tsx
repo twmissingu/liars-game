@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { CharacterRenderer } from '../components/characters';
+import { ChibiAvatar } from '../components/characters';
 import type { ResultScreenProps, CharacterId } from '../types';
 
 export const ResultScreen: React.FC<ResultScreenProps> = ({
@@ -126,10 +126,9 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
         {/* 角色展示 */}
         <div className="cg-result-character">
           <div className="cg-character-showcase">
-            <CharacterRenderer
+            <ChibiAvatar
               characterId={resultCharacter}
               size={200}
-              animationState={animationState}
             />
             
             {/* 角色光环效果 */}

@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { characters } from '../data/characters';
-import { CharacterRenderer } from '../components/characters';
+import { ChibiAvatar } from '../components/characters';
 import type { CharacterSelectProps, CharacterId } from '../types';
 
 export const CharacterSelect: React.FC<CharacterSelectProps> = ({
@@ -66,10 +66,9 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
                 </div>
 
                 <div className="cg-character-preview">
-                  <CharacterRenderer
+                  <ChibiAvatar
                     characterId={character.id}
                     size={150}
-                    animationState={isSelected ? 'breathing' : 'idle'}
                   />
                 </div>
 
