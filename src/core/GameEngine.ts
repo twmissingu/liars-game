@@ -129,6 +129,43 @@ export class GameEngine {
   }
 
   /**
+   * 重置牌局（惩罚后重新发牌）
+   */
+  resetRound(): GameState {
+    // 重置牌组
+    this.cardSystem.reset();
+    this.cardSystem.generateDeck();
+    this.cardSystem.shuffle();
+    
+    // 重新发牌
+    const { playerCards, ai1Cards, ai2Cards, ai3Cards } = this.cardSystem.dealCards();
+    
+    // 设定新的骗子牌
+    const liarCard = this.cardSystem.setLiarCard();
+    
+    // 更新状态
+    this.state.playerHand = playerCards;
+    this.state.aiPlayers[0].hand = ai1Cards;
+    this.state.aiPlayers[1].hand = ai2Cards;
+    this.state.aiPlayers[2].hand = ai3Cards;
+    this.state.liarCard = liarCard;
+    this.state.phase = 'player_turn';
+    this.state.currentPlayerIndex = 0;
+    this.state.playerSelectedCards = [];
+    this.state.turnState = {
+      ...this.state.turnState,
+      turnNumber: this.state.turnState.turnNumber + 1,
+      playedCards: null,
+      tableCards: [],
+      lastPlayerId: null,
+    };
+    this.state.geassResult = null;
+    this.state.lastAction = '牌局重置，重新发牌';
+    
+    return this.state;
+  }
+
+  /**
    * 获取当前活动玩家ID
    */
   getCurrentPlayerId(): 'player' | 'ai' | 'ai2' | 'ai3' {
@@ -211,6 +248,9 @@ export class GameEngine {
     // 更新玩家手牌 - 移除已出的牌
     this.state.playerHand = this.state.playerHand.filter(c => !cardIds.includes(c.id));
     
+    // 检查玩家是否出完牌
+    const isPlayerOutOfCards = this.state.playerHand.length === 0;
+    
     this.state = {
       ...this.state,
       phase: 'challenge',
@@ -225,7 +265,7 @@ export class GameEngine {
         },
         lastPlayerId: 'player',
       },
-      lastAction: `玩家出了 ${cardIds.length} 张牌，声称是 ${claimedRank}`,
+      lastAction: `玩家出了 ${cardIds.length} 张牌，声称是 ${claimedRank}${isPlayerOutOfCards ? '（玩家手牌已出完！）' : ''}`,
     };
 
     return this.state;
@@ -280,6 +320,9 @@ export class GameEngine {
     
     // 更新AI手牌
     ai.hand = ai.hand.filter(c => !cardIds.includes(c.id));
+    
+    // 检查AI是否出完牌
+    const isAIOutOfCards = ai.hand.length === 0;
 
     this.state = {
       ...this.state,
@@ -294,7 +337,7 @@ export class GameEngine {
         },
         lastPlayerId: aiId,
       },
-      lastAction: `${ai.name}出了 ${cardIds.length} 张牌，声称是 ${claimedRank}`,
+      lastAction: `${ai.name}出了 ${cardIds.length} 张牌，声称是 ${claimedRank}${isAIOutOfCards ? '（' + ai.name + '手牌已出完！）' : ''}`,
     };
 
     return this.state;
@@ -491,6 +534,34 @@ export class GameEngine {
     // 确保下一个玩家是活跃的
     this.state.currentPlayerIndex = nextPlayerIndex;
     const nextPlayerId = this.getCurrentPlayerId();
+    
+    // 检查是否有玩家出完牌且未被惩罚（获胜条件）
+    const playedBy = playedCards.playerId;
+    if (playedBy === 'player' && this.state.playerHand.length === 0 && loser !== 'player') {
+      // 玩家出完牌且没有因为撒谎受惩罚，玩家获胜
+      this.state = {
+        ...this.state,
+        phase: 'game_over',
+        winner: 'player',
+        lastAction: '玩家出完所有手牌，获得胜利！',
+      };
+      return this.state;
+    }
+    
+    // 检查是否有AI出完牌
+    if (playedBy !== 'player') {
+      const aiIndex = this.state.aiPlayers.findIndex(ai => ai.id === playedBy);
+      if (aiIndex >= 0 && this.state.aiPlayers[aiIndex].hand.length === 0 && loser !== playedBy) {
+        // AI出完牌且没有因为撒谎受惩罚，该AI获胜（玩家失败）
+        this.state = {
+          ...this.state,
+          phase: 'game_over',
+          winner: 'ai',
+          lastAction: `${this.state.aiPlayers[aiIndex].name}出完所有手牌，获得胜利！`,
+        };
+        return this.state;
+      }
+    }
 
     this.state = {
       ...this.state,

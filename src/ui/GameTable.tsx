@@ -92,11 +92,13 @@ export const GameTable: React.FC<GameTableProps> = ({
       hearts: '♥',
       clubs: '♣',
       diamonds: '♦',
+      joker: '🃏',
     };
     return symbols[suit] || suit;
   };
 
   const getSuitColor = (suit: string): string => {
+    if (suit === 'joker') return '#d4af37'; // 小丑牌用金色
     return suit === 'hearts' || suit === 'diamonds' ? '#dc2626' : '#1a1a24';
   };
 
