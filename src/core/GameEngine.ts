@@ -456,9 +456,9 @@ export class GameEngine {
 
   /**
    * 执行Geass判定
-   * @param kallenBoost 卡莲技能：出2张+且质疑失败时，命中率+20%
+   * @param hitChanceBoost 命中率加成（卡莲技能）
    */
-  private executeGeass(loser: 'player' | 'ai' | 'ai2' | 'ai3', kallenBoost: boolean = false): GeassResult {
+  private executeGeass(loser: 'player' | 'ai' | 'ai2' | 'ai3', hitChanceBoost: number = 0): GeassResult {
     let geassResult: GeassResult;
     
     // 计算卡莲技能加成
@@ -476,10 +476,7 @@ export class GameEngine {
       const aiIndex = this.state.aiPlayers.findIndex(ai => ai.id === loser);
       const ai = this.state.aiPlayers[aiIndex];
       
-      // 检查是否是卡莲且触发了技能
-      const aiKallenBoost = ai.character === 'kallen' && ai.stats.kallenBoostActive;
-      
-      geassResult = this.geassSystem.performGeass(loser, ai.stats, ai.character, hitChanceBoost || (aiKallenBoost ? 0.2 : 0));
+      geassResult = this.geassSystem.performGeass(loser, ai.stats, ai.character, hitChanceBoost);
       ai.stats = geassResult.newStats;
       
       // 检查AI是否被淘汰
