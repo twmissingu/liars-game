@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { CharacterRenderer } from '../components/characters';
+import { ChibiAvatar } from '../components/characters';
 import { characters, getCharacterName } from '../data/characters';
 import type { Card, CardRank, CharacterId, FunnyAction } from '../types';
 
@@ -27,7 +27,7 @@ interface GameTableProps {
 const getCharacterColor = (characterId: CharacterId | null): string => {
   if (!characterId) return '#d4af37';
   const char = characters.find(c => c.id === characterId);
-  return char?.accentColor || '#d4af37';
+  return char?.color || '#d4af37';
 };
 
 // 所有角色配置（包括玩家）
@@ -88,7 +88,7 @@ export const GameTable: React.FC<GameTableProps> = ({
   const renderCharacter = (name: string, characterId: CharacterId | null, hp: number, cardCount: number, color: string, isTop: boolean = false) => (
     <div className={`cg-character ${isTop ? 'cg-character-top' : ''}`}>
       <div className="cg-character-avatar">
-        {characterId && <CharacterRenderer characterId={characterId} size={50} animationState="idle" />}
+        {characterId && <ChibiAvatar characterId={characterId} size={80} />}
       </div>
       <div className="cg-character-info">
         <div className="cg-character-name" style={{ color }}>{name}</div>

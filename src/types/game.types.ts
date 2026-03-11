@@ -56,12 +56,7 @@ export interface Character {
   name: string;
   nameEn: string;
   color: string;
-  secondaryColor: string;
-  accentColor: string;
   description: string;
-  personality: string;
-  pose: string;
-  accessories: string[];
   skillName: string;
   skillDescription: string;
 }
