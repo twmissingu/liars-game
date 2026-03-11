@@ -174,7 +174,7 @@ const App: React.FC = () => {
     }
   }, [selectedCards, isProcessing, addLog, selectedCharacter]);
 
-  // AI质疑处理
+  // AI质疑处理 - 按顺序，下家质疑
   const processAIChallenge = useCallback(() => {
     if (!gameEngineRef.current) return;
     
@@ -183,29 +183,71 @@ const App: React.FC = () => {
     
     if (state.phase !== 'challenge') return;
     
-    // 随机选择一个AI来质疑
-    const activeAIs = state.aiPlayers.filter(ai => ai.isActive && ai.stats.hp > 0);
-    if (activeAIs.length === 0) {
-      // 没有AI质疑，继续下一回合
+    // 获取出牌者ID
+    const playedBy = state.turnState.playedCards?.playerId;
+    if (!playedBy) return;
+    
+    // 计算下家（按顺序：玩家->AI1->AI2->AI3->玩家）
+    const playerIndex = playedBy === 'player' ? 0 : 
+      state.aiPlayers.findIndex((ai: any) => ai.id === playedBy) + 1;
+    const nextIndex = (playerIndex + 1) % 4;
+    
+    // 下家质疑决策
+    if (nextIndex === 0) {
+      // 下家是玩家，等待玩家决策
+      addLog('等待玩家决策...');
+      return;
+    }
+    
+    // 下家是AI
+    const nextAI = state.aiPlayers[nextIndex - 1];
+    if (!nextAI || !nextAI.isActive || nextAI.stats.hp <= 0) {
+      // 下家已淘汰，继续到下下家
       continueToNextTurn();
       return;
     }
     
-    // 随机决定是否质疑
-    const shouldChallenge = Math.random() > 0.6;
+    // AI智能决策：根据牌面、血条、技能等判断
+    const shouldChallenge = calculateAIChallengeDecision(nextAI, state);
     
     if (shouldChallenge) {
-      const challengingAI = activeAIs[Math.floor(Math.random() * activeAIs.length)];
       playSound('sfx-challenge');
-      addLog(`${challengingAI.name} 发起了质疑！`);
+      addLog(`${nextAI.name} 向 ${getCharacterName(playedBy === 'player' ? selectedCharacter : playedBy.replace('ai', '') as CharacterId)} 发起质疑！`);
       
-      const newState = engine.aiChallengeDecision(challengingAI.id);
+      const newState = engine.aiChallengeDecision(nextAI.id);
       handleGeassResult(newState);
     } else {
-      addLog('AI们选择不质疑');
+      addLog(`${nextAI.name} 选择不质疑`);
+      // 继续到下一家
       continueToNextTurn();
     }
-  }, [addLog]);
+  }, [addLog, selectedCharacter]);
+
+  // AI质疑决策算法
+  const calculateAIChallengeDecision = (ai: any, state: any): boolean => {
+    const playedCards = state.turnState.playedCards;
+    if (!playedCards) return false;
+    
+    // 基础概率
+    let challengeProbability = 0.3;
+    
+    // 根据出牌数量调整（出多张牌更可能是撒谎）
+    const cardCount = playedCards.cardIds.length;
+    if (cardCount >= 3) challengeProbability += 0.3;
+    else if (cardCount === 2) challengeProbability += 0.15;
+    
+    // 根据AI血条调整（血少时更谨慎）
+    if (ai.stats.hp === 1) challengeProbability -= 0.2;
+    
+    // 朱雀技能：更激进
+    if (ai.character === 'suzaku') challengeProbability += 0.1;
+    
+    // C.C.技能：更保守
+    if (ai.character === 'cc') challengeProbability -= 0.1;
+    
+    // 随机决策
+    return Math.random() < challengeProbability;
+  };
 
   // 处理Geass结果
   const handleGeassResult = useCallback((newState: any) => {
@@ -464,18 +506,7 @@ const App: React.FC = () => {
           <div className="cg-placeholder-screen">
             <h2>设置</h2>
             <div className="cg-settings-content">
-              <div className="cg-setting-item">
-                <label>难度选择</label>
-                <select 
-                  value={difficulty} 
-                  onChange={(e) => setDifficulty(e.target.value as any)}
-                  className="cg-setting-select"
-                >
-                  <option value="easy">简单</option>
-                  <option value="normal">普通</option>
-                  <option value="hard">困难</option>
-                </select>
-              </div>
+              <p style={{color: '#a1a1aa', textAlign: 'center'}}>AI 会根据牌面、血条、技能等综合判断，自动选择最优策略</p>
               <button onClick={() => setCurrentScreen('main-menu')} className="cg-menu-button">返回</button>
             </div>
           </div>
