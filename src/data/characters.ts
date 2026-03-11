@@ -18,7 +18,7 @@ export const characters: Character[] = [
     pose: '思考姿势 - 单手托腮，眼神锐利',
     accessories: ['眼罩（遮住Geass之眼）', '黑色披风', '金色装饰'],
     skillName: '绝对命令',
-    skillDescription: '可以强制指定骗子牌为任意点数',
+    skillDescription: '每局限用1次，强制将当前骗子牌改为任意点数（Q/K/A）',
   },
   {
     id: 'cc',
@@ -27,12 +27,12 @@ export const characters: Character[] = [
     color: '#15803d',        // 绿色
     secondaryColor: '#14532d', // 深绿
     accentColor: '#fbbf24',  // 金色
-    description: '赋予鲁鲁修Geass的神秘少女。首次濒死时50%概率复活。',
+    description: '赋予鲁鲁修Geass的神秘少女，拥有不老不死的Code之力。',
     personality: 'mysterious',
     pose: '慵懒姿势 - 手持披萨，侧躺',
     accessories: ['披萨', '白色拘束服', '绿色长发'],
     skillName: 'Code之力',
-    skillDescription: '首次受到致命伤害时，50%概率复活并免疫本次伤害',
+    skillDescription: '首次受到致命伤害（HP归零）时，50%概率复活并免疫本次伤害，每局限1次',
   },
   {
     id: 'suzaku',
@@ -41,12 +41,12 @@ export const characters: Character[] = [
     color: '#f8fafc',        // 白色
     secondaryColor: '#cbd5e1', // 浅灰
     accentColor: '#3b82f6',  // 蓝色
-    description: '圆桌骑士，拥有超凡的战斗技巧。受到Geass时25%概率反击。',
+    description: '圆桌骑士，拥有超凡的战斗技巧和反应速度。',
     personality: 'passionate',
     pose: '热血姿势 - 握拳，充满干劲',
     accessories: ['骑士制服', '兰斯洛特徽章', '白色披风'],
     skillName: '枢木剑术',
-    skillDescription: '受到Geass时25%概率反击，15%基础闪避率',
+    skillDescription: '受到Geass判定时：15%基础闪避率 + 25%概率完美闪避并反击（让攻击者承受伤害）',
   },
   {
     id: 'kallen',
@@ -55,12 +55,12 @@ export const characters: Character[] = [
     color: '#dc2626',        // 红色
     secondaryColor: '#991b1b', // 深红
     accentColor: '#fbbf24',  // 金色
-    description: '黑色骑士团的王牌驾驶员。可出1-4张牌，出2张及以上时质疑失败惩罚随张数增加。',
+    description: '黑色骑士团的王牌驾驶员，驾驶红莲二式的战斗天才。',
     personality: 'tsundere',
     pose: '傲娇姿势 - 双臂交叉，侧头',
     accessories: ['红色头巾', '驾驶服', '红莲徽章'],
     skillName: '红莲二式',
-    skillDescription: '可出1-4张牌，出2张+被质疑且质疑失败，Geass命中率=20%×出牌张数',
+    skillDescription: '可出1-4张牌；出2张及以上时，若被质疑且质疑失败（撒谎被揭穿），对质疑者的Geass命中率=20%×出牌张数（最高80%）',
   },
 ];
 

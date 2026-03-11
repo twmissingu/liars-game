@@ -457,26 +457,46 @@ const App: React.FC = () => {
             <h2>游戏帮助</h2>
             <div className="cg-help-content">
               <section className="cg-help-section">
-                <h3>游戏规则</h3>
+                <h3>🎮 游戏规则</h3>
                 <ul>
-                  <li>每人初始5张牌，轮流出牌</li>
-                  <li>每回合会指定一张"骗子牌"</li>
-                  <li>出牌时可以声称是骗子牌（可能撒谎）</li>
-                  <li>其他玩家可以质疑你的出牌</li>
-                  <li>质疑成功将触发Geass判定</li>
-                  <li>Geass有1/3概率命中，造成1点伤害</li>
-                  <li>HP归零则被淘汰</li>
-                  <li>最后存活的玩家获胜</li>
+                  <li>每人初始5张牌（Q/K/A + 小丑牌），轮流出牌</li>
+                  <li>每回合随机指定一张"骗子牌"（Q/K/A）</li>
+                  <li>出牌时声称是骗子牌（可以撒谎）</li>
+                  <li>下家可以选择<strong>质疑</strong>或<strong>跟牌</strong></li>
+                  <li>质疑后翻牌验证：撒谎者受惩罚，说真话则质疑者受惩罚</li>
+                  <li>惩罚：触发Geass判定，基础命中率33%，命中则HP-1</li>
+                  <li>HP归零被淘汰，最后存活者获胜</li>
+                  <li>手牌出完且未被质疑成功，直接获胜</li>
+                  <li>惩罚后牌局重置，重新洗牌发牌</li>
                 </ul>
               </section>
               
               <section className="cg-help-section">
-                <h3>角色技能</h3>
+                <h3>👤 角色技能详解</h3>
                 <ul>
-                  <li><strong>鲁鲁修</strong>: 绝对命令 - 可强制改变骗子牌</li>
-                  <li><strong>C.C.</strong>: Code之力 - 首次濒死时50%概率复活</li>
-                  <li><strong>朱雀</strong>: 枢木剑术 - 受Geass时25%反击，15%闪避</li>
-                  <li><strong>卡莲</strong>: 红莲二式 - 可出1-4张，出2张+被质疑失败时Geass命中率=20%×N</li>
+                  <li>
+                    <strong style={{color: '#d4af37'}}>鲁鲁修 · 绝对命令</strong>
+                    <br/><small>每局限用1次，强制将当前骗子牌改为任意点数（Q/K/A）。掌控全局的王者技能。</small>
+                  </li>
+                  <li>
+                    <strong style={{color: '#22c55e'}}>C.C. · Code之力</strong>
+                    <br/><small>首次受到致命伤害（HP归零）时，50%概率复活并免疫本次伤害。不老不死的神秘力量，每局限1次。</small>
+                  </li>
+                  <li>
+                    <strong style={{color: '#3b82f6'}}>朱雀 · 枢木剑术</strong>
+                    <br/><small>受到Geass判定时：15%基础闪避率 + 25%概率完美闪避并反击（让攻击者承受本次伤害）。骑士的战斗技巧。</small>
+                  </li>
+                  <li>
+                    <strong style={{color: '#dc2626'}}>卡莲 · 红莲二式</strong>
+                    <br/><small>可出1-4张牌。出2张及以上时，若被质疑且质疑失败（撒谎被揭穿），对质疑者的Geass命中率 = 20% × 出牌张数（最高80%）。高风险高回报的爆发战术！</small>
+                  </li>
+                </ul>
+              </section>
+              
+              <section className="cg-help-section">
+                <h3>🃏 特殊牌</h3>
+                <ul>
+                  <li><strong>小丑牌（Joker）</strong>：万能牌，可以当作任意骗子牌使用</li>
                 </ul>
               </section>
               
