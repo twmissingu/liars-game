@@ -289,8 +289,9 @@ export class GameEngine {
     const liarCard = this.state.liarCard!;
     
     // AI策略
-    const liarCards = aiCards.filter(c => c.rank === liarCard);
-    const otherCards = aiCards.filter(c => c.rank !== liarCard);
+    // 注意：小丑牌(JOKER)可以当作骗子牌使用
+    const liarCards = aiCards.filter(c => c.rank === liarCard || c.isJoker);
+    const otherCards = aiCards.filter(c => c.rank !== liarCard && !c.isJoker);
     
     let selectedCards: Card[];
     let claimedRank: CardRank;
@@ -313,6 +314,12 @@ export class GameEngine {
     // 如果没有可选的牌，从所有手牌中选1张
     if (selectedCards.length === 0 && aiCards.length > 0) {
       selectedCards = [aiCards[0]];
+    }
+    
+    // 最终保护：确保至少出1张牌
+    if (selectedCards.length === 0) {
+      console.error('AI没有牌可出，但不应该发生');
+      selectedCards = aiCards.slice(0, 1);
     }
 
     const cardIds = selectedCards.map(c => c.id);
