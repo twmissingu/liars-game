@@ -36,6 +36,7 @@ export interface GameState {
   phase: GamePhase;
   liarCard: CardRank | null;
   playerStats: PlayerStats;
+  playerHand: Card[]; // 玩家手牌
   aiPlayers: AIPlayer[];
   currentPlayerIndex: number; // 0=player, 1=ai1, 2=ai2, 3=ai3
   turnState: {
@@ -68,6 +69,7 @@ export class GameEngine {
       phase: 'setup',
       liarCard: null,
       playerStats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 },
+      playerHand: [], // 初始为空
       aiPlayers: [
         { id: 'ai', name: 'C.C.', character: 'cc', hand: [], stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 }, isActive: true },
         { id: 'ai2', name: '朱雀', character: 'suzaku', hand: [], stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 }, isActive: true },
@@ -109,6 +111,7 @@ export class GameEngine {
       phase: 'player_turn',
       liarCard,
       playerCharacter,
+      playerHand: playerCards, // 保存玩家手牌
       aiPlayers: [
         { id: 'ai', name: 'C.C.', character: 'cc', hand: ai1Cards, stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 }, isActive: true },
         { id: 'ai2', name: '朱雀', character: 'suzaku', hand: ai2Cards, stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 }, isActive: true },
@@ -204,6 +207,9 @@ export class GameEngine {
     }
 
     const cards = this.cardSystem.playCards(cardIds);
+    
+    // 更新玩家手牌 - 移除已出的牌
+    this.state.playerHand = this.state.playerHand.filter(c => !cardIds.includes(c.id));
     
     this.state = {
       ...this.state,
