@@ -204,8 +204,9 @@ export class GameEngine {
     const selectedCards = this.state.playerSelectedCards;
     const cardIndex = selectedCards.indexOf(cardId);
     
-    // 卡莲技能：最多可选4张，其他角色最多1张
-    const maxCards = this.playerCharacter === 'kallen' ? 4 : 1;
+    // Liar's Bar规则：每次可出1-3张牌
+    // 卡莲技能：最多可选4张，其他角色最多3张
+    const maxCards = this.playerCharacter === 'kallen' ? 4 : 3;
     
     if (cardIndex > -1) {
       // 取消选择
@@ -214,9 +215,7 @@ export class GameEngine {
       // 选择牌
       if (selectedCards.length >= maxCards) {
         // 已达到上限，替换最后一张
-        if (this.playerCharacter !== 'kallen') {
-          this.state.playerSelectedCards = [cardId];
-        }
+        this.state.playerSelectedCards = [...selectedCards.slice(1), cardId];
       } else {
         this.state.playerSelectedCards = [...selectedCards, cardId];
       }
@@ -238,9 +237,12 @@ export class GameEngine {
       throw new Error('未选择任何牌');
     }
 
-    // 卡莲技能检查
+    // 检查出牌数量限制
     if (this.playerCharacter === 'kallen' && cardIds.length > 4) {
       throw new Error('红莲突击最多出4张牌');
+    }
+    if (cardIds.length > 3) {
+      throw new Error('最多只能出3张牌');
     }
 
     const cards = this.cardSystem.playCards(cardIds);

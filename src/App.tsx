@@ -89,7 +89,7 @@ const App: React.FC = () => {
       setGameLog([
         '游戏开始！',
         `骗子牌是: ${initialState.liarCard}`,
-        '请选择要出的牌，然后选择声称的点数。'
+        '每次可出1-3张牌，然后选择声称的点数。'
       ]);
       setCurrentScreen('game-table');
       playBGM('bgm-game');
