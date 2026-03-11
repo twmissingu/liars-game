@@ -279,8 +279,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                   <div className="cg-card-suit-center" style={{ color: getSuitColor(card.suit) }}>
                     {getSuitSymbol(card.suit)}
                   </div>
-                  <div className="cg-card-rank cg-card-rank-br" style={{ color: getSuitColor(card.suit) }}
-003e
+                  <div className="cg-card-rank cg-card-rank-br" style={{ color: getSuitColor(card.suit) }}>
                     {card.rank}
                   </div>
                 </div>
