@@ -559,14 +559,6 @@ export class GameEngine {
     } else {
       this.state.lastAction = `${attackerName} 向 ${loserName} 发动Geass！未命中！`;
     }
-          const cardCount = ai.stats.kallenCardCount || 2;
-          kallenHitChance = 0.2 * cardCount; // 20% × N
-        }
-      }
-    }
-    
-    const geassResult = this.executeGeass(loser, kallenHitChance);
-    this.state.geassResult = geassResult;
 
     // 检查游戏结束
     const activeAIs = this.state.aiPlayers.filter(ai => ai.isActive && ai.stats.hp > 0);
@@ -591,13 +583,6 @@ export class GameEngine {
       return this.state;
     }
 
-    // 继续游戏 - 惩罚后重置牌局（Liar's Bar规则）
-    // 延迟后重置牌局
-    setTimeout(() => {
-      this.resetRound();
-    }, 2000);
-    
-    // 先返回当前状态，让UI显示惩罚结果
     return this.state;
   }
 
