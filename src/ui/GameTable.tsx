@@ -140,7 +140,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                       {/* 出牌时显示背面，质疑后才显示实际牌 */}
                       {turnState.playedCards.actualCards.map((c: Card, i: number) => (
                         <div key={c.id} className="cg-card-small cg-card-back">
-                          <span>🎴</span>
+                          <img src="/assets/cards/card-back.webp" alt="牌背" />
                         </div>
                       ))}
                     </div>
@@ -256,8 +256,9 @@ export const GameTable: React.FC<GameTableProps> = ({
         .cg-played { text-align: center; }
         .cg-played div:first-child { color: #d4af37; font-size: 14px; margin-bottom: 10px; }
         .cg-cards { display: flex; justify-content: center; gap: 8px; }
-        .cg-card-small { width: 40px; height: 56px; background: white; border-radius: 4px; border: 2px solid #d4af37; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 16px; }
-        .cg-card-back { background: linear-gradient(135deg, #4c1d95, #1e1b4b); color: #d4af37; font-size: 24px; }
+        .cg-card-small { width: 40px; height: 56px; border-radius: 4px; border: 2px solid #d4af37; overflow: hidden; }
+        .cg-card-small img { width: 100%; height: 100%; object-fit: cover; }
+        .cg-card-back { background: linear-gradient(135deg, #4c1d95, #1e1b4b); }
         .cg-card-count-display { color: #d4af37; font-size: 14px; margin-top: 10px; }
         .cg-placeholder-text { color: rgba(255,255,255,0.3); font-size: 16px; }
         
