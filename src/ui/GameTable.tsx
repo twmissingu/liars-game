@@ -12,6 +12,9 @@ interface GameTableProps {
   gameState: any;
   selectedCards: string[];
   selectedCharacter: CharacterId | null;
+  selectedAvatar?: number;
+  aiCharacters?: CharacterId[];
+  aiAvatars?: Record<string, number>;
   onToggleCardSelection: (cardId: string) => void;
   onConfirmPlay: () => void;
   onPass: () => void;
@@ -42,6 +45,9 @@ export const GameTable: React.FC<GameTableProps> = ({
   gameState,
   selectedCards,
   selectedCharacter,
+  selectedAvatar = 1,
+  aiCharacters = ['cc', 'suzaku', 'kallen'],
+  aiAvatars = {},
   onToggleCardSelection,
   onConfirmPlay,
   onPass,
@@ -85,10 +91,10 @@ export const GameTable: React.FC<GameTableProps> = ({
   const playerColor = getCharacterColor(selectedCharacter);
 
   // 渲染角色（统一格式）
-  const renderCharacter = (name: string, characterId: CharacterId | null, hp: number, cardCount: number, color: string, isTop: boolean = false) => (
+  const renderCharacter = (name: string, characterId: CharacterId | null, hp: number, cardCount: number, color: string, avatarNum: number, isTop: boolean = false) => (
     <div className={`cg-character ${isTop ? 'cg-character-top' : ''}`}>
       <div className="cg-character-avatar">
-        {characterId && <ChibiAvatar characterId={characterId} size={160} />}
+        {characterId && <ChibiAvatar characterId={characterId} size={160} avatarNumber={avatarNum} />}
       </div>
       <div className="cg-character-info">
         <div className="cg-character-name" style={{ color }}>{name}</div>
@@ -123,13 +129,28 @@ export const GameTable: React.FC<GameTableProps> = ({
 
         {/* 游戏区 */}
         <div className="cg-play-area">
-          {/* C.C. */}
-          {renderCharacter('C.C.', 'cc', aiPlayers?.[0]?.stats?.hp || 3, aiPlayers?.[0]?.hand?.length || 0, '#22c55e', true)}
+          {/* AI 1 - 顶部 */}
+          {renderCharacter(
+            getCharacterName(aiCharacters[0]), 
+            aiCharacters[0], 
+            aiPlayers?.[0]?.stats?.hp || 3, 
+            aiPlayers?.[0]?.hand?.length || 0, 
+            getCharacterColor(aiCharacters[0]), 
+            aiAvatars[aiCharacters[0]] || 1,
+            true
+          )}
 
           {/* 中间行 */}
           <div className="cg-middle-row">
-            {/* 朱雀 */}
-            {renderCharacter('朱雀', 'suzaku', aiPlayers?.[1]?.stats?.hp || 3, aiPlayers?.[1]?.hand?.length || 0, '#3b82f6')}
+            {/* AI 2 - 左侧 */}
+            {renderCharacter(
+              getCharacterName(aiCharacters[1]), 
+              aiCharacters[1], 
+              aiPlayers?.[1]?.stats?.hp || 3, 
+              aiPlayers?.[1]?.hand?.length || 0, 
+              getCharacterColor(aiCharacters[1]), 
+              aiAvatars[aiCharacters[1]] || 1
+            )}
 
             {/* 圆桌 */}
             <div className="cg-table">
@@ -152,13 +173,27 @@ export const GameTable: React.FC<GameTableProps> = ({
               </div>
             </div>
 
-            {/* 卡莲 */}
-            {renderCharacter('卡莲', 'kallen', aiPlayers?.[2]?.stats?.hp || 3, aiPlayers?.[2]?.hand?.length || 0, '#dc2626')}
+            {/* AI 3 - 右侧 */}
+            {renderCharacter(
+              getCharacterName(aiCharacters[2]), 
+              aiCharacters[2], 
+              aiPlayers?.[2]?.stats?.hp || 3, 
+              aiPlayers?.[2]?.hand?.length || 0, 
+              getCharacterColor(aiCharacters[2]), 
+              aiAvatars[aiCharacters[2]] || 1
+            )}
           </div>
 
           {/* 玩家 */}
           <div className="cg-player-position">
-            {renderCharacter(playerName, selectedCharacter, playerStats.hp, playerHand.length, playerColor)}
+            {renderCharacter(
+              playerName, 
+              selectedCharacter, 
+              playerStats.hp, 
+              playerHand.length, 
+              playerColor,
+              selectedAvatar
+            )}
             {selectedCharacter === 'lelouch' && isPlayerTurn && (
               <button className="cg-skill-btn" onClick={handleLelouchSkillClick} disabled={isProcessing}>绝对命令</button>
             )}

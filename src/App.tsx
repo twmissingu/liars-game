@@ -25,6 +25,9 @@ type ScreenType = 'main-menu' | 'character-select' | 'game-table' | 'result' | '
 const App: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<ScreenType>('main-menu');
   const [selectedCharacter, setSelectedCharacter] = useState<CharacterId | null>(null);
+  const [selectedAvatar, setSelectedAvatar] = useState<number>(1); // 玩家选中的头像编号
+  const [aiCharacters, setAiCharacters] = useState<CharacterId[]>(['cc', 'suzaku', 'kallen']); // AI角色
+  const [aiAvatars, setAiAvatars] = useState<Record<string, number>>({}); // AI头像
   const [difficulty, setDifficulty] = useState<'easy' | 'normal' | 'hard'>('normal');
   const gameEngineRef = useRef<GameEngine | null>(null);
   const [gameState, setGameState] = useState<any>(null);
@@ -74,11 +77,27 @@ const App: React.FC = () => {
   const handleSelectCharacter = useCallback((id: CharacterId) => {
     playSound('sfx-character-select');
     setSelectedCharacter(id);
+    // 随机选择头像 1-4
+    setSelectedAvatar(Math.floor(Math.random() * 4) + 1);
   }, []);
 
   const handleConfirmCharacter = useCallback(() => {
     if (selectedCharacter) {
       playSound('sfx-button-click');
+      
+      // 随机分配AI角色（从剩下的3个角色中）
+      const allCharacters: CharacterId[] = ['lelouch', 'cc', 'suzaku', 'kallen'];
+      const remainingCharacters = allCharacters.filter(c => c !== selectedCharacter);
+      // 打乱顺序
+      const shuffled = remainingCharacters.sort(() => Math.random() - 0.5);
+      setAiCharacters(shuffled);
+      
+      // 为每个AI随机分配头像
+      const avatars: Record<string, number> = {};
+      shuffled.forEach(char => {
+        avatars[char] = Math.floor(Math.random() * 4) + 1;
+      });
+      setAiAvatars(avatars);
       
       // 初始化游戏引擎
       gameEngineRef.current = new GameEngine();
@@ -474,6 +493,9 @@ const App: React.FC = () => {
             gameState={gameState}
             selectedCards={selectedCards}
             selectedCharacter={selectedCharacter}
+            selectedAvatar={selectedAvatar}
+            aiCharacters={aiCharacters}
+            aiAvatars={aiAvatars}
             onToggleCardSelection={handleToggleCardSelection}
             onConfirmPlay={handleConfirmPlay}
             onPass={handlePass}
