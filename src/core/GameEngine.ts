@@ -5,6 +5,7 @@
 
 import { CardSystem, Card, CardRank } from './CardSystem';
 import { GeassSystem, GeassResult, PlayerStats, FUNNY_ACTIONS } from './GeassSystem';
+import { getCharacterName } from '../data/characters';
 import type { CharacterId } from '../types';
 
 export type GamePhase = 
@@ -508,25 +509,56 @@ export class GameEngine {
       ? playedCards.playerId
       : challenger;
 
+    // 获取玩家名称
+    const getPlayerName = (id: string) => {
+      if (id === 'player') return this.playerCharacter ? getCharacterName(this.playerCharacter) : '玩家';
+      const ai = this.state.aiPlayers.find(a => a.id === id);
+      return ai?.name || id;
+    };
+
+    // 记录实际出的牌
+    const actualCardsStr = playedCards.actualCards.map(c => c.rank).join(', ');
+
     // 进入Geass判定
     this.state = {
       ...this.state,
       phase: 'geass',
-      lastAction: `${challenger} 质疑！${wasLie ? '撒谎了！' : '是实话！'}`,
+      lastAction: `${getPlayerName(challenger)} 质疑${getPlayerName(playedCards.playerId)}！${wasLie ? '质疑成功！' : '质疑失败！'} 实际出牌: ${actualCardsStr}`,
     };
 
-    // 执行Geass判定
-    // 卡莲技能：出2张+且质疑失败（撒谎被揭穿）时，Geass命中率 = 20% × 出牌张数
+    // 执行Geass判定...
     const playedBy = playedCards.playerId;
     let kallenHitChance = 0;
     
     if (wasLie) {
       if (playedBy === 'player' && this.playerCharacter === 'kallen' && this.state.playerStats.kallenBoostActive) {
         const cardCount = this.state.playerStats.kallenCardCount || 2;
-        kallenHitChance = 0.2 * cardCount; // 20% × N
+        kallenHitChance = 0.2 * cardCount;
       } else if (playedBy !== 'player') {
         const ai = this.state.aiPlayers.find(ai => ai.id === playedBy);
         if (ai?.character === 'kallen' && ai.stats.kallenBoostActive) {
+          const cardCount = ai.stats.kallenCardCount || 2;
+          kallenHitChance = 0.2 * cardCount;
+        }
+      }
+    }
+    
+    const geassResult = this.executeGeass(loser, kallenHitChance);
+    this.state.geassResult = geassResult;
+
+    // 添加详细的Geass记录
+    const loserName = getPlayerName(loser);
+    const attackerName = getPlayerName(wasLie ? challenger : playedCards.playerId);
+    
+    if (geassResult.isRevived) {
+      this.state.lastAction = `${attackerName} 向 ${loserName} 发动Geass！C.C.发动Code之力复活！`;
+    } else if (geassResult.isCounter) {
+      this.state.lastAction = `${attackerName} 向 ${loserName} 发动Geass！朱雀发动枢木剑术反击！`;
+    } else if (geassResult.hit) {
+      this.state.lastAction = `${attackerName} 向 ${loserName} 发动Geass！命中！${geassResult.funnyAction || ''}`;
+    } else {
+      this.state.lastAction = `${attackerName} 向 ${loserName} 发动Geass！未命中！`;
+    }
           const cardCount = ai.stats.kallenCardCount || 2;
           kallenHitChance = 0.2 * cardCount; // 20% × N
         }
