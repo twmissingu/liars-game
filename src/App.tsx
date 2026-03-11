@@ -225,13 +225,16 @@ const App: React.FC = () => {
       return;
     }
     
-    // 继续游戏
+    // 惩罚后重置牌局（Liar's Bar规则）
     setTimeout(() => {
       setCurrentFunnyAction(null);
-      if (newState.phase !== 'player_turn') {
-        processAITurn();
+      if (gameEngineRef.current) {
+        const resetState = gameEngineRef.current.resetRound();
+        setGameState(resetState);
+        setSelectedCards([]);
+        addLog(`牌局重置！新的骗子牌是 ${resetState.liarCard}`);
       }
-    }, 2000);
+    }, 2500);
   }, [addLog]);
 
   // 继续下一回合

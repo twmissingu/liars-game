@@ -522,61 +522,13 @@ export class GameEngine {
       return this.state;
     }
 
-    // 继续游戏 - 输家下一回合先出牌
-    let nextPlayerIndex: number;
-    if (loser === 'player') {
-      nextPlayerIndex = 1; // AI1先出
-    } else {
-      const loserIndex = this.state.aiPlayers.findIndex(ai => ai.id === loser);
-      nextPlayerIndex = loserIndex + 1;
-    }
+    // 继续游戏 - 惩罚后重置牌局（Liar's Bar规则）
+    // 延迟后重置牌局
+    setTimeout(() => {
+      this.resetRound();
+    }, 2000);
     
-    // 确保下一个玩家是活跃的
-    this.state.currentPlayerIndex = nextPlayerIndex;
-    const nextPlayerId = this.getCurrentPlayerId();
-    
-    // 检查是否有玩家出完牌且未被惩罚（获胜条件）
-    const playedBy = playedCards.playerId;
-    if (playedBy === 'player' && this.state.playerHand.length === 0 && loser !== 'player') {
-      // 玩家出完牌且没有因为撒谎受惩罚，玩家获胜
-      this.state = {
-        ...this.state,
-        phase: 'game_over',
-        winner: 'player',
-        lastAction: '玩家出完所有手牌，获得胜利！',
-      };
-      return this.state;
-    }
-    
-    // 检查是否有AI出完牌
-    if (playedBy !== 'player') {
-      const aiIndex = this.state.aiPlayers.findIndex(ai => ai.id === playedBy);
-      if (aiIndex >= 0 && this.state.aiPlayers[aiIndex].hand.length === 0 && loser !== playedBy) {
-        // AI出完牌且没有因为撒谎受惩罚，该AI获胜（玩家失败）
-        this.state = {
-          ...this.state,
-          phase: 'game_over',
-          winner: 'ai',
-          lastAction: `${this.state.aiPlayers[aiIndex].name}出完所有手牌，获得胜利！`,
-        };
-        return this.state;
-      }
-    }
-
-    this.state = {
-      ...this.state,
-      phase: nextPlayerId === 'player' ? 'player_turn' : `${nextPlayerId}_turn` as GamePhase,
-      turnState: {
-        ...this.state.turnState,
-        tableCards: [
-          ...this.state.turnState.tableCards,
-          ...playedCards.actualCards,
-        ],
-        playedCards: null,
-        turnNumber: this.state.turnState.turnNumber + 1,
-      },
-    };
-
+    // 先返回当前状态，让UI显示惩罚结果
     return this.state;
   }
 
