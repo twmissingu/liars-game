@@ -157,11 +157,17 @@ export const GameTable: React.FC<GameTableProps> = ({
               <div className="cg-table-inner">
                 {turnState?.playedCards ? (
                   <div className="cg-played">
+                    <div className="cg-player-name" style={{color: '#d4af37', fontWeight: 'bold', marginBottom: '8px'}}>
+                      {turnState.playedCards.playedBy === 'player' ? playerName : 
+                       turnState.playedCards.playedBy.startsWith('ai') ? 
+                       getCharacterName(turnState.playedCards.playedBy.replace('ai-', '') as CharacterId) : 
+                       '未知玩家'} 出牌
+                    </div>
                     <div className="cg-cards">
                       {/* 出牌时显示背面，质疑后才显示实际牌 */}
                       {turnState.playedCards.actualCards.map((c: Card, i: number) => (
                         <div key={c.id} className="cg-card-small cg-card-back">
-                          <img src="/assets/cards/card-back.webp" alt="牌背" />
+                          <img src="/assets/cards/card-back.svg" alt="牌背" />
                         </div>
                       ))}
                     </div>
@@ -267,7 +273,7 @@ export const GameTable: React.FC<GameTableProps> = ({
         .cg-liar-card span { color: #dc2626; font-weight: bold; font-size: 20px; }
         .cg-placeholder { width: 80px; }
         
-        .cg-main { flex: 1; display: flex; overflow: hidden; }
+        .cg-main { flex: 1; display: flex; overflow: auto; }
         .cg-log { width: 260px; background: rgba(0,0,0,0.4); border-right: 1px solid rgba(212,175,55,0.2); padding: 15px; display: flex; flex-direction: column; }
         .cg-log-title { font-size: 16px; color: #d4af37; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(212,175,55,0.3); }
         .cg-log-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }

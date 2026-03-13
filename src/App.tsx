@@ -193,7 +193,7 @@ const App: React.FC = () => {
     }
   }, [selectedCards, isProcessing, addLog, selectedCharacter]);
 
-  // AI质疑处理 - 按顺序，下家质疑
+  // AI质疑处理 - 按顺序，所有其他玩家依次质疑
   const processAIChallenge = useCallback(() => {
     if (!gameEngineRef.current) return;
     
@@ -206,23 +206,49 @@ const App: React.FC = () => {
     const playedBy = state.turnState.playedCards?.playerId;
     if (!playedBy) return;
     
-    // 计算下家（按顺序：玩家->AI1->AI2->AI3->玩家）
-    const playerIndex = playedBy === 'player' ? 0 : 
-      state.aiPlayers.findIndex((ai: any) => ai.id === playedBy) + 1;
-    const nextIndex = (playerIndex + 1) % 4;
+    // 获取当前质疑轮次（0=第一家质疑者，1=第二家，2=第三家）
+    const challengeRound = state.turnState.challengeRound || 0;
     
-    // 下家质疑决策
-    if (nextIndex === 0) {
-      // 下家是玩家，等待玩家决策
-      addLog('等待玩家决策...');
-      return;
+    // 计算质疑者（按顺序：出牌者下家开始，依次3家质疑）
+    const playedByIndex = playedBy === 'player' ? 0 : 
+      state.aiPlayers.findIndex((ai: any) => ai.id === playedBy) + 1;
+    
+    // 依次3个其他玩家质疑
+    for (let i = 0; i < 3; i++) {
+      const challengerIndex = (playedByIndex + 1 + i) % 4;
+      
+      if (challengerIndex === 0) {
+        // 轮到玩家质疑
+        addLog('等待玩家决策...');
+        return; // 等待玩家操作
+      }
+      
+      // AI质疑
+      const challengerAI = state.aiPlayers[challengerIndex - 1];
+      if (!challengerAI || !challengerAI.isActive || challengerAI.stats.hp <= 0) {
+        continue; // 跳过已淘汰的AI
+      }
+      
+      const shouldChallenge = calculateAIChallengeDecision(challengerAI, state);
+      
+      if (shouldChallenge) {
+        playSound('sfx-challenge');
+        const targetName = playedBy === 'player' ? 
+          getCharacterName(selectedCharacter) : 
+          getCharacterName(playedBy.replace('ai-', '') as CharacterId);
+        addLog(`${challengerAI.name} 向 ${targetName} 发起质疑！`);
+        
+        const newState = engine.aiChallengeDecision(challengerAI.id);
+        handleGeassResult(newState, challengerAI.name, targetName);
+        return; // 质疑后结束本轮
+      } else {
+        addLog(`${challengerAI.name} 选择不质疑`);
+      }
     }
     
-    // 下家是AI
-    const nextAI = state.aiPlayers[nextIndex - 1];
-    if (!nextAI || !nextAI.isActive || nextAI.stats.hp <= 0) {
-      // 下家已淘汰，继续到下下家
-      continueToNextTurn();
+    // 所有人都未质疑，继续下一回合
+    continueToNextTurn();
+  }, [addLog, selectedCharacter, handleGeassResult]);
       return;
     }
     
@@ -269,24 +295,27 @@ const App: React.FC = () => {
   };
 
   // 处理Geass结果
-  const handleGeassResult = useCallback((newState: any) => {
+  const handleGeassResult = useCallback((newState: any, challengerName?: string, targetName?: string) => {
     setGameState(newState);
     
     if (newState.geassResult) {
+      const challenger = challengerName || '玩家';
+      const target = targetName || '对手';
+      
       if (newState.geassResult.hit) {
         playSound('sfx-geass-hit');
         const funnyAction = FUNNY_ACTIONS[Math.floor(Math.random() * FUNNY_ACTIONS.length)];
         setCurrentFunnyAction(funnyAction);
         playSound(funnyAction.soundType as any);
-        addLog(`Geass命中！${funnyAction.emoji} ${newState.geassResult.message}`);
+        addLog(`✅ 质疑成功！${challenger} 对 ${target} 发动Geass！`);
+        addLog(`💥 Geass命中！${funnyAction.emoji} ${newState.geassResult.message}`);
       } else {
         playSound('sfx-geass-miss');
+        addLog(`❌ 质疑失败！${challenger} 对 ${target} 发动Geass未命中！`);
         if (newState.geassResult.isRevived) {
           addLog(`🔄 ${newState.geassResult.message}`);
         } else if (newState.geassResult.isCounter) {
           addLog(`⚔️ ${newState.geassResult.message}`);
-        } else {
-          addLog('Geass未命中！');
         }
       }
     }
