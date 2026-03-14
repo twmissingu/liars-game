@@ -326,10 +326,11 @@ export class GameEngine {
     }
 
     // 检查出牌数量限制
-    if (this.playerCharacter === 'kallen' && cardIds.length > 4) {
-      throw new Error('红莲突击最多出4张牌');
-    }
-    if (cardIds.length > 3) {
+    if (this.playerCharacter === 'kallen') {
+      if (cardIds.length > 4) {
+        throw new Error('红莲突击最多出4张牌');
+      }
+    } else if (cardIds.length > 3) {
       throw new Error('最多只能出3张牌');
     }
 
@@ -726,6 +727,31 @@ export class GameEngine {
     this.state.liarCard = newRank;
     this.state.lastAction = `鲁鲁修发动绝对命令！骗子牌变为 ${newRank}`;
     
+    return this.state;
+  }
+
+  /**
+   * 跳过回合
+   * 当玩家没有手牌时可以选择跳过
+   * 
+   * @returns 更新后的游戏状态
+   */
+  passTurn(): GameState {
+    // 检查是否可以跳过（例如没有手牌）
+    if (this.state.playerHand.length > 0) {
+      throw new Error('还有手牌，不能跳过回合');
+    }
+
+    // 将回合传递给下一个玩家
+    this.state.currentPlayerIndex = this.getNextPlayerIndex();
+    const nextPlayerId = this.getCurrentPlayerId();
+
+    this.state = {
+      ...this.state,
+      phase: nextPlayerId === 'player' ? 'player_turn' : 'ai_turn',
+      lastAction: '玩家跳过回合',
+    };
+
     return this.state;
   }
 

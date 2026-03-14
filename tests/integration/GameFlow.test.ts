@@ -242,10 +242,14 @@ describe('游戏流程集成测试', () => {
 
   describe('游戏状态流转', () => {
     test('状态流转：setup → player_turn → challenge → geass → player_turn', () => {
+      // 初始状态应该是setup
+      expect(gameEngine.getState().phase).toBe('setup');
+      
       gameEngine.initializeGame('lelouch');
       
+      // 初始化后phase应该是player_turn或ai_turn
       const state = gameEngine.getState();
-      expect(state.phase).toBe('setup');
+      expect(['player_turn', 'ai_turn']).toContain(state.phase);
       
       // 手动设置玩家回合
       state.phase = 'player_turn';
