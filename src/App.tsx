@@ -236,7 +236,14 @@ const App: React.FC = () => {
         // AI出牌
         const newState = engine.aiPlayCards(currentAIId);
         setGameState(newState);
-        addLog(`${ai.name} 出了 ${newState.turnState.playedCards?.cardIds.length} 张牌`);
+        
+        // 详细记录AI出牌信息
+        const playedCards = newState.turnState.playedCards;
+        if (playedCards) {
+          const cardCount = playedCards.cardIds.length;
+          const claimedRank = playedCards.claimedRank;
+          addLog(`${ai.name}出了${cardCount}张牌，声称是${claimedRank}`);
+        }
         
         // 延迟后进入质疑阶段
         setTimeout(() => {
@@ -300,17 +307,28 @@ const App: React.FC = () => {
         const targetName = playedBy === 'player' ? 
           getCharacterName(selectedCharacter!) : 
           state.aiPlayers.find((ai: { id: string }) => ai.id === playedBy)?.name || playedBy;
-        addLog(`${challengerAI.name} 向 ${targetName} 发起质疑！`);
+        
+        // 记录AI发起质疑
+        addLog(`${challengerAI.name}向${targetName}发起质疑！`);
         
         const newState = engine.aiChallengeDecision(challengerAI.id);
         setCurrentChallengerIndex(null); // 重置质疑者索引
         
-        // 计算受罚者名称
+        // 从newState中获取质疑结果信息
+        const geassResult = newState.geassResult;
         const playedCards = state.turnState.playedCards;
         const wasLie = playedCards ? 
           playedCards.actualCards.some((c: { rank: string; isJoker: boolean }) => 
             c.rank !== playedCards.claimedRank && !c.isJoker
           ) : false;
+        
+        // 记录质疑结果
+        if (wasLie) {
+          addLog(`质疑成功！${targetName}在撒谎！`);
+        } else {
+          addLog(`质疑失败！${targetName}没有撒谎！`);
+        }
+        
         const loser = wasLie ? playedBy : challengerAI.id;
         const loserName = loser === 'player' ? 
           getCharacterName(selectedCharacter!) : 
@@ -320,11 +338,13 @@ const App: React.FC = () => {
         handleGeassResultRef.current?.(newState, challengerAI.name, targetName, loserName);
         return;
       } else {
-        addLog(`${challengerAI.name} 选择不质疑`);
+        // 记录AI选择不质疑
+        addLog(`${challengerAI.name}选择不质疑`);
       }
     }
     
-    // 所有人都未质疑，重置状态并继续下一回合
+    // 所有人都未质疑，记录并继续下一回合
+    addLog('无人质疑，回合继续');
     setCurrentChallengerIndex(null);
     continueToNextTurnRef.current?.();
   }, [addLog, selectedCharacter, currentChallengerIndex]);
@@ -361,16 +381,24 @@ const App: React.FC = () => {
         const funnyAction = FUNNY_ACTIONS[Math.floor(Math.random() * FUNNY_ACTIONS.length)];
         setCurrentFunnyAction(funnyAction);
         playSound(funnyAction.soundType as SoundType);
-        addLog(`✅ ${challenger}质疑${target}成功！${loser}受到Geass！`);
-        addLog(`💥 ${newState.geassResult.message}`);
+        
+        // 详细记录Geass结果
+        addLog(`${loser}受到Geass！`);
+        addLog(`突然${funnyAction.description}`);
+        addLog(`Geass命中！${loser}HP-1`);
       } else {
         // Geass未命中
         playSound('sfx-geass-miss');
-        addLog(`❌ ${challenger}质疑${target}失败！${loser}闪避了Geass！`);
+        
+        // 记录闪避结果
         if (newState.geassResult.isRevived) {
+          addLog(`${loser}闪避了Geass！`);
           addLog(`🔄 ${newState.geassResult.message}`);
         } else if (newState.geassResult.isCounter) {
+          addLog(`${loser}闪避了Geass！`);
           addLog(`⚔️ ${newState.geassResult.message}`);
+        } else {
+          addLog(`${loser}闪避了Geass！`);
         }
       }
     }
@@ -401,8 +429,8 @@ const App: React.FC = () => {
           getCharacterName(selectedCharacter!) : 
           resetState.aiPlayers[resetState.currentPlayerIndex - 1]?.name;
         
-        addLog(`牌局重置！新的骗子牌是 ${resetState.liarCard}`);
-        addLog(`${firstPlayerName} 先手！`);
+        addLog(`【第${resetState.turnState.turnNumber}回合】骗子牌是${resetState.liarCard}`);
+        addLog(`${firstPlayerName}先手！`);
         
         // 如果AI先手，自动执行AI回合
         if (!isPlayerFirst) {
@@ -544,9 +572,8 @@ const App: React.FC = () => {
     
     setGameLog([
       '游戏开始！',
-      `骗子牌是: ${initialState.liarCard}`,
-      `${firstPlayerName} 先手！`,
-      '选择1-3张牌打出。'
+      `【第1回合】骗子牌是${initialState.liarCard}`,
+      `${firstPlayerName}先手！`,
     ]);
     
     setCurrentScreen('game-table');
@@ -613,7 +640,12 @@ const App: React.FC = () => {
       setSelectedCards([]);
       
       const playerName = getCharacterName(selectedCharacter!);
-      addLog(`${playerName} 出了 ${newState.turnState.playedCards?.cardIds.length} 张牌`);
+      const playedCards = newState.turnState.playedCards;
+      if (playedCards) {
+        const cardCount = playedCards.cardIds.length;
+        const claimedRank = playedCards.claimedRank;
+        addLog(`${playerName}出了${cardCount}张牌，声称是${claimedRank}`);
+      }
       
       // 延迟后AI决策
       setTimeout(() => {
@@ -643,16 +675,25 @@ const App: React.FC = () => {
       playerName : 
       state.aiPlayers.find((ai: { id: string }) => ai.id === playedBy)?.name || playedBy;
     
+    // 记录玩家发起质疑
     addLog(`${playerName}向${targetName}发起质疑！`);
     
     const newState = engine.playerChallengeDecision(true);
     setCurrentChallengerIndex(null); // 重置质疑者索引
     
-    // 计算受罚者名称
+    // 计算质疑结果
     const wasLie = playedCards ? 
       playedCards.actualCards.some((c: { rank: string; isJoker: boolean }) => 
         c.rank !== playedCards.claimedRank && !c.isJoker
       ) : false;
+    
+    // 记录质疑结果
+    if (wasLie) {
+      addLog(`质疑成功！${targetName}在撒谎！`);
+    } else {
+      addLog(`质疑失败！${targetName}没有撒谎！`);
+    }
+    
     const loser = wasLie ? playedBy : 'player';
     const loserName = loser === 'player' ? 
       playerName : 
@@ -668,11 +709,14 @@ const App: React.FC = () => {
     if (!gameEngineRef.current || isProcessing) return;
     
     playSound('sfx-button-click');
-    addLog('你选择不质疑');
     
     const engine = gameEngineRef.current;
     const state = engine.getState();
     const playedBy = state.turnState.playedCards?.playerId;
+    const playerName = getCharacterName(selectedCharacter!);
+    
+    // 记录玩家选择不质疑
+    addLog(`${playerName}选择不质疑`);
     
     // 计算出牌者的索引
     const playedByIndex = playedBy === 'player' ? 0 : 
@@ -697,7 +741,7 @@ const App: React.FC = () => {
     setTimeout(() => {
       processAIChallenge();
     }, 1000);
-  }, [isProcessing, addLog, currentChallengerIndex, processAIChallenge, continueToNextTurn]);
+  }, [isProcessing, addLog, currentChallengerIndex, processAIChallenge, continueToNextTurn, selectedCharacter]);
 
   /** 鲁鲁修技能：改变骗子牌 */
   const handleLelouchSkill = useCallback((newRank: CardRank) => {
