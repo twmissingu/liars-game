@@ -41,7 +41,7 @@ export function canUseSkill(state: CharacterState): boolean {
 }
 
 /** 使用技能 */
-export function useSkill(state: CharacterState): CharacterState {
+export function applySkill(state: CharacterState): CharacterState {
   if (!canUseSkill(state)) {
     return state;
   }

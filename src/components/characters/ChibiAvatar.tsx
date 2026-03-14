@@ -11,6 +11,7 @@ export const ChibiAvatar: React.FC<ChibiAvatarProps> = ({
   characterId, 
   size = 160,
   avatarNumber,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   animationState = 'idle'
 }) => {
   // 使用传入的头像编号，如果没有则随机

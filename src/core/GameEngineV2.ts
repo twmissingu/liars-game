@@ -19,12 +19,12 @@ import { GeassSystem, GeassResult, PlayerStats } from './GeassSystem';
 import { FUNNY_ACTIONS } from '../types/game.types';
 import { executeGeassWithChance } from './GeassSystemCompat';
 import { getCharacterName } from '../data/characters';
-import type { CharacterId, CharacterState } from '../types';
+import type { CharacterId } from '../types';
 import type { CharacterState as CharacterStateInternal } from '../characters/types';
 import { 
   createCharacterState, 
   canUseSkill, 
-  useSkill,
+  applySkill,
   onTurnEnd,
   resetSkill,
   checkGeassImmunity,
@@ -517,7 +517,7 @@ export class GameEngine {
     
     if (!canUseSkill(charState)) return false;
     
-    const newState = useSkill(charState);
+    const newState = applySkill(charState);
     this.state.characterStates.set(playerId, newState);
     
     // 鲁鲁修技能 - 强制改变骗子牌

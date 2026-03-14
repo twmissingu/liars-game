@@ -46,9 +46,11 @@ export class HardStrategy implements AIStrategy {
   /**
    * 做出决策
    */
-  makeDecision(context: StrategyContext, config: AIConfig): AIDecision {
-    const traits = this.getPersonalityTraits(config.personality);
-    
+  makeDecision(
+    context: StrategyContext, 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    config: AIConfig
+  ): AIDecision {
     // 高级质疑决策
     const challengeProb = this.calculateChallengeProbability(context);
     const shouldChallenge = Math.random() < challengeProb;
@@ -177,7 +179,10 @@ export class HardStrategy implements AIStrategy {
   /**
    * 计算剩余总牌数
    */
-  private calculateTotalRemainingCards(context: StrategyContext): number {
+  private calculateTotalRemainingCards(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    context: StrategyContext
+  ): number {
     const totalCards = 18; // Q/K/A共18张（不含小丑）
     let playedCount = 0;
     this.memory.playedCards.forEach((count) => {
@@ -190,7 +195,10 @@ export class HardStrategy implements AIStrategy {
    * 选择要出的牌
    * 困难策略：最优选择，考虑多种因素
    */
-  selectCard(context: StrategyContext): { 
+  selectCard(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    context: StrategyContext
+  ): { 
     cardIds: string[]; 
     claimedRank: string;
     isBluff: boolean;

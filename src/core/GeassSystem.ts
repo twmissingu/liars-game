@@ -79,6 +79,7 @@ export class GeassSystem {
         const reviveRoll = Math.random();
         if (reviveRoll < 0.5) {
           return {
+            activated: true,
             hit: false,
             damage: 0,
             newStats: { ...targetStats, ccReviveUsed: true },
@@ -95,6 +96,7 @@ export class GeassSystem {
       const counterRoll = Math.random();
       if (counterRoll < 0.25) {
         return {
+          activated: true,
           hit: false,
           damage: 0,
           newStats: targetStats,
@@ -126,6 +128,7 @@ export class GeassSystem {
       const funnyAction = FUNNY_ACTIONS[Math.floor(Math.random() * FUNNY_ACTIONS.length)];
 
       return {
+        activated: true,
         hit: true,
         damage,
         newStats,
@@ -135,6 +138,7 @@ export class GeassSystem {
     } else {
       // Geass未命中
       return {
+        activated: true,
         hit: false,
         damage: 0,
         newStats: {

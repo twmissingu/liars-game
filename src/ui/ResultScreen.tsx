@@ -27,7 +27,6 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 
   // 根据胜负选择显示的角色
   const resultCharacter: CharacterId = isWin ? 'lelouch' : 'cc';
-  const animationState = isWin ? 'win' : 'lose';
 
   return (
     <div className={`cg-result-screen ${isWin ? 'cg-result-win' : 'cg-result-lose'}`}>

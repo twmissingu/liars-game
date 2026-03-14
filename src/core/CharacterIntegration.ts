@@ -13,7 +13,7 @@ import type {
 import { 
   createCharacterState, 
   canUseSkill, 
-  useSkill,
+  applySkill,
   onTurnEnd,
   resetSkill,
   checkGeassImmunity,
@@ -21,7 +21,6 @@ import {
   getMaxPlayCount,
   canUseAbsoluteOrder,
 } from '../characters/state';
-import { getCharacter } from '../characters/data';
 
 // ==================== 角色状态管理 ====================
 
@@ -91,7 +90,7 @@ export function playerUseCharacterSkill(
     return { state, success: false };
   }
   
-  const newState = useSkill(playerState);
+  const newState = applySkill(playerState);
   const newPlayerStates = new Map(state.playerStates);
   newPlayerStates.set(playerId, newState);
   

@@ -24,9 +24,7 @@ import type {
   CardRank,
   Card,
   GameState,
-  GamePhase,
   AIPlayer,
-  PlayerStats,
   GeassResult,
   PlayedCards,
   Difficulty,
@@ -584,7 +582,6 @@ export class GameEngine {
    */
   private resolveChallenge(challenger: 'player' | 'ai' | 'ai2' | 'ai3'): GameState {
     const playedCards = this.state.turnState.playedCards!;
-    const liarCard = this.state.liarCard!;
     
     // 检查是否撒谎（使用CardSystem的验证方法）
     const wasLie = this.cardSystem.checkBluff(playedCards.actualCards, playedCards.claimedRank);

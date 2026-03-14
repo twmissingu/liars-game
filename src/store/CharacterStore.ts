@@ -106,7 +106,7 @@ export function createCharacterStore(
     },
     
     setCurrentPlayer: (playerId: string) => {
-      set((state) => ({
+      set(() => ({
         currentPlayerId: playerId,
       }));
     },

@@ -3,7 +3,7 @@
  * React组件，用于显示AI玩家状态、动画和决策过程
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { AIEngine, AIEngineManager } from '../ai/AIEngine';
+import { AIEngineManager } from '../ai/AIEngine';
 import type { 
   AIPlayer as AIPlayerType, 
   GameState, 
@@ -35,6 +35,7 @@ interface AIPlayerState {
 
 export const AIPlayer: React.FC<AIPlayerProps> = ({
   player,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   opponent,
   gameState,
   difficulty,

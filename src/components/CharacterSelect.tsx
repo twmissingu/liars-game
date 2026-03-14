@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import type { Character, CharacterId } from '../characters/types';
+import type { CharacterId } from '../characters/types';
 import { characterList, getCharacter } from '../characters/data';
 import { CharacterAvatar } from './CharacterAvatar';
 import './CharacterSelect.css';

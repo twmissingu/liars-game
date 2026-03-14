@@ -1,4 +1,4 @@
-import type { GeassResult, FunnyAction } from '../types';
+import type { GeassResult } from '../types';
 import { FUNNY_ACTIONS } from '../types/game.types';
 
 /**

@@ -6,10 +6,10 @@
 import React, { useState } from 'react';
 import { ChibiAvatar } from '../components/characters';
 import { characters, getCharacterName } from '../data/characters';
-import type { Card, CardRank, CharacterId, FunnyAction } from '../types';
+import type { Card, CardRank, CharacterId, FunnyAction, GameState } from '../types';
 
 interface GameTableProps {
-  gameState: any;
+  gameState: GameState;
   selectedCards: string[];
   selectedCharacter: CharacterId | null;
   selectedAvatar?: number;
@@ -33,14 +33,6 @@ const getCharacterColor = (characterId: CharacterId | null): string => {
   return char?.color || '#d4af37';
 };
 
-// 所有角色配置（包括玩家）
-const ALL_CHARACTERS = [
-  { id: 'cc', name: 'C.C.', color: '#22c55e' },
-  { id: 'suzaku', name: '朱雀', color: '#3b82f6' },
-  { id: 'kallen', name: '卡莲', color: '#dc2626' },
-  { id: 'lelouch', name: '鲁鲁修', color: '#d4af37' },
-];
-
 export const GameTable: React.FC<GameTableProps> = ({
   gameState,
   selectedCards,
@@ -55,7 +47,6 @@ export const GameTable: React.FC<GameTableProps> = ({
   onBackToMenu,
   onLelouchSkill,
   gameLog = [],
-  funnyAction,
   isProcessing = false,
 }) => {
   const [showLelouchSkill, setShowLelouchSkill] = useState(false);
@@ -71,7 +62,7 @@ export const GameTable: React.FC<GameTableProps> = ({
   const currentRound = turnState?.turnNumber || 1;
 
   const lastAI = currentPlayerId && currentPlayerId !== 'player' 
-    ? aiPlayers?.find((ai: any) => ai.id === currentPlayerId)
+    ? aiPlayers?.find((ai: { id: string; isActive?: boolean }) => ai.id === currentPlayerId)
     : null;
 
   const handlePlayClick = () => {
@@ -158,14 +149,14 @@ export const GameTable: React.FC<GameTableProps> = ({
                 {turnState?.playedCards ? (
                   <div className="cg-played">
                     <div className="cg-player-name" style={{color: '#d4af37', fontWeight: 'bold', marginBottom: '8px'}}>
-                      {turnState.playedCards.playedBy === 'player' ? playerName : 
-                       turnState.playedCards.playedBy.startsWith('ai') ? 
-                       getCharacterName(turnState.playedCards.playedBy.replace('ai-', '') as CharacterId) : 
+                      {turnState.playedCards.playerId === 'player' ? playerName : 
+                       turnState.playedCards.playerId.startsWith('ai') ? 
+                       getCharacterName(aiPlayers?.find((ai: { id: string }) => ai.id === turnState.playedCards.playerId)?.character || 'cc') : 
                        '未知玩家'} 出牌
                     </div>
                     <div className="cg-cards">
                       {/* 出牌时显示背面，质疑后才显示实际牌 */}
-                      {turnState.playedCards.actualCards.map((c: Card, i: number) => (
+                      {turnState.playedCards.actualCards.map((c: Card) => (
                         <div key={c.id} className="cg-card-small cg-card-back">
                           <img src="/assets/cards/card-back.svg" alt="牌背" />
                         </div>

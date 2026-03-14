@@ -12,7 +12,7 @@
 import React, { useState } from 'react';
 import { characters } from '../data/characters';
 import { ChibiAvatar } from '../components/characters';
-import type { CharacterSelectProps, CharacterId, Character } from '../types';
+import type { CharacterSelectProps, CharacterId } from '../types';
 
 export const CharacterSelect: React.FC<CharacterSelectProps> = ({
   selectedId,

@@ -197,9 +197,10 @@ export interface TurnState {
  * Geass判定结果
  */
 export interface GeassResult {
+  activated: boolean;         // 是否激活
   hit: boolean;               // 是否命中
   damage: number;             // 伤害值
-  newStats: PlayerStats;      // 更新后的状态
+  newStats?: PlayerStats;     // 更新后的状态
   funnyAction?: string;       // 搞笑动作描述
   message: string;            // 结果消息
   isImmune?: boolean;         // 是否免疫

@@ -27,6 +27,7 @@ import { ResultScreen } from './ui/ResultScreen';
 // 数据和工具导入
 import { characters, getCharacterName } from './data/characters';
 import { soundManager, playSound, playBGM, stopBGM } from './audio';
+import type { SoundType } from './audio';
 import { GameEngine } from './core/GameEngine';
 import { storage } from './utils';
 
@@ -231,7 +232,7 @@ const App: React.FC = () => {
     
     // 按顺序让AI决定是否质疑
     const playedByIndex = playedBy === 'player' ? 0 : 
-      state.aiPlayers.findIndex((ai: any) => ai.id === playedBy) + 1;
+      state.aiPlayers.findIndex((ai: { id: string }) => ai.id === playedBy) + 1;
     
     // 依次检查其他3个玩家
     for (let i = 0; i < 3; i++) {
@@ -294,7 +295,7 @@ const App: React.FC = () => {
         playSound('sfx-geass-hit');
         const funnyAction = FUNNY_ACTIONS[Math.floor(Math.random() * FUNNY_ACTIONS.length)];
         setCurrentFunnyAction(funnyAction);
-        playSound(funnyAction.soundType as any);
+        playSound(funnyAction.soundType as SoundType);
         addLog(`✅ 质疑成功！${challenger} 对 ${target} 发动Geass！`);
         addLog(`💥 Geass命中！${funnyAction.emoji} ${newState.geassResult.message}`);
       } else {
@@ -627,7 +628,7 @@ const App: React.FC = () => {
         );
 
       case 'game-table':
-        return (
+        return gameState ? (
           <GameTable
             gameState={gameState}
             selectedCards={selectedCards}
@@ -645,13 +646,13 @@ const App: React.FC = () => {
             funnyAction={currentFunnyAction}
             isProcessing={isProcessing}
           />
-        );
+        ) : null;
 
-      case 'result':
+      case 'result': {
         const isWin = gameState?.winner === 'player';
         const playerScore = gameState?.playerStats?.geassSuccessCount || 0;
         const aiScore = gameState?.aiPlayers?.reduce(
-          (sum: number, ai: any) => sum + ai.stats.geassSuccessCount, 0
+          (sum: number, ai: { stats?: { geassSuccessCount?: number } }) => sum + (ai.stats?.geassSuccessCount || 0), 0
         ) || 0;
         
         return (
@@ -663,6 +664,7 @@ const App: React.FC = () => {
             onMainMenu={handleMainMenu}
           />
         );
+      }
 
       case 'settings':
         return renderSettingsScreen();

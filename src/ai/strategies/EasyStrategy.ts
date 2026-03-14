@@ -25,14 +25,16 @@ export class EasyStrategy implements AIStrategy {
   readonly description = '随机出牌，随机质疑，适合新手';
   
   /** 记忆存储 */
-  private memory: Map<string, any> = new Map();
+  private memory: Map<string, unknown> = new Map();
 
   /**
    * 做出决策
    */
-  makeDecision(context: StrategyContext, config: AIConfig): AIDecision {
-    const traits = this.getPersonalityTraits(config.personality);
-    
+  makeDecision(
+    context: StrategyContext, 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    config: AIConfig
+  ): AIDecision {
     // 根据性格决定是否质疑
     const challengeProb = this.calculateChallengeProbability(context);
     const shouldChallenge = Math.random() < challengeProb;

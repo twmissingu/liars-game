@@ -40,9 +40,11 @@ export class NormalStrategy implements AIStrategy {
   /**
    * 做出决策
    */
-  makeDecision(context: StrategyContext, config: AIConfig): AIDecision {
-    const traits = this.getPersonalityTraits(config.personality);
-    
+  makeDecision(
+    context: StrategyContext, 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    config: AIConfig
+  ): AIDecision {
     // 决定是否质疑
     const challengeProb = this.calculateChallengeProbability(context);
     const shouldChallenge = Math.random() < challengeProb;
