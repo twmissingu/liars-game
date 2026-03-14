@@ -357,9 +357,10 @@ describe('性能测试', () => {
               id: 'ai',
               name: 'AI',
               isAI: true,
-              hand: [{ id: 'card1', type: 'citizen' as const, value: 1, owner: 'ai' }],
+              hand: [{ id: 'card1', type: 'citizen' as const, value: 1, owner: 'ai', rank: 'Q', suit: 'spades', isJoker: false }],
               score: 0,
               isActive: true,
+              stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 },
             },
             {
               id: 'player',
@@ -368,18 +369,23 @@ describe('性能测试', () => {
               hand: [],
               score: 0,
               isActive: true,
+              stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 },
             },
           ],
           tableCards: [],
           phase: 'play' as const,
+          turnState: {
+            playedCards: null,
+          },
         },
         aiPlayer: {
           id: 'ai',
           name: 'AI',
           isAI: true,
-          hand: [{ id: 'card1', type: 'citizen' as const, value: 1, owner: 'ai' }],
+          hand: [{ id: 'card1', type: 'citizen' as const, value: 1, owner: 'ai', rank: 'Q', suit: 'spades', isJoker: false }],
           score: 0,
           isActive: true,
+          stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 },
         },
         opponent: {
           id: 'player',
@@ -388,9 +394,11 @@ describe('性能测试', () => {
           hand: [],
           score: 0,
           isActive: true,
+          stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 },
         },
         history: [],
         knownCards: new Map(),
+        liarCard: 'Q',
       };
       
       difficulties.forEach(difficulty => {
@@ -398,7 +406,7 @@ describe('性能测试', () => {
         
         const start = performance.now();
         for (let i = 0; i < 100; i++) {
-          aiEngine.makeDecisionInstant(mockContext);
+          aiEngine.makeDecisionInstant(mockContext as any);
         }
         const end = performance.now();
         

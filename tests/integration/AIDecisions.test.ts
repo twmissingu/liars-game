@@ -54,10 +54,12 @@ describe('AI决策集成测试', () => {
       
       const state = gameEngine.getState();
       state.phase = 'ai_turn';
+      state.currentPlayerIndex = 1;
       
       // AI先出牌
       gameEngine.aiPlayCards('ai');
       
+      // 出牌后应该进入质疑阶段
       expect(state.phase).toBe('challenge');
       
       // 另一个AI质疑
@@ -72,11 +74,12 @@ describe('AI决策集成测试', () => {
       
       const state = gameEngine.getState();
       state.phase = 'ai_turn';
+      state.currentPlayerIndex = 1;
       
       // AI出牌
       gameEngine.aiPlayCards('ai');
       
-      // 同一个AI不会质疑自己
+      // 同一个AI不会质疑自己，应该直接跳过到下一回合
       const newState = gameEngine.aiChallengeDecision('ai');
       
       // 应该进入下一回合
