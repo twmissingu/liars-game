@@ -58,7 +58,7 @@ export const GameTable: React.FC<GameTableProps> = ({
       AvatarPreloader.preloadAvatar(selectedCharacter, selectedAvatar);
     }
     // 预加载所有AI角色头像
-    aiCharacters.forEach((char, index) => {
+    aiCharacters.forEach((char) => {
       const avatarNum = aiAvatars[char] || 1;
       AvatarPreloader.preloadAvatar(char, avatarNum);
     });
