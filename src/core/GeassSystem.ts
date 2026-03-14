@@ -198,7 +198,7 @@ export class GeassSystem {
    * @returns C.C.技能描述
    */
   getCCSkillDescription(): string {
-    return this.getSkillDescription('cc');
+    return 'C.C. - Code之力：首次受到致命伤害时，50%概率复活并免疫本次伤害（每局限1次）';
   }
 
   /**
@@ -207,7 +207,7 @@ export class GeassSystem {
    * @returns 朱雀技能描述
    */
   getSuzakuSkillDescription(): string {
-    return this.getSkillDescription('suzaku');
+    return '朱雀 - 枢木剑术：受到Geass时25%概率反击，15%基础闪避率';
   }
 
   /**
@@ -216,7 +216,7 @@ export class GeassSystem {
    * @returns 卡莲技能描述
    */
   getKallenSkillDescription(): string {
-    return this.getSkillDescription('kallen');
+    return '卡莲 - 红莲二式：可出1-4张牌，出2张+被质疑且质疑失败，Geass命中率=20%×出牌张数';
   }
 }
 
