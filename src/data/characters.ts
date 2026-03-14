@@ -45,6 +45,8 @@ export const characters: Character[] = [
     avatar: '🔮',
     color: '#d4af37',
     description: '布里塔尼亚帝国王子，拥有Geass之力',
+    skillName: '绝对命令',
+    skillDescription: '强制改变骗子牌（每局限用1次）',
     skill: {
       id: 'absolute-order',
       name: '绝对命令',
@@ -74,6 +76,8 @@ export const characters: Character[] = [
     avatar: '🧀',
     color: '#22c55e',
     description: '神秘的魔女，拥有Code之力赋予的不死之身',
+    skillName: 'Code之力',
+    skillDescription: '首次濒死50%复活（每局限1次）',
     skill: {
       id: 'code-power',
       name: 'Code之力',
@@ -103,6 +107,8 @@ export const characters: Character[] = [
     avatar: '⚔️',
     color: '#3b82f6',
     description: '枢木朱雀，拥有超群的战斗技巧',
+    skillName: '枢木剑术',
+    skillDescription: '15%闪避 + 25%反击',
     skill: {
       id: 'suzaku-sword',
       name: '枢木剑术',
@@ -132,6 +138,8 @@ export const characters: Character[] = [
     avatar: '🔥',
     color: '#dc2626',
     description: '红月卡莲，黑色骑士团王牌驾驶员',
+    skillName: '红莲二式',
+    skillDescription: '出2张+且质疑失败，Geass命中率=20%×N',
     skill: {
       id: 'guren-assault',
       name: '红莲二式',

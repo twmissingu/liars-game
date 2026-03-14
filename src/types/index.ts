@@ -125,6 +125,8 @@ export interface Character {
   avatar: string;
   color: string;
   description: string;
+  skillName: string;
+  skillDescription: string;
   skill: CharacterSkill;
   stats: {
     hp: number;
