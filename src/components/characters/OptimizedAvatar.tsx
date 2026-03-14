@@ -65,8 +65,9 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
   const imgRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // 使用传入的头像编号，如果没有则随机
-  const num = avatarNumber || Math.floor(Math.random() * 4) + 1;
+  // 使用传入的头像编号，如果没有则只随机一次并保存到state
+  const [randomNum] = useState(() => Math.floor(Math.random() * 4) + 1);
+  const num = avatarNumber || randomNum;
 
   // 获取最优尺寸名称
   const sizeName = useMemo(() => getOptimalSizeName(size), [size]);
