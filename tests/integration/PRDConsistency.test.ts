@@ -100,6 +100,12 @@ describe('PRD一致性深度测试', () => {
     test('卡莲角色可出1-4张牌', () => {
       const state = engine.initializeGame('kallen', 'normal');
       
+      // 确保是玩家回合（如果不是，切换到玩家回合）
+      if (state.phase !== 'player_turn') {
+        engine['state'].phase = 'player_turn';
+        engine['state'].currentPlayerIndex = 0;
+      }
+      
       // 选择4张牌
       const cardIds = state.playerHand.slice(0, 4).map(c => c.id);
       cardIds.forEach(id => engine.toggleCardSelection(id));
