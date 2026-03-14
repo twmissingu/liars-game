@@ -1,0 +1,157 @@
+name: CI - Build and Test
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # 代码质量检查
+  lint-and-type-check:
+    runs-on: ubuntu-latest
+    name: 🔍 Lint & Type Check
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: 🔍 Run ESLint
+        run: npm run lint
+
+      - name: 📐 Run TypeScript check
+        run: npm run type-check
+
+      - name: 💅 Check Prettier formatting
+        run: npm run format:check
+
+  # 测试
+  test:
+    runs-on: ubuntu-latest
+    name: 🧪 Run Tests
+    needs: lint-and-type-check
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: 🧪 Run tests
+        run: npm run test:ci
+
+      - name: 📊 Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
+  # 构建
+  build:
+    runs-on: ubuntu-latest
+    name: 🔨 Build Project
+    needs: [lint-and-type-check, test]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: 🔨 Build project
+        run: npm run build
+
+      - name: ✅ Verify build output
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "❌ Build output directory 'dist' not found"
+            exit 1
+          fi
+          if [ ! -f "dist/index.html" ]; then
+            echo "❌ index.html not found in dist"
+            exit 1
+          fi
+          echo "✅ Build output verified"
+          ls -la dist/
+
+      - name: 📦 Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: dist/
+          retention-days: 1
+
+  # 安全扫描
+  security:
+    runs-on: ubuntu-latest
+    name: 🔒 Security Scan
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: 🔒 Run npm audit
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+
+      - name: 📦 Check for outdated dependencies
+        run: npm outdated
+        continue-on-error: true
