@@ -225,6 +225,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: 配置Git身份
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+
       - name: 创建部署标签
         run: |
           VERSION=$(node -p "require('./package.json').version")
