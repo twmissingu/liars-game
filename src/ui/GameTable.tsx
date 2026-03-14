@@ -3,7 +3,7 @@
  * 统一角色格式 + 显示AI手牌数 + 优化布局 + 头像预加载
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ChibiAvatar, AvatarPreloader } from '../components/characters';
 import { characters, getCharacterName } from '../data/characters';
 import type { Card, CardRank, CharacterId, FunnyAction, GameState } from '../types';
@@ -55,6 +55,12 @@ export const GameTable: React.FC<GameTableProps> = ({
   currentChallengerIndex = null,
 }) => {
   const [showLelouchSkill, setShowLelouchSkill] = useState(false);
+  
+  // 使用 ref 来同步跟踪 currentChallengerIndex，解决异步 state 更新问题
+  const currentChallengerIndexRef = useRef(currentChallengerIndex);
+  useEffect(() => {
+    currentChallengerIndexRef.current = currentChallengerIndex;
+  }, [currentChallengerIndex]);
 
   // 预加载所有游戏页面需要的头像
   useEffect(() => {
@@ -77,8 +83,8 @@ export const GameTable: React.FC<GameTableProps> = ({
   const playerHand = gameState.playerHand || [];
   const currentRound = turnState?.turnNumber || 1;
 
-  // 判断是否是玩家的质疑回合（currentChallengerIndex === 0 表示轮到玩家）
-  const isPlayerChallengeTurn = isChallengePhase && currentChallengerIndex === 0;
+  // 判断是否是玩家的质疑回合（使用 ref 获取最新值，避免异步 state 更新问题）
+  const isPlayerChallengeTurn = isChallengePhase && currentChallengerIndexRef.current === 0;
 
   const handlePlayClick = () => {
     if (selectedCards.length > 0) onConfirmPlay();
