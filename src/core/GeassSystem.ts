@@ -191,6 +191,33 @@ export class GeassSystem {
     };
     return descriptions[character];
   }
+
+  /**
+   * 获取C.C.技能描述
+   * 
+   * @returns C.C.技能描述
+   */
+  getCCSkillDescription(): string {
+    return this.getSkillDescription('cc');
+  }
+
+  /**
+   * 获取朱雀技能描述
+   * 
+   * @returns 朱雀技能描述
+   */
+  getSuzakuSkillDescription(): string {
+    return this.getSkillDescription('suzaku');
+  }
+
+  /**
+   * 获取卡莲技能描述
+   * 
+   * @returns 卡莲技能描述
+   */
+  getKallenSkillDescription(): string {
+    return this.getSkillDescription('kallen');
+  }
 }
 
 /**

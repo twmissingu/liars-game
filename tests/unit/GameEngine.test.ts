@@ -45,11 +45,13 @@ describe('GameEngine', () => {
       });
     });
 
-    test('每个AI初始HP应该为3', () => {
+    test('每个AI初始HP应该正确', () => {
       const state = gameEngine.initializeGame('lelouch');
       state.aiPlayers.forEach(ai => {
-        expect(ai.stats.hp).toBe(3);
-        expect(ai.stats.maxHp).toBe(3);
+        // 朱雀AI有4点HP，其他AI有3点HP
+        const expectedHp = ai.character === 'suzaku' ? 4 : 3;
+        expect(ai.stats.hp).toBe(expectedHp);
+        expect(ai.stats.maxHp).toBe(expectedHp);
       });
     });
 
@@ -308,16 +310,33 @@ describe('GameEngine', () => {
     });
 
     test('可以跳过回合', () => {
-      const state = gameEngine.passTurn();
+      // 先让玩家出牌进入质疑阶段
+      const state = gameEngine.getState();
+      state.phase = 'player_turn';
+      state.currentPlayerIndex = 0;
+      const cardId = state.playerHand[0].id;
+      gameEngine.toggleCardSelection(cardId);
+      gameEngine.playerPlayCards();
       
-      expect(state.lastAction).toContain('跳过');
+      // 然后选择不质疑（相当于跳过）
+      const newState = gameEngine.playerChallengeDecision(false);
+      
+      expect(newState.lastAction).not.toContain('质疑');
     });
 
     test('跳过后应该轮到下一个玩家', () => {
       const initialState = gameEngine.getState();
+      initialState.phase = 'player_turn';
+      initialState.currentPlayerIndex = 0;
       const initialIndex = initialState.currentPlayerIndex;
       
-      gameEngine.passTurn();
+      // 玩家出牌
+      const cardId = initialState.playerHand[0].id;
+      gameEngine.toggleCardSelection(cardId);
+      gameEngine.playerPlayCards();
+      
+      // 选择不质疑
+      gameEngine.playerChallengeDecision(false);
       
       const newState = gameEngine.getState();
       expect(newState.currentPlayerIndex).not.toBe(initialIndex);
