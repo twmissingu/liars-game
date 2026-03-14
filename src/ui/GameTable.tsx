@@ -55,7 +55,7 @@ export const GameTable: React.FC<GameTableProps> = ({
   currentChallengerIndex = null,
 }) => {
   const [showLelouchSkill, setShowLelouchSkill] = useState(false);
-  
+
   // 使用 ref 来同步跟踪 currentChallengerIndex，解决异步 state 更新问题
   const currentChallengerIndexRef = useRef(currentChallengerIndex);
   useEffect(() => {
