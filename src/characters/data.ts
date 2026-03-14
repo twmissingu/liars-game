@@ -104,6 +104,8 @@ export const lelouch: Character = {
   color: '#8B00FF',
   description: '黑色骑士团的领袖，拥有绝对命令的Geass能力。可以强制指定一张牌为骗子牌。',
   skill: lelouchSkill,
+  skillName: lelouchSkill.name,
+  skillDescription: lelouchSkill.description,
   stats: {
     hp: 3,
     difficulty: 4,
