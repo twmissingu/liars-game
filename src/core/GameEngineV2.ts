@@ -15,7 +15,8 @@
  */
 
 import { CardSystem, Card, CardRank } from './CardSystem';
-import { GeassSystem, GeassResult, PlayerStats, FUNNY_ACTIONS } from './GeassSystem';
+import { GeassSystem, GeassResult, PlayerStats } from './GeassSystem';
+import { FUNNY_ACTIONS } from '../types/game.types';
 import { executeGeassWithChance } from './GeassSystemCompat';
 import { getCharacterName } from '../data/characters';
 import type { CharacterId, CharacterState } from '../types';
@@ -375,7 +376,7 @@ export class GameEngine {
     // 检查剩余牌堆
     const remainingCards = this.cardSystem.getRemainingCards();
     
-    if (remainingCards.length < 4) {
+    if (remainingCards < 4) {
       // 牌堆不足，重置牌局
       this.resetRound();
     } else {
@@ -676,7 +677,7 @@ export class GameEngine {
    * @param playerId - 玩家ID
    * @returns 角色状态
    */
-  getCharacterState(playerId: string): CharacterState | undefined {
+  getCharacterState(playerId: string): CharacterStateInternal | undefined {
     return this.state.characterStates.get(playerId);
   }
 }
