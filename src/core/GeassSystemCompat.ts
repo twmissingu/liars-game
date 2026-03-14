@@ -1,5 +1,5 @@
-import type { GeassResult } from '../types';
-import { FUNNY_ACTIONS } from './GeassSystem';
+import type { GeassResult, FunnyAction } from '../types';
+import { FUNNY_ACTIONS } from '../types/game.types';
 
 /**
  * 执行Geass判定（兼容方法）
