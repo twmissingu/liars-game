@@ -106,6 +106,12 @@ const App: React.FC = () => {
   useEffect(() => {
     currentChallengerIndexRef.current = currentChallengerIndex;
   }, [currentChallengerIndex]);
+  
+  // 防重复调用机制 - 用于质疑流程
+  const isProcessingChallengeRef = useRef<boolean>(false);
+  
+  // 标记当前质疑流程是否已经处理完成（防止重复触发）
+  const hasProcessedChallengeRef = useRef<boolean>(false);
 
   // 使用ref来存储函数，避免循环依赖
   const processAIChallengeRef = useRef<(() => void) | null>(null);
@@ -173,11 +179,24 @@ const App: React.FC = () => {
    */
   useEffect(() => {
     if (gameState?.phase === 'challenge' && currentChallengerIndex === null) {
+      // 如果已经处理过这个质疑流程，则不再触发
+      if (hasProcessedChallengeRef.current) {
+        return;
+      }
+      
       // 延迟后触发质疑流程，让UI先更新
       const timer = setTimeout(() => {
-        processAIChallengeRef.current?.();
+        // 双重检查防止重复调用
+        if (!isProcessingChallengeRef.current && !hasProcessedChallengeRef.current) {
+          isProcessingChallengeRef.current = true;
+          hasProcessedChallengeRef.current = true;
+          processAIChallengeRef.current?.();
+        }
       }, 500);
       return () => clearTimeout(timer);
+    } else if (gameState?.phase !== 'challenge') {
+      // 当离开质疑阶段时，重置处理标记
+      hasProcessedChallengeRef.current = false;
     }
   }, [gameState?.phase, currentChallengerIndex]);
 
@@ -276,15 +295,30 @@ const App: React.FC = () => {
    * 4. 所有人都未质疑：结束质疑阶段，轮到下一个出牌
    */
   const processAIChallenge = useCallback(() => {
+    // 防重复调用检查
+    if (isProcessingChallengeRef.current) {
+      console.log('[processAIChallenge] 已经在处理中，跳过重复调用');
+      return;
+    }
+    
     if (!gameEngineRef.current) return;
+    
+    // 设置处理中标志
+    isProcessingChallengeRef.current = true;
     
     const engine = gameEngineRef.current;
     const state = engine.getState();
     
-    if (state.phase !== 'challenge') return;
+    if (state.phase !== 'challenge') {
+      isProcessingChallengeRef.current = false;
+      return;
+    }
     
     const playedBy = state.turnState.playedCards?.playerId;
-    if (!playedBy) return;
+    if (!playedBy) {
+      isProcessingChallengeRef.current = false;
+      return;
+    }
     
     // 计算出牌者的索引 (0=玩家, 1=AI1, 2=AI2, 3=AI3)
     const playedByIndex = playedBy === 'player' ? 0 : 
@@ -312,6 +346,7 @@ const App: React.FC = () => {
         // 轮到玩家质疑，设置状态并等待玩家操作
         setCurrentChallengerIndex(currentIndex);
         addLog('等待玩家决策...');
+        isProcessingChallengeRef.current = false; // 重置处理标志，等待玩家操作
         return;
       }
       
@@ -358,6 +393,10 @@ const App: React.FC = () => {
           getCharacterName(selectedCharacter!) : 
           state.aiPlayers.find((ai: { id: string }) => ai.id === loser)?.name || loser;
         
+        // 质疑结算后，重置所有处理标记
+        isProcessingChallengeRef.current = false;
+        hasProcessedChallengeRef.current = false;
+        
         // 使用ref调用handleGeassResult避免循环依赖
         handleGeassResultRef.current?.(newState, challengerAI.name, targetName, loserName);
         return;
@@ -374,6 +413,12 @@ const App: React.FC = () => {
     // 所有人都未质疑，记录并继续下一回合
     addLog('无人质疑，回合继续');
     setCurrentChallengerIndex(null);
+    
+    // 重置所有处理标记
+    isProcessingChallengeRef.current = false;
+    hasProcessedChallengeRef.current = false;
+    
+    // 直接调用continueToNextTurn，不经过engine.playerChallengeDecision
     continueToNextTurnRef.current?.();
   }, [addLog, selectedCharacter]);
 
@@ -527,6 +572,10 @@ const App: React.FC = () => {
     }
     
     state.turnState.playedCards = null;
+    
+    // 重置质疑处理标记，为下一轮质疑做准备
+    hasProcessedChallengeRef.current = false;
+    
     setGameState({ ...state });
   }, [addLog, processAITurn]);
 
@@ -708,6 +757,10 @@ const App: React.FC = () => {
     const newState = engine.playerChallengeDecision(true);
     setCurrentChallengerIndex(null); // 重置质疑者索引
     
+    // 重置质疑处理标记
+    isProcessingChallengeRef.current = false;
+    hasProcessedChallengeRef.current = false;
+    
     // 计算质疑结果
     const wasLie = playedCards ? 
       playedCards.actualCards.some((c: { rank: string; isJoker: boolean }) => 
@@ -755,6 +808,11 @@ const App: React.FC = () => {
     // 如果下一个质疑者就是出牌者，说明所有人都已经选择不质疑了
     if (nextChallengerIndex === playedByIndex) {
       setCurrentChallengerIndex(null);
+      
+      // 重置所有处理标记
+      isProcessingChallengeRef.current = false;
+      hasProcessedChallengeRef.current = false;
+      
       const newState = engine.playerChallengeDecision(false);
       setGameState(newState);
       continueToNextTurn();
