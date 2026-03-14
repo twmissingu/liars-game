@@ -1,6 +1,22 @@
 /**
+ * =============================================================================
  * Code Geass: Liar's Game - 游戏主界面（圆桌布局）
- * 统一角色格式 + 显示AI手牌数 + 优化布局 + 头像预加载
+ * =============================================================================
+ *
+ * 游戏主界面组件，采用圆桌布局展示：
+ * - 顶部：AI玩家1
+ * - 左侧：AI玩家2
+ * - 右侧：AI玩家3
+ * - 底部：玩家自己
+ *
+ * 功能特性：
+ * - 统一角色格式显示
+ * - 显示AI手牌数
+ * - 头像预加载优化
+ * - 质疑阶段UI交互
+ *
+ * @author Code Agent
+ * @version 2.0.0 - 重构版：简化质疑流程
  */
 
 import React, { useState, useEffect } from 'react';
@@ -9,33 +25,64 @@ import { characters, getCharacterName } from '../data/characters';
 import type { Card, CardRank, CharacterId, FunnyAction, GameState } from '../types';
 import cardBack from '/assets/cards/card-back.svg';
 
+/**
+ * GameTable组件属性接口
+ */
 interface GameTableProps {
+  /** 当前游戏状态 */
   gameState: GameState;
+  /** 玩家选中的牌ID列表 */
   selectedCards: string[];
+  /** 玩家选择的角色ID */
   selectedCharacter: CharacterId | null;
+  /** 玩家选择的头像编号 */
   selectedAvatar?: number;
+  /** AI角色ID列表 */
   aiCharacters?: CharacterId[];
+  /** AI头像映射表 */
   aiAvatars?: Record<string, number>;
+  /** 切换牌选择状态回调 */
   onToggleCardSelection: (cardId: string) => void;
+  /** 确认出牌回调 */
   onConfirmPlay: () => void;
+  /** 不质疑/跳过回调 */
   onPass: () => void;
+  /** 质疑回调 */
   onChallenge: () => void;
+  /** 返回主菜单回调 */
   onBackToMenu: () => void;
+  /** 鲁鲁修技能回调 */
   onLelouchSkill?: (newRank: CardRank) => void;
+  /** 游戏日志 */
   gameLog?: string[];
+  /** 当前搞笑动作 */
   funnyAction?: FunnyAction | null;
+  /** 是否正在处理中 */
   isProcessing?: boolean;
+  /** 是否可以使用技能 */
   canUseSkill?: boolean;
-  currentChallengerIndex?: number | null;
 }
 
-// 获取角色颜色
+/**
+ * 获取角色颜色
+ * 根据角色ID返回对应的主题色
+ *
+ * @param characterId - 角色ID
+ * @returns 颜色代码（十六进制）
+ */
 const getCharacterColor = (characterId: CharacterId | null): string => {
   if (!characterId) return '#d4af37';
   const char = characters.find(c => c.id === characterId);
   return char?.color || '#d4af37';
 };
 
+/**
+ * 游戏主界面组件
+ * 采用圆桌布局，支持质疑阶段交互
+ *
+ * @param props - 组件属性
+ * @returns 游戏主界面JSX元素
+ */
 export const GameTable: React.FC<GameTableProps> = ({
   gameState,
   selectedCards,
@@ -52,11 +99,14 @@ export const GameTable: React.FC<GameTableProps> = ({
   gameLog = [],
   isProcessing = false,
   canUseSkill = true,
-  currentChallengerIndex = null,
 }) => {
+  /** 是否显示鲁鲁修技能弹窗 */
   const [showLelouchSkill, setShowLelouchSkill] = useState(false);
 
-  // 预加载所有游戏页面需要的头像
+  /**
+   * 预加载所有游戏页面需要的头像
+   * 在组件挂载或角色变化时执行
+   */
   useEffect(() => {
     if (selectedCharacter) {
       // 预加载玩家选择的角色头像
@@ -69,36 +119,86 @@ export const GameTable: React.FC<GameTableProps> = ({
     });
   }, [selectedCharacter, selectedAvatar, aiCharacters, aiAvatars]);
 
+  // 如果没有游戏状态，不渲染
   if (!gameState) return null;
 
+  // 解构游戏状态
   const { phase, liarCard, playerStats, aiPlayers, turnState } = gameState;
+
+  // 判断当前阶段
   const isPlayerTurn = phase === 'player_turn';
   const isChallengePhase = phase === 'challenge';
+
+  // 获取玩家手牌
   const playerHand = gameState.playerHand || [];
+
+  // 获取当前回合数
   const currentRound = turnState?.turnNumber || 1;
 
-  // 判断是否是玩家的质疑回合
-  const isPlayerChallengeTurn = isChallengePhase && currentChallengerIndex === 0;
+  /**
+   * 判断是否是玩家的质疑回合
+   * 在质疑阶段，且轮到玩家决策时返回true
+   */
+  const isPlayerChallengeTurn = isChallengePhase;
 
+  /**
+   * 处理出牌按钮点击
+   */
   const handlePlayClick = () => {
     if (selectedCards.length > 0) onConfirmPlay();
   };
 
+  /**
+   * 处理鲁鲁修技能按钮点击
+   * 显示技能选择弹窗
+   */
   const handleLelouchSkillClick = () => setShowLelouchSkill(true);
+
+  /**
+   * 处理选择新的骗子牌
+   *
+   * @param rank - 新的骗子牌点数
+   */
   const handleLelouchRankSelect = (rank: CardRank) => {
     setShowLelouchSkill(false);
     onLelouchSkill?.(rank);
   };
 
+  /**
+   * 获取花色符号
+   *
+   * @param suit - 花色
+   * @returns 对应的符号
+   */
   const getSuitSymbol = (suit: string) =>
     ({ spades: '♠', hearts: '♥', clubs: '♣', diamonds: '♦', joker: '🃏' })[suit] || suit;
+
+  /**
+   * 获取花色颜色
+   *
+   * @param suit - 花色
+   * @returns 对应的颜色代码
+   */
   const getSuitColor = (suit: string) =>
     suit === 'joker' ? '#d4af37' : suit === 'hearts' || suit === 'diamonds' ? '#dc2626' : '#1a1a24';
 
+  // 获取玩家名称和颜色
   const playerName = getCharacterName(selectedCharacter);
   const playerColor = getCharacterColor(selectedCharacter);
 
-  // 渲染角色（统一格式）
+  /**
+   * 渲染角色组件
+   * 统一格式的角色信息显示
+   *
+   * @param name - 角色名称
+   * @param characterId - 角色ID
+   * @param hp - 当前生命值
+   * @param cardCount - 手牌数量
+   * @param color - 角色主题色
+   * @param avatarNum - 头像编号
+   * @param isTop - 是否在顶部位置
+   * @returns 角色信息JSX元素
+   */
   const renderCharacter = (
     name: string,
     characterId: CharacterId | null,
@@ -133,7 +233,7 @@ export const GameTable: React.FC<GameTableProps> = ({
 
   return (
     <div className="cg-game-table">
-      {/* 顶部栏 */}
+      {/* 顶部栏：返回按钮、回合信息、骗子牌 */}
       <div className="cg-top-bar">
         <button className="cg-back-button" onClick={onBackToMenu}>
           ← 主页面
@@ -146,7 +246,7 @@ export const GameTable: React.FC<GameTableProps> = ({
       </div>
 
       <div className="cg-main">
-        {/* 日志 */}
+        {/* 左侧日志面板 */}
         <div className="cg-log">
           <div className="cg-log-title">📜 游戏记录</div>
           <div className="cg-log-content">
@@ -161,7 +261,7 @@ export const GameTable: React.FC<GameTableProps> = ({
           </div>
         </div>
 
-        {/* 游戏区 */}
+        {/* 游戏区域 */}
         <div className="cg-play-area">
           {/* AI 1 - 顶部 (id='ai') */}
           {renderCharacter(
@@ -174,7 +274,7 @@ export const GameTable: React.FC<GameTableProps> = ({
             true
           )}
 
-          {/* 中间行 */}
+          {/* 中间行：AI2 + 圆桌 + AI3 */}
           <div className="cg-middle-row">
             {/* AI 2 - 左侧 (id='ai2') */}
             {renderCharacter(
@@ -186,7 +286,7 @@ export const GameTable: React.FC<GameTableProps> = ({
               aiAvatars[aiPlayers?.[1]?.character || aiCharacters[1]] || 1
             )}
 
-            {/* 圆桌 */}
+            {/* 圆桌区域 */}
             <div className="cg-table">
               <div className="cg-table-inner">
                 {turnState?.playedCards ? (
@@ -235,7 +335,7 @@ export const GameTable: React.FC<GameTableProps> = ({
             )}
           </div>
 
-          {/* 玩家 */}
+          {/* 玩家区域 */}
           <div className="cg-player-position">
             {renderCharacter(
               playerName,
@@ -245,6 +345,7 @@ export const GameTable: React.FC<GameTableProps> = ({
               playerColor,
               selectedAvatar
             )}
+            {/* 鲁鲁修技能按钮 */}
             {selectedCharacter === 'lelouch' && isPlayerTurn && (
               <button
                 className="cg-skill-btn"
@@ -259,7 +360,7 @@ export const GameTable: React.FC<GameTableProps> = ({
         </div>
       </div>
 
-      {/* 手牌 */}
+      {/* 手牌区域 */}
       <div className="cg-hand-area">
         <div className="cg-hand">
           {playerHand.map((card: Card, i: number) => {
@@ -289,17 +390,21 @@ export const GameTable: React.FC<GameTableProps> = ({
 
       {/* 操作栏 */}
       <div className="cg-actions">
+        {/* 玩家回合：出牌按钮 */}
         {isPlayerTurn && selectedCards.length > 0 && (
           <button className="cg-btn cg-btn-play" onClick={handlePlayClick} disabled={isProcessing}>
             出牌 ({selectedCards.length})
           </button>
         )}
+
+        {/* 玩家回合：跳过按钮（未选牌时） */}
         {isPlayerTurn && selectedCards.length === 0 && (
           <button className="cg-btn cg-btn-skip" onClick={onPass} disabled={isProcessing}>
             跳过
           </button>
         )}
-        {/* 质疑阶段：轮到玩家质疑时显示质疑/不质疑按钮 */}
+
+        {/* 质疑阶段：质疑/不质疑按钮 */}
         {isPlayerChallengeTurn && (
           <>
             <button
@@ -314,15 +419,17 @@ export const GameTable: React.FC<GameTableProps> = ({
             </button>
           </>
         )}
+
         {/* 质疑阶段：等待其他玩家质疑 */}
         {isChallengePhase && !isPlayerChallengeTurn && (
           <span className="cg-wait">等待其他玩家质疑...</span>
         )}
+
         {/* AI回合 */}
         {!isPlayerTurn && !isChallengePhase && <span className="cg-wait">AI回合...</span>}
       </div>
 
-      {/* 技能弹窗 */}
+      {/* 鲁鲁修技能弹窗 */}
       {showLelouchSkill && (
         <div className="cg-modal">
           <div className="cg-modal-content">
