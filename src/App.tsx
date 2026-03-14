@@ -98,6 +98,14 @@ const App: React.FC = () => {
   
   /** 当前质疑者索引（用于质疑阶段顺序） */
   const [currentChallengerIndex, setCurrentChallengerIndex] = useState<number | null>(null);
+  
+  // 使用ref来存储currentChallengerIndex，以便在回调中获取最新值
+  const currentChallengerIndexRef = useRef<number | null>(null);
+  
+  // 同步ref和state
+  useEffect(() => {
+    currentChallengerIndexRef.current = currentChallengerIndex;
+  }, [currentChallengerIndex]);
 
   // 使用ref来存储函数，避免循环依赖
   const processAIChallengeRef = useRef<(() => void) | null>(null);
@@ -260,6 +268,12 @@ const App: React.FC = () => {
   /**
    * 处理AI质疑决策
    * 按照Liar's Bar规则：出牌者的下家开始依次选择质疑/不质疑
+   * 
+   * 质疑流程：
+   * 1. 从出牌者的下家开始，按顺序询问每个玩家
+   * 2. 有人质疑：立即结算，结束质疑阶段
+   * 3. 无人质疑：继续询问下一个玩家
+   * 4. 所有人都未质疑：结束质疑阶段，轮到下一个出牌
    */
   const processAIChallenge = useCallback(() => {
     if (!gameEngineRef.current) return;
@@ -272,34 +286,45 @@ const App: React.FC = () => {
     const playedBy = state.turnState.playedCards?.playerId;
     if (!playedBy) return;
     
-    // 计算出牌者的索引
+    // 计算出牌者的索引 (0=玩家, 1=AI1, 2=AI2, 3=AI3)
     const playedByIndex = playedBy === 'player' ? 0 : 
       state.aiPlayers.findIndex((ai: { id: string }) => ai.id === playedBy) + 1;
     
-    // 确定从哪个质疑者开始（如果currentChallengerIndex为null，则从出牌者的下家开始）
-    let startIndex = currentChallengerIndex !== null ? currentChallengerIndex : (playedByIndex + 1) % 4;
+    // 使用ref获取最新的currentChallengerIndex
+    const challengerIndexFromRef = currentChallengerIndexRef.current;
     
-    // 依次检查其他玩家
-    for (let i = 0; i < 3; i++) {
-      const challengerIndex = (startIndex + i) % 4;
-      
+    // 确定当前应该从哪个质疑者开始
+    // 如果currentChallengerIndex为null，说明是第一次进入质疑阶段，从出牌者的下家开始
+    // 否则，从上一次停止的位置继续
+    let currentIndex = challengerIndexFromRef !== null ? challengerIndexFromRef : (playedByIndex + 1) % 4;
+    
+    // 最多检查3个其他玩家（因为不能质疑自己）
+    let checkedCount = 0;
+    
+    while (checkedCount < 3) {
       // 跳过出牌者自己
-      if (challengerIndex === playedByIndex) continue;
+      if (currentIndex === playedByIndex) {
+        currentIndex = (currentIndex + 1) % 4;
+        continue;
+      }
       
-      if (challengerIndex === 0) {
+      if (currentIndex === 0) {
         // 轮到玩家质疑，设置状态并等待玩家操作
-        setCurrentChallengerIndex(challengerIndex);
+        setCurrentChallengerIndex(currentIndex);
         addLog('等待玩家决策...');
         return;
       }
       
       // AI质疑
-      const challengerAI = state.aiPlayers[challengerIndex - 1];
+      const challengerAI = state.aiPlayers[currentIndex - 1];
       if (!challengerAI || !challengerAI.isActive || challengerAI.stats.hp <= 0) {
+        // 该AI已淘汰，跳过
+        currentIndex = (currentIndex + 1) % 4;
+        checkedCount++;
         continue;
       }
       
-      // AI决策
+      // AI决策（30%概率质疑）
       const shouldChallenge = Math.random() < 0.3;
       
       if (shouldChallenge) {
@@ -341,13 +366,17 @@ const App: React.FC = () => {
         // 记录AI选择不质疑
         addLog(`${challengerAI.name}选择不质疑`);
       }
+      
+      // 移动到下一个质疑者
+      currentIndex = (currentIndex + 1) % 4;
+      checkedCount++;
     }
     
     // 所有人都未质疑，记录并继续下一回合
     addLog('无人质疑，回合继续');
     setCurrentChallengerIndex(null);
     continueToNextTurnRef.current?.();
-  }, [addLog, selectedCharacter, currentChallengerIndex]);
+  }, [addLog, selectedCharacter]);
 
   // 更新ref - 必须在函数定义之后
   useEffect(() => {
@@ -718,14 +747,14 @@ const App: React.FC = () => {
     // 记录玩家选择不质疑
     addLog(`${playerName}选择不质疑`);
     
-    // 计算出牌者的索引
+    // 计算出牌者的索引 (0=玩家, 1=AI1, 2=AI2, 3=AI3)
     const playedByIndex = playedBy === 'player' ? 0 : 
       state.aiPlayers.findIndex((ai: { id: string }) => ai.id === playedBy) + 1;
     
     // 计算下一个质疑者索引（玩家的下家）
     const nextChallengerIndex = (currentChallengerIndex! + 1) % 4;
     
-    // 如果下一个质疑者就是出牌者，说明所有人都质疑过了
+    // 如果下一个质疑者就是出牌者，说明所有人都已经选择不质疑了
     if (nextChallengerIndex === playedByIndex) {
       setCurrentChallengerIndex(null);
       const newState = engine.playerChallengeDecision(false);
@@ -734,10 +763,12 @@ const App: React.FC = () => {
       return;
     }
     
-    // 设置下一个质疑者并继续AI质疑流程
+    // 设置下一个质疑者索引，然后继续AI质疑流程
+    // 注意：这里先更新currentChallengerIndex，然后processAIChallenge会使用这个新值
     setCurrentChallengerIndex(nextChallengerIndex);
     
     // 延迟后继续AI质疑流程
+    // 使用setTimeout确保state更新后再调用processAIChallenge
     setTimeout(() => {
       processAIChallenge();
     }, 1000);
