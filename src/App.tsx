@@ -264,11 +264,23 @@ const App: React.FC = () => {
         playSound('sfx-challenge');
         const targetName = playedBy === 'player' ? 
           getCharacterName(selectedCharacter!) : 
-          getCharacterName(playedBy.replace('ai-', '') as CharacterId);
+          state.aiPlayers.find((ai: { id: string }) => ai.id === playedBy)?.name || playedBy;
         addLog(`${challengerAI.name} 向 ${targetName} 发起质疑！`);
         
         const newState = engine.aiChallengeDecision(challengerAI.id);
-        handleGeassResult(newState, challengerAI.name, targetName);
+        
+        // 计算受罚者名称
+        const playedCards = state.turnState.playedCards;
+        const wasLie = playedCards ? 
+          playedCards.actualCards.some((c: { rank: string; isJoker: boolean }) => 
+            c.rank !== playedCards.claimedRank && !c.isJoker
+          ) : false;
+        const loser = wasLie ? playedBy : challengerAI.id;
+        const loserName = loser === 'player' ? 
+          getCharacterName(selectedCharacter!) : 
+          state.aiPlayers.find((ai: { id: string }) => ai.id === loser)?.name || loser;
+        
+        handleGeassResult(newState, challengerAI.name, targetName, loserName);
         return;
       } else {
         addLog(`${challengerAI.name} 选择不质疑`);
@@ -284,22 +296,21 @@ const App: React.FC = () => {
    * 
    * @param newState - 新的游戏状态
    * @param challengerName - 质疑者名称
-   * @param targetName - 目标名称
+   * @param targetName - 目标名称（被质疑者）
+   * @param loserName - 受罚者名称
    */
   const handleGeassResult = useCallback((
     newState: GameState, 
     challengerName?: string, 
-    targetName?: string
+    targetName?: string,
+    loserName?: string
   ) => {
     setGameState(newState);
     
     if (newState.geassResult) {
       const challenger = challengerName || '玩家';
       const target = targetName || '对手';
-      const loser = newState.geassResult.target;
-      const loserName = loser === 'player' ? 
-        getCharacterName(selectedCharacter!) : 
-        newState.aiPlayers.find((ai: { id: string }) => ai.id === loser)?.name || loser;
+      const loser = loserName || target;
       
       if (newState.geassResult.hit) {
         // Geass命中
@@ -307,12 +318,12 @@ const App: React.FC = () => {
         const funnyAction = FUNNY_ACTIONS[Math.floor(Math.random() * FUNNY_ACTIONS.length)];
         setCurrentFunnyAction(funnyAction);
         playSound(funnyAction.soundType as SoundType);
-        addLog(`✅ ${challenger}质疑${target}成功！${loserName}受到Geass！`);
+        addLog(`✅ ${challenger}质疑${target}成功！${loser}受到Geass！`);
         addLog(`💥 Geass命中！${funnyAction.emoji} ${newState.geassResult.message}`);
       } else {
         // Geass未命中
         playSound('sfx-geass-miss');
-        addLog(`❌ ${challenger}质疑${target}失败！${loserName}闪避了Geass！`);
+        addLog(`❌ ${challenger}质疑${target}失败！${loser}闪避了Geass！`);
         if (newState.geassResult.isRevived) {
           addLog(`🔄 ${newState.geassResult.message}`);
         } else if (newState.geassResult.isCounter) {
@@ -567,14 +578,35 @@ const App: React.FC = () => {
     
     setIsProcessing(true);
     playSound('sfx-challenge');
-    addLog('你发起了质疑！');
     
     const engine = gameEngineRef.current;
+    const state = engine.getState();
+    const playedCards = state.turnState.playedCards;
+    const playedBy = playedCards?.playerId;
+    
+    const playerName = getCharacterName(selectedCharacter!);
+    const targetName = playedBy === 'player' ? 
+      playerName : 
+      state.aiPlayers.find((ai: { id: string }) => ai.id === playedBy)?.name || playedBy;
+    
+    addLog(`${playerName}向${targetName}发起质疑！`);
+    
     const newState = engine.playerChallengeDecision(true);
-    handleGeassResult(newState);
+    
+    // 计算受罚者名称
+    const wasLie = playedCards ? 
+      playedCards.actualCards.some((c: { rank: string; isJoker: boolean }) => 
+        c.rank !== playedCards.claimedRank && !c.isJoker
+      ) : false;
+    const loser = wasLie ? playedBy : 'player';
+    const loserName = loser === 'player' ? 
+      playerName : 
+      state.aiPlayers.find((ai: { id: string }) => ai.id === loser)?.name || loser;
+    
+    handleGeassResult(newState, playerName, targetName, loserName);
     
     setIsProcessing(false);
-  }, [isProcessing, addLog, handleGeassResult]);
+  }, [isProcessing, addLog, handleGeassResult, selectedCharacter]);
 
   /** 玩家不质疑（跳过） */
   const handlePass = useCallback(() => {
