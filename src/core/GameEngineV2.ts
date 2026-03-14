@@ -16,6 +16,7 @@
 
 import { CardSystem, Card, CardRank } from './CardSystem';
 import { GeassSystem, GeassResult, PlayerStats, FUNNY_ACTIONS } from './GeassSystem';
+import { executeGeassWithChance } from './GeassSystemCompat';
 import { getCharacterName } from '../data/characters';
 import type { CharacterId, CharacterState } from '../types';
 import type { CharacterState as CharacterStateInternal } from '../characters/types';
@@ -475,7 +476,7 @@ export class GameEngine {
     }
     
     // 执行判定
-    const result = this.geassSystem.executeGeassWithChance(targetId, baseChance);
+    const result = executeGeassWithChance(targetId, baseChance);
     this.state.geassResult = result;
     
     // 应用伤害

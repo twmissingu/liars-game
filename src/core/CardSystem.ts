@@ -234,6 +234,32 @@ export class CardSystem {
   }
 
   /**
+   * 获取剩余牌数
+   * 
+   * @returns 剩余牌数量
+   */
+  getRemainingCards(): number {
+    return this.cards.filter(c => c.owner === null).length;
+  }
+
+  /**
+   * 抽取指定数量的牌
+   * 
+   * @param count - 要抽取的牌数
+   * @returns 抽到的牌
+   */
+  drawCards(count: number): Card[] {
+    const availableCards = this.cards.filter(c => c.owner === null);
+    const drawnCards = availableCards.slice(0, count);
+    
+    for (const card of drawnCards) {
+      card.owner = 'player'; // 默认给玩家，调用者可以修改
+    }
+    
+    return drawnCards;
+  }
+
+  /**
    * 重置牌组 - 清空所有牌和状态
    */
   reset(): void {
