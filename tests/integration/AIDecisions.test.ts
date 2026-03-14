@@ -245,6 +245,7 @@ describe('AI决策集成测试', () => {
         hand: [{ id: 'card1', type: 'citizen', value: 1, owner: 'ai' }],
         score: 0,
         isActive: true,
+        stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 },
       };
       
       const mockContext: StrategyContext = {
