@@ -158,11 +158,11 @@ export class GameEngine {
     const startingPlayerIndex = Math.floor(Math.random() * 4);
     
     // 初始化角色技能状态
-    const characterStates = new Map<string, CharacterState>();
-    characterStates.set('player', createCharacterState(playerCharacter));
-    characterStates.set('ai', createCharacterState('cc'));
-    characterStates.set('ai2', createCharacterState('suzaku'));
-    characterStates.set('ai3', createCharacterState('kallen'));
+    const characterStates = new Map<string, CharacterStateInternal>();
+    characterStates.set('player', createCharacterState(playerCharacter) as CharacterStateInternal);
+    characterStates.set('ai', createCharacterState('cc') as CharacterStateInternal);
+    characterStates.set('ai2', createCharacterState('suzaku') as CharacterStateInternal);
+    characterStates.set('ai3', createCharacterState('kallen') as CharacterStateInternal);
     
     this.state = {
       ...this.createInitialState(),
@@ -244,7 +244,7 @@ export class GameEngine {
     const charState = this.state.characterStates.get(playerId);
     if (charState) {
       const newState = onTurnEnd(charState);
-      this.state.characterStates.set(playerId, newState);
+      this.state.characterStates.set(playerId, newState as CharacterStateInternal);
     }
   }
 
