@@ -13,8 +13,8 @@
     "test:integration": "jest tests/integration",
     "test:e2e": "playwright test",
     "test:coverage": "jest --coverage",
-    "lint": "eslint src",
-    "lint:fix": "eslint src --fix",
+    "lint": "eslint 'src/**/*.{ts,tsx}'",
+    "lint:fix": "eslint 'src/**/*.{ts,tsx}' --fix",
     "type-check": "tsc --noEmit"
   },
   "homepage": "https://twmissingu.github.io/liars-game",

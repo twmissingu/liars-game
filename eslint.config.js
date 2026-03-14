@@ -7,7 +7,8 @@ export default {
     'plugin:@typescript-eslint/recommended',
     'plugin:react-hooks/recommended',
   ],
-  ignorePatterns: ['dist', '.eslintrc.cjs'],
+  ignorePatterns: ['dist', '.eslintrc.cjs', 'node_modules'],
+  files: ['src/**/*.{ts,tsx}'],
   parser: '@typescript-eslint/parser',
   plugins: ['react-refresh'],
   rules: {
