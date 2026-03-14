@@ -13,10 +13,12 @@ jobs:
   # 快速检查 - 在PR时快速验证
   quick-check:
     runs-on: ubuntu-latest
-    name: ⚡ Quick Check
+    name: ⚡ 快速检查
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -26,17 +28,22 @@ jobs:
 
       - name: Cache npm dependencies
         uses: actions/cache@v4
+        id: npm-cache
         with:
-          path: ~/.npm
+          path: |
+            ~/.npm
+            node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
       - name: Install dependencies
         run: npm ci
+        if: steps.npm-cache.outputs.cache-hit != 'true'
 
       - name: 🔍 Quick lint check
         run: npm run lint
+        continue-on-error: true
 
       - name: 📐 TypeScript check
         run: npm run type-check
@@ -44,10 +51,14 @@ jobs:
       - name: 🔨 Quick build test
         run: npm run build
 
+      - name: 🧪 Run tests
+        run: npm run test:ci
+        timeout-minutes: 10
+
   # PR信息检查
   pr-check:
     runs-on: ubuntu-latest
-    name: 📝 PR Check
+    name: 📝 PR 规范检查
     steps:
       - name: Check PR title
         uses: amannn/action-semantic-pull-request@v5
@@ -62,7 +73,14 @@ jobs:
             refactor
             test
             chore
+            ci
+            perf
+            revert
           requireScope: false
+          subjectPattern: ^(?![A-Z]).+$
+          subjectPatternError: |
+            PR标题不能以大小写字母开头，请使用小写开头。
+            例如: "feat: add new feature" 而不是 "feat: Add new feature"
 
       - name: PR size check
         uses: codelytv/pr-size-checker@v1
@@ -73,3 +91,88 @@ jobs:
           m_max_size: 500
           l_max_size: 1000
           fail_if_xl: false
+
+      - name: 检查冲突标记
+        run: |
+          CONFLICT_MARKERS=$(git diff HEAD^ HEAD | grep -E '^\+.*(<<<<<<<|=======|>>>>>>>)' || true)
+          if [ -n "$CONFLICT_MARKERS" ]; then
+            echo "❌ 发现冲突标记，请解决冲突后再提交:"
+            echo "$CONFLICT_MARKERS"
+            exit 1
+          fi
+          echo "✅ 未检测到冲突标记"
+
+  # 变更检测
+  detect-changes:
+    runs-on: ubuntu-latest
+    name: 🔍 变更检测
+    outputs:
+      src_changed: ${{ steps.changes.outputs.src_changed }}
+      test_changed: ${{ steps.changes.outputs.test_changed }}
+      docs_changed: ${{ steps.changes.outputs.docs_changed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 检测变更文件
+        id: changes
+        run: |
+          # 获取变更文件列表
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          
+          # 检查源代码变更
+          if echo "$CHANGED_FILES" | grep -qE '^src/'; then
+            echo "src_changed=true" >> $GITHUB_OUTPUT
+            echo "✅ 源代码文件有变更"
+          else
+            echo "src_changed=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # 检查测试文件变更
+          if echo "$CHANGED_FILES" | grep -qE '^tests?/'; then
+            echo "test_changed=true" >> $GITHUB_OUTPUT
+            echo "✅ 测试文件有变更"
+          else
+            echo "test_changed=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # 检查文档变更
+          if echo "$CHANGED_FILES" | grep -qE '^docs/|\.md$'; then
+            echo "docs_changed=true" >> $GITHUB_OUTPUT
+            echo "✅ 文档文件有变更"
+          else
+            echo "docs_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+  # 依赖安全检查
+  dependency-check:
+    runs-on: ubuntu-latest
+    name: 🔒 依赖安全检查
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: 🔒 npm audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: 📦 检查 lockfile 是否同步
+        run: |
+          npm ci --package-lock-only
+          if [ -n "$(git status --porcelain package-lock.json)" ]; then
+            echo "❌ package-lock.json 与 package.json 不同步"
+            echo "请运行 'npm install' 并提交更新后的 package-lock.json"
+            exit 1
+          fi
+          echo "✅ lockfile 已同步"

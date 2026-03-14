@@ -1,0 +1,166 @@
+name: Rollback - 回滚部署
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: '回滚目标'
+        required: true
+        default: 'previous'
+        type: choice
+        options:
+          - previous
+          - specific
+      version:
+        description: '指定版本标签 (仅当target为specific时有效)'
+        required: false
+        type: string
+      reason:
+        description: '回滚原因'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  # 确定回滚目标
+  determine-target:
+    runs-on: ubuntu-latest
+    name: 🔍 确定回滚目标
+    outputs:
+      target_sha: ${{ steps.target.outputs.sha }}
+      target_version: ${{ steps.target.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 确定回滚目标
+        id: target
+        run: |
+          if [ "${{ github.event.inputs.target }}" == "previous" ]; then
+            # 获取上一个部署标签
+            PREVIOUS_TAG=$(git tag -l "deploy-*" --sort=-creatordate | head -2 | tail -1)
+            if [ -z "$PREVIOUS_TAG" ]; then
+              echo "❌ 未找到上一个部署标签"
+              exit 1
+            fi
+            TARGET_SHA=$(git rev-list -n 1 $PREVIOUS_TAG)
+            echo "sha=$TARGET_SHA" >> $GITHUB_OUTPUT
+            echo "version=$PREVIOUS_TAG" >> $GITHUB_OUTPUT
+            echo "✅ 回滚目标: $PREVIOUS_TAG ($TARGET_SHA)"
+          else
+            # 使用指定版本
+            SPECIFIC_TAG="${{ github.event.inputs.version }}"
+            if [ -z "$SPECIFIC_TAG" ]; then
+              echo "❌ 未指定版本标签"
+              exit 1
+            fi
+            if ! git rev-parse "$SPECIFIC_TAG" > /dev/null 2>&1; then
+              echo "❌ 标签 $SPECIFIC_TAG 不存在"
+              exit 1
+            fi
+            TARGET_SHA=$(git rev-list -n 1 $SPECIFIC_TAG)
+            echo "sha=$TARGET_SHA" >> $GITHUB_OUTPUT
+            echo "version=$SPECIFIC_TAG" >> $GITHUB_OUTPUT
+            echo "✅ 回滚目标: $SPECIFIC_TAG ($TARGET_SHA)"
+          fi
+
+  # 回滚部署
+  rollback:
+    runs-on: ubuntu-latest
+    name: ⏪ 执行回滚
+    needs: determine-target
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout 目标版本
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.determine-target.outputs.target_sha }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: 🔨 构建目标版本
+        run: npm run build
+        env:
+          NODE_ENV: production
+          VITE_APP_VERSION: ${{ needs.determine-target.outputs.target_version }}
+          VITE_BUILD_TIME: ${{ github.event.repository.updated_at }}
+          VITE_GIT_SHA: ${{ needs.determine-target.outputs.target_sha }}
+          VITE_ROLLBACK: 'true'
+
+      - name: ✅ 验证构建输出
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "❌ 构建输出目录 'dist' 不存在"
+            exit 1
+          fi
+          echo "✅ 构建验证通过"
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: 📤 上传构建产物
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+      - name: 🚀 部署到 GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: 📝 记录回滚
+        run: |
+          echo "# ⏪ 回滚完成" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| 项目 | 信息 |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 回滚目标 | ${{ needs.determine-target.outputs.target_version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 提交 SHA | ${{ needs.determine-target.outputs.target_sha }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 回滚原因 | ${{ github.event.inputs.reason }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 部署地址 | ${{ steps.deployment.outputs.page_url }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ 请验证回滚后的功能是否正常。"
+
+  # 创建回滚标签
+  tag-rollback:
+    runs-on: ubuntu-latest
+    name: 🏷️ 创建回滚标签
+    needs: [determine-target, rollback]
+    if: success()
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 创建回滚标签
+        run: |
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          ROLLBACK_TAG="rollback-${TIMESTAMP}"
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git tag -a "$ROLLBACK_TAG" -m "回滚到 ${{ needs.determine-target.outputs.target_version }} - ${{ github.event.inputs.reason }}"
+          git push origin "$ROLLBACK_TAG"
+          echo "✅ 创建回滚标签: $ROLLBACK_TAG"

@@ -3,18 +3,24 @@ name: CI - Build and Test
 on:
   push:
     branches: [ main, master, develop ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   pull_request:
     branches: [ main, master, develop ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  # 代码质量检查
-  lint-and-type-check:
+  # 代码质量检查 - 并行执行
+  lint:
     runs-on: ubuntu-latest
-    name: 🔍 Lint & Type Check
+    name: 🔍 ESLint 检查
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,29 +33,25 @@ jobs:
 
       - name: Cache npm dependencies
         uses: actions/cache@v4
+        id: npm-cache
         with:
-          path: ~/.npm
+          path: |
+            ~/.npm
+            node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
       - name: Install dependencies
         run: npm ci
+        if: steps.npm-cache.outputs.cache-hit != 'true'
 
       - name: 🔍 Run ESLint
         run: npm run lint
 
-      - name: 📐 Run TypeScript check
-        run: npm run type-check
-
-      - name: 💅 Check Prettier formatting
-        run: npm run format:check
-
-  # 测试
-  test:
+  type-check:
     runs-on: ubuntu-latest
-    name: 🧪 Run Tests
-    needs: lint-and-type-check
+    name: 📐 TypeScript 类型检查
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -62,31 +64,139 @@ jobs:
 
       - name: Cache npm dependencies
         uses: actions/cache@v4
+        id: npm-cache
         with:
-          path: ~/.npm
+          path: |
+            ~/.npm
+            node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
       - name: Install dependencies
         run: npm ci
+        if: steps.npm-cache.outputs.cache-hit != 'true'
 
-      - name: 🧪 Run tests
-        run: npm run test:ci
+      - name: 📐 Run TypeScript check
+        run: npm run type-check
+
+  format-check:
+    runs-on: ubuntu-latest
+    name: 💅 Prettier 格式检查
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        id: npm-cache
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+        if: steps.npm-cache.outputs.cache-hit != 'true'
+
+      - name: 💅 Check Prettier formatting
+        run: npm run format:check
+
+  # 测试 - 并行执行
+  test-unit:
+    runs-on: ubuntu-latest
+    name: 🧪 单元测试
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        id: npm-cache
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+        if: steps.npm-cache.outputs.cache-hit != 'true'
+
+      - name: 🧪 Run unit tests
+        run: npm run test:unit
+        timeout-minutes: 10
 
       - name: 📊 Upload coverage report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: coverage-report
+          name: coverage-unit-${{ github.run_id }}
+          path: coverage/
+          retention-days: 7
+
+  test-integration:
+    runs-on: ubuntu-latest
+    name: 🔗 集成测试
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        id: npm-cache
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+        if: steps.npm-cache.outputs.cache-hit != 'true'
+
+      - name: 🔗 Run integration tests
+        run: npm run test:integration
+        timeout-minutes: 10
+
+      - name: 📊 Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-integration-${{ github.run_id }}
           path: coverage/
           retention-days: 7
 
   # 构建
   build:
     runs-on: ubuntu-latest
-    name: 🔨 Build Project
-    needs: [lint-and-type-check, test]
+    name: 🔨 构建项目
+    needs: [lint, type-check, test-unit]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -99,14 +209,18 @@ jobs:
 
       - name: Cache npm dependencies
         uses: actions/cache@v4
+        id: npm-cache
         with:
-          path: ~/.npm
+          path: |
+            ~/.npm
+            node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
       - name: Install dependencies
         run: npm ci
+        if: steps.npm-cache.outputs.cache-hit != 'true'
 
       - name: 🔨 Build project
         run: npm run build
@@ -127,14 +241,14 @@ jobs:
       - name: 📦 Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-output
+          name: build-output-${{ github.run_id }}
           path: dist/
           retention-days: 1
 
   # 安全扫描
   security:
     runs-on: ubuntu-latest
-    name: 🔒 Security Scan
+    name: 🔒 安全扫描
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -155,3 +269,24 @@ jobs:
       - name: 📦 Check for outdated dependencies
         run: npm outdated
         continue-on-error: true
+
+  # 汇总报告
+  summary:
+    runs-on: ubuntu-latest
+    name: 📋 CI 汇总报告
+    needs: [lint, type-check, format-check, test-unit, test-integration, build, security]
+    if: always()
+    steps:
+      - name: 生成汇总报告
+        run: |
+          echo "# CI 执行结果汇总 📊" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| 任务 | 状态 |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔍 ESLint | ${{ needs.lint.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📐 TypeScript | ${{ needs.type-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 💅 Prettier | ${{ needs.format-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🧪 单元测试 | ${{ needs.test-unit.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔗 集成测试 | ${{ needs.test-integration.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔨 构建 | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔒 安全扫描 | ${{ needs.security.result }} |" >> $GITHUB_STEP_SUMMARY
