@@ -99,6 +99,16 @@ const App: React.FC = () => {
   /** 当前质疑者索引（用于质疑阶段顺序） */
   const [currentChallengerIndex, setCurrentChallengerIndex] = useState<number | null>(null);
 
+  // 使用ref来存储函数，避免循环依赖
+  const processAIChallengeRef = useRef<(() => void) | null>(null);
+  const handleGeassResultRef = useRef<((
+    newState: GameState, 
+    challengerName?: string, 
+    targetName?: string,
+    loserName?: string
+  ) => void) | null>(null);
+  const continueToNextTurnRef = useRef<(() => void) | null>(null);
+
   // ============================================
   // 初始化效果
   // ============================================
@@ -215,9 +225,10 @@ const App: React.FC = () => {
         setGameState(newState);
         addLog(`${ai.name} 出了 ${newState.turnState.playedCards?.cardIds.length} 张牌`);
         
-        // 延迟后让玩家决定是否质疑
+        // 延迟后进入质疑阶段
         setTimeout(() => {
           setIsProcessing(false);
+          // 注意：质疑流程会在useEffect中自动触发
         }, 1000);
       } catch (e) {
         console.error('AI出牌错误:', e);
@@ -292,7 +303,8 @@ const App: React.FC = () => {
           getCharacterName(selectedCharacter!) : 
           state.aiPlayers.find((ai: { id: string }) => ai.id === loser)?.name || loser;
         
-        handleGeassResult(newState, challengerAI.name, targetName, loserName);
+        // 使用ref调用handleGeassResult避免循环依赖
+        handleGeassResultRef.current?.(newState, challengerAI.name, targetName, loserName);
         return;
       } else {
         addLog(`${challengerAI.name} 选择不质疑`);
@@ -301,8 +313,8 @@ const App: React.FC = () => {
     
     // 所有人都未质疑，重置状态并继续下一回合
     setCurrentChallengerIndex(null);
-    continueToNextTurn();
-  }, [addLog, selectedCharacter, handleGeassResult, continueToNextTurn, currentChallengerIndex]);
+    continueToNextTurnRef.current?.();
+  }, [addLog, selectedCharacter, currentChallengerIndex]);
 
   /**
    * 处理Geass结果
