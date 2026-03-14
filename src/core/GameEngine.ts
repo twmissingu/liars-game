@@ -248,6 +248,7 @@ export class GameEngine {
 
   /**
    * 获取下一个玩家索引（跳过已淘汰玩家）
+   * Liar's Bar规则：玩家→AI1→AI2→AI3循环
    * 
    * @returns 下一个活跃玩家的索引
    */
@@ -261,7 +262,7 @@ export class GameEngine {
         // 玩家
         if (this.state.playerStats.hp > 0) return nextIndex;
       } else {
-        // AI
+        // AI (索引1-3对应aiPlayers[0-2])
         const ai = this.state.aiPlayers[nextIndex - 1];
         if (ai && ai.isActive && ai.stats.hp > 0) return nextIndex;
       }
