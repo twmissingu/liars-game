@@ -340,7 +340,6 @@ const App: React.FC = () => {
         setCurrentChallengerIndex(null); // 重置质疑者索引
         
         // 从newState中获取质疑结果信息
-        const geassResult = newState.geassResult;
         const playedCards = state.turnState.playedCards;
         const wasLie = playedCards ? 
           playedCards.actualCards.some((c: { rank: string; isJoker: boolean }) => 
@@ -400,7 +399,6 @@ const App: React.FC = () => {
     setGameState(newState);
     
     if (newState.geassResult) {
-      const challenger = challengerName || '玩家';
       const target = targetName || '对手';
       const loser = loserName || target;
       
