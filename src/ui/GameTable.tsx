@@ -74,7 +74,6 @@ export const GameTable: React.FC<GameTableProps> = ({
   const { phase, liarCard, playerStats, aiPlayers, turnState } = gameState;
   const isPlayerTurn = phase === 'player_turn';
   const isChallengePhase = phase === 'challenge';
-  const currentPlayerId = turnState?.lastPlayerId;
   const playerHand = gameState.playerHand || [];
   const currentRound = turnState?.turnNumber || 1;
 
