@@ -574,7 +574,29 @@ export class GameEngine {
       return this.handleEmptyHand();
     }
 
-    this.state.currentPlayerIndex = this.getNextPlayerIndex();
+    // 从出牌者开始计算下一个玩家（不是从当前currentPlayerIndex）
+    const playedByIndex = playedCards.playerId === 'player' ? 0 : 
+      this.state.aiPlayers.findIndex(ai => ai.id === playedCards.playerId) + 1;
+    
+    // 计算下一个玩家（从出牌者的下家开始）
+    let nextIndex = (playedByIndex + 1) % 4;
+    
+    // 跳过已淘汰的玩家
+    let attempts = 0;
+    while (attempts < 4) {
+      if (nextIndex === 0) {
+        // 玩家
+        if (this.state.playerStats.hp > 0) break;
+      } else {
+        // AI (索引1-3对应aiPlayers[0-2])
+        const ai = this.state.aiPlayers[nextIndex - 1];
+        if (ai && ai.isActive && ai.stats.hp > 0) break;
+      }
+      nextIndex = (nextIndex + 1) % 4;
+      attempts++;
+    }
+    
+    this.state.currentPlayerIndex = nextIndex;
     const nextPlayerId = this.getCurrentPlayerId();
     
     this.state = {
