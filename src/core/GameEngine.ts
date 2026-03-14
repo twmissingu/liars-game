@@ -279,6 +279,13 @@ export class GameEngine {
    * @returns 更新后的游戏状态
    */
   toggleCardSelection(cardId: string): GameState {
+    // 验证牌ID是否存在于玩家手牌中
+    const cardExists = this.state.playerHand.some(c => c.id === cardId);
+    if (!cardExists) {
+      // 无效ID，忽略操作
+      return this.state;
+    }
+    
     const selectedCards = this.state.playerSelectedCards;
     const cardIndex = selectedCards.indexOf(cardId);
     

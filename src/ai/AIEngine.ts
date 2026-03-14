@@ -72,12 +72,12 @@ export class AIEngine {
    * @param config - 新的配置
    */
   updateConfig(config: Partial<AIConfig>): void {
-    this.config = { ...this.config, ...config };
-    
     // 如果难度改变，重新创建策略
     if (config.difficulty && config.difficulty !== this.config.difficulty) {
       this.strategy = this.createStrategy(config.difficulty);
     }
+    
+    this.config = { ...this.config, ...config };
   }
   
   /**
