@@ -160,6 +160,19 @@ const App: React.FC = () => {
     storage.save(settings);
   }, [difficulty, personality]);
 
+  /**
+   * 监听游戏状态变化，当进入质疑阶段时自动触发质疑流程
+   */
+  useEffect(() => {
+    if (gameState?.phase === 'challenge' && currentChallengerIndex === null) {
+      // 延迟后触发质疑流程，让UI先更新
+      const timer = setTimeout(() => {
+        processAIChallengeRef.current?.();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [gameState?.phase, currentChallengerIndex]);
+
   // ============================================
   // 工具函数
   // ============================================
@@ -316,6 +329,11 @@ const App: React.FC = () => {
     continueToNextTurnRef.current?.();
   }, [addLog, selectedCharacter, currentChallengerIndex]);
 
+  // 更新ref - 必须在函数定义之后
+  useEffect(() => {
+    processAIChallengeRef.current = processAIChallenge;
+  }, [processAIChallenge]);
+
   /**
    * 处理Geass结果
    * 
@@ -396,6 +414,11 @@ const App: React.FC = () => {
     }, 2500);
   }, [addLog, selectedCharacter, processAITurn]);
 
+  // 更新ref
+  useEffect(() => {
+    handleGeassResultRef.current = handleGeassResult;
+  }, [handleGeassResult]);
+
   /**
    * 继续下一回合
    */
@@ -451,6 +474,11 @@ const App: React.FC = () => {
     state.turnState.playedCards = null;
     setGameState({ ...state });
   }, [addLog, processAITurn]);
+
+  // 更新ref
+  useEffect(() => {
+    continueToNextTurnRef.current = continueToNextTurn;
+  }, [continueToNextTurn]);
 
   // ============================================
   // 事件处理函数
