@@ -345,7 +345,8 @@ export interface MainMenuProps {
 export interface CharacterSelectProps {
   characters: Character[];
   selectedId: CharacterId | null;
-  onSelect: (id: CharacterId) => void;
+  selectedAvatar?: number;  // 当前选中的头像编号
+  onSelect: (id: CharacterId, avatarNum?: number) => void;  // 选择角色时同时确定头像
   onConfirm: () => void;
   onBack: () => void;
 }

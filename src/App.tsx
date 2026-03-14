@@ -450,10 +450,11 @@ const App: React.FC = () => {
   }, []);
 
   /** 选择角色 */
-  const handleSelectCharacter = useCallback((id: CharacterId) => {
+  const handleSelectCharacter = useCallback((id: CharacterId, avatarNum?: number) => {
     playSound('sfx-character-select');
     setSelectedCharacter(id);
-    setSelectedAvatar(Math.floor(Math.random() * 4) + 1);
+    // 如果传入了头像编号则使用，否则随机生成
+    setSelectedAvatar(avatarNum || Math.floor(Math.random() * 4) + 1);
   }, []);
 
   /** 确认角色选择并开始游戏 */

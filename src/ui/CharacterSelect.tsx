@@ -16,6 +16,7 @@ import type { CharacterSelectProps, CharacterId } from '../types';
 
 export const CharacterSelect: React.FC<CharacterSelectProps> = ({
   selectedId,
+  selectedAvatar,
   onSelect,
   onConfirm,
   onBack,
