@@ -95,6 +95,9 @@ const App: React.FC = () => {
   
   /** 是否正在处理中 */
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  /** 当前质疑者索引（用于质疑阶段顺序） */
+  const [currentChallengerIndex, setCurrentChallengerIndex] = useState<number | null>(null);
 
   // ============================================
   // 初始化效果
