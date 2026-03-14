@@ -16,14 +16,13 @@ import type { CharacterSelectProps, CharacterId } from '../types';
 
 export const CharacterSelect: React.FC<CharacterSelectProps> = ({
   selectedId,
-  selectedAvatar,
   onSelect,
   onConfirm,
   onBack,
 }) => {
   const [hoveredId, setHoveredId] = useState<CharacterId | null>(null);
   // 为每个角色存储固定的头像编号，确保UI一致性
-  const [characterAvatars, setCharacterAvatars] = useState<Record<CharacterId, number>>(() => {
+  const [characterAvatars] = useState<Record<CharacterId, number>>(() => {
     // 初始化时随机分配头像
     const avatars: Record<CharacterId, number> = {
       lelouch: Math.floor(Math.random() * 4) + 1,

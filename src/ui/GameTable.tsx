@@ -75,13 +75,8 @@ export const GameTable: React.FC<GameTableProps> = ({
   const isPlayerTurn = phase === 'player_turn';
   const isChallengePhase = phase === 'challenge';
   const currentPlayerId = turnState?.lastPlayerId;
-  const isPlayerLastPlayed = currentPlayerId === 'player';
   const playerHand = gameState.playerHand || [];
   const currentRound = turnState?.turnNumber || 1;
-
-  const lastAI = currentPlayerId && currentPlayerId !== 'player' 
-    ? aiPlayers?.find((ai: { id: string; isActive?: boolean }) => ai.id === currentPlayerId)
-    : null;
 
   // 判断是否是玩家的质疑回合（currentChallengerIndex === 0 表示轮到玩家）
   const isPlayerChallengeTurn = isChallengePhase && currentChallengerIndex === 0;
