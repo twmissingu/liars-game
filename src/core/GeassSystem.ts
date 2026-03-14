@@ -1,59 +1,69 @@
 /**
+ * =============================================================================
  * Code Geass: Liar's Game - Geass系统
- * 包含角色技能效果
+ * =============================================================================
+ * 
+ * Geass系统是游戏的核心惩罚机制：
+ * - 质疑失败的一方需要接受Geass判定
+ * - 基础命中率：1/3 (33.3%)
+ * - 角色技能可影响命中率和效果
+ * 
+ * 角色技能：
+ * - C.C.: 首次致命伤害50%概率复活
+ * - 朱雀: 25%概率反击，15%基础闪避
+ * - 卡莲: 出牌张数增加命中率
+ * 
+ * @author Code Agent
+ * @version 2.0.0
  */
 
-import type { CardRank } from './CardSystem';
+import type { 
+  CardRank, 
+  PlayerStats, 
+  GeassResult, 
+  CharacterId,
+  FunnyAction 
+} from '../types';
 
-export interface PlayerStats {
-  hp: number;
-   maxHp: number;
-   geassSuccessCount: number;
-   geassFailCount: number;
-   // 技能相关状态
-   ccReviveUsed?: boolean;        // C.C.是否已使用复活
-   suzakuCounterActive?: boolean; // 朱雀反击是否激活
-   kallenBoostActive?: boolean;   // 卡莲爆发是否激活
-   kallenCardCount?: number;      // 卡莲出牌张数（用于计算命中率）
-}
-
-export interface GeassResult {
-  hit: boolean;
-   damage: number;
-   newStats: PlayerStats;
-   funnyAction?: string;
-   message: string;
-   isImmune?: boolean;
-   isRevived?: boolean;  // C.C.复活
-   isCounter?: boolean;  // 朱雀反击
-}
-
-export const FUNNY_ACTIONS = [
-  { emoji: '😵', description: '突然跳起了奇怪的舞蹈', soundType: 'sfx-funny-dance' },
-  { emoji: '🙈', description: '开始模仿猴子叫', soundType: 'sfx-funny-monkey' },
-  { emoji: '🤪', description: '不停地说"披萨"', soundType: 'sfx-funny-pizza' },
-  { emoji: '😂', description: '无法控制地大笑30秒', soundType: 'sfx-funny-laugh' },
-  { emoji: '🐔', description: '学鸡打鸣', soundType: 'sfx-funny-chicken' },
-  { emoji: '🎭', description: '开始背诵中二台词', soundType: 'sfx-funny-chunibyo' },
-  { emoji: '🍕', description: '声称自己是披萨的化身', soundType: 'sfx-funny-pizza' },
-  { emoji: '🦋', description: '追逐不存在的蝴蝶', soundType: 'sfx-funny-butterfly' },
+/**
+ * 预定义的搞笑动作列表
+ * Geass命中后，受害者需要执行的动作
+ */
+export const FUNNY_ACTIONS: FunnyAction[] = [
+  { id: 0, emoji: '😵', description: '突然跳起了奇怪的舞蹈', soundType: 'sfx-funny-dance' },
+  { id: 1, emoji: '🙈', description: '开始模仿猴子叫', soundType: 'sfx-funny-monkey' },
+  { id: 2, emoji: '🤪', description: '不停地说"披萨"', soundType: 'sfx-funny-pizza' },
+  { id: 3, emoji: '😂', description: '无法控制地大笑30秒', soundType: 'sfx-funny-laugh' },
+  { id: 4, emoji: '🐔', description: '学鸡打鸣', soundType: 'sfx-funny-chicken' },
+  { id: 5, emoji: '🎭', description: '开始背诵中二台词', soundType: 'sfx-funny-chunibyo' },
+  { id: 6, emoji: '🍕', description: '声称自己是披萨的化身', soundType: 'sfx-funny-pizza' },
+  { id: 7, emoji: '🦋', description: '追逐不存在的蝴蝶', soundType: 'sfx-funny-butterfly' },
 ];
 
+/**
+ * Geass系统类
+ * 处理所有Geass判定和角色技能效果
+ */
 export class GeassSystem {
+  /** 基础命中率：1/3 ≈ 33.3% */
+  private readonly BASE_HIT_CHANCE = 1 / 3;
+
   /**
    * 执行Geass判定
-   * @param target 目标玩家
-   * @param targetStats 目标玩家状态
-   * @param character 角色ID
-   * @param hitChanceBoost 命中率加成（如卡莲技能）
+   * 
+   * @param target - 目标玩家ID
+   * @param targetStats - 目标玩家当前状态
+   * @param character - 目标角色ID
+   * @param hitChanceBoost - 命中率加成（如卡莲技能）
+   * @returns Geass判定结果
    */
   performGeass(
     target: 'player' | 'ai' | 'ai2' | 'ai3',
     targetStats: PlayerStats,
-    character: 'lelouch' | 'cc' | 'suzaku' | 'kallen' | null = null,
+    character: CharacterId | null = null,
     hitChanceBoost: number = 0
   ): GeassResult {
-    let hitChance = 1 / 3; // 基础1/3概率
+    let hitChance = this.BASE_HIT_CHANCE;
     
     // 应用命中率加成
     hitChance += hitChanceBoost;
@@ -61,7 +71,6 @@ export class GeassSystem {
     // ========== C.C.技能：Code之力（复活） ==========
     // 第一次受到致命伤害时（HP会减少到0），有50%概率复活并免疫本次伤害
     if (character === 'cc' && !targetStats.ccReviveUsed) {
-      // 先计算是否会命中
       const roll = Math.random();
       const willHit = roll < hitChance;
       
@@ -97,11 +106,7 @@ export class GeassSystem {
       hitChance -= 0.15;
     }
 
-    // ========== 卡莲技能：红莲二式（爆发） ==========
-    // 卡莲没有防御技能，但出牌时可以爆发（在出牌逻辑中处理）
-    // 这里只处理Geass命中判定
-
-    // 确保概率在合理范围
+    // 确保概率在合理范围 [0.1, 0.9]
     hitChance = Math.max(0.1, Math.min(0.9, hitChance));
 
     // 计算是否命中
@@ -109,6 +114,7 @@ export class GeassSystem {
     const hit = roll < hitChance;
 
     if (hit) {
+      // Geass命中
       const damage = 1;
       const newStats = {
         ...targetStats,
@@ -116,6 +122,7 @@ export class GeassSystem {
         geassSuccessCount: targetStats.geassSuccessCount + 1,
       };
 
+      // 随机选择一个搞笑动作
       const funnyAction = FUNNY_ACTIONS[Math.floor(Math.random() * FUNNY_ACTIONS.length)];
 
       return {
@@ -126,6 +133,7 @@ export class GeassSystem {
         message: `Geass命中！${funnyAction.emoji} ${funnyAction.description}`,
       };
     } else {
+      // Geass未命中
       return {
         hit: false,
         damage: 0,
@@ -139,8 +147,23 @@ export class GeassSystem {
   }
 
   /**
-   * 鲁鲁修技能：绝对命令 - 强制指定骗子牌
-   * 每局限用1次，可以强制改变当前骗子牌
+   * 计算卡莲技能加成
+   * 出2张+被质疑且质疑失败，Geass命中率 = 20% × 出牌张数（最高80%）
+   * 
+   * @param cardCount - 出牌张数
+   * @returns 命中率加成
+   */
+  calculateKallenBoost(cardCount: number): number {
+    if (cardCount < 2) return 0;
+    return Math.min(0.8, 0.2 * cardCount);
+  }
+
+  /**
+   * 鲁鲁修技能：绝对命令
+   * 强制指定骗子牌
+   * 
+   * @param newRank - 新的骗子牌点数
+   * @returns 技能执行结果
    */
   lelouchAbsoluteCommand(newRank: CardRank): { success: boolean; message: string } {
     return {
@@ -150,25 +173,29 @@ export class GeassSystem {
   }
 
   /**
-   * C.C.技能：Code之力 - 获取技能描述
+   * 获取角色技能描述
+   * 
+   * @param character - 角色ID
+   * @returns 技能描述
    */
-  getCCSkillDescription(): string {
-    return 'Code之力：首次受到致命伤害时，50%概率复活并免疫本次伤害（每局限1次）';
-  }
-
-  /**
-   * 朱雀技能：枢木剑术 - 获取技能描述
-   */
-  getSuzakuSkillDescription(): string {
-    return '枢木剑术：受到Geass时25%概率反击，15%基础闪避率';
-  }
-
-  /**
-   * 卡莲技能：红莲二式 - 获取技能描述
-   */
-  getKallenSkillDescription(): string {
-    return '红莲二式：可出1-4张牌，出2张+被质疑且质疑失败，Geass命中率=20%×出牌张数';
+  getSkillDescription(character: CharacterId): string {
+    const descriptions: Record<CharacterId, string> = {
+      lelouch: '绝对命令：每局限用1次，强制将当前骗子牌改为任意点数（Q/K/A）',
+      cc: 'Code之力：首次受到致命伤害时，50%概率复活并免疫本次伤害（每局限1次）',
+      suzaku: '枢木剑术：受到Geass时25%概率反击，15%基础闪避率',
+      kallen: '红莲二式：可出1-4张牌，出2张+被质疑且质疑失败，Geass命中率=20%×出牌张数',
+    };
+    return descriptions[character];
   }
 }
 
+/**
+ * Geass系统单例
+ */
 export const geassSystem = new GeassSystem();
+
+// ============================================
+// 导出类型
+// ============================================
+
+export type { PlayerStats, GeassResult };

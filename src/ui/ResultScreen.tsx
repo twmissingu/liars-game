@@ -188,6 +188,9 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
           align-items: center;
           justify-content: center;
           overflow: hidden;
+          touch-action: manipulation;
+          -webkit-user-select: none;
+          user-select: none;
         }
 
         .cg-result-win {
@@ -439,6 +442,14 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
           border-radius: 0.5rem;
           cursor: pointer;
           transition: all 0.3s ease;
+          touch-action: manipulation;
+          -webkit-tap-highlight-color: transparent;
+          min-height: 44px;
+        }
+
+        .cg-result-button:active {
+          transform: scale(0.98);
+          opacity: 0.9;
         }
 
         .cg-button-restart {

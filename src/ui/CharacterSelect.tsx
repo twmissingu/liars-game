@@ -1,12 +1,18 @@
 /**
+ * =============================================================================
  * Code Geass: Liar's Game - 角色选择界面
- * 展示4个Q版角色
+ * =============================================================================
+ * 
+ * 展示4个Q版角色供玩家选择
+ * 
+ * @author Code Agent
+ * @version 2.0.0
  */
 
 import React, { useState } from 'react';
 import { characters } from '../data/characters';
 import { ChibiAvatar } from '../components/characters';
-import type { CharacterSelectProps, CharacterId } from '../types';
+import type { CharacterSelectProps, CharacterId, Character } from '../types';
 
 export const CharacterSelect: React.FC<CharacterSelectProps> = ({
   selectedId,
@@ -76,7 +82,7 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
                   <h3 className="cg-character-name">{character.name}</h3>
                   <p className="cg-character-name-en">{character.nameEn}</p>
                   <div className="cg-character-skill">
-                    <span className="cg-skill-name">{character.skillName}</span>
+                    <span className="cg-skill-name">{character.skill.name}</span>
                   </div>
                 </div>
 
@@ -107,8 +113,8 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
                 <p className="cg-detail-description">{selectedCharacter.description}</p>
                 <div className="cg-detail-skill">
                   <span className="cg-skill-label">技能:</span>
-                  <span className="cg-skill-value">{selectedCharacter.skillName}</span>
-                  <p className="cg-skill-desc">{selectedCharacter.skillDescription}</p>
+                  <span className="cg-skill-value">{selectedCharacter.skill.name}</span>
+                  <p className="cg-skill-desc">{selectedCharacter.skill.description}</p>
                 </div>
               </div>
 
@@ -137,6 +143,9 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
           align-items: center;
           justify-content: center;
           overflow: hidden;
+          touch-action: manipulation;
+          -webkit-user-select: none;
+          user-select: none;
         }
 
         .cg-select-bg {
@@ -345,6 +354,13 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
           cursor: pointer;
           transition: all 0.3s ease;
           overflow: hidden;
+          touch-action: manipulation;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        .cg-character-card:active {
+          transform: scale(0.98);
+          opacity: 0.9;
         }
 
         .cg-character-card:hover,
@@ -551,6 +567,14 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
           border-radius: 0.5rem;
           cursor: pointer;
           transition: all 0.3s ease;
+          touch-action: manipulation;
+          -webkit-tap-highlight-color: transparent;
+          min-height: 44px;
+        }
+
+        .cg-confirm-button:active {
+          transform: scale(0.98);
+          opacity: 0.9;
         }
 
         .cg-confirm-button:hover {

@@ -1,11 +1,10 @@
 import React from 'react';
-import type { AnimationState } from '../../types';
 
 interface ChibiAvatarProps {
   characterId: 'lelouch' | 'cc' | 'suzaku' | 'kallen';
   size?: number;
   avatarNumber?: number; // 固定头像编号 1-4
-  animationState?: AnimationState;
+  animationState?: 'idle' | 'breathing' | 'playing-card' | 'win' | 'lose';
 }
 
 export const ChibiAvatar: React.FC<ChibiAvatarProps> = ({ 

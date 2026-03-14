@@ -131,6 +131,9 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           align-items: center;
           justify-content: center;
           overflow: hidden;
+          touch-action: manipulation;
+          -webkit-user-select: none;
+          user-select: none;
         }
 
         .cg-menu-bg {
@@ -327,6 +330,14 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           cursor: pointer;
           overflow: hidden;
           transition: all 0.3s ease;
+          touch-action: manipulation;
+          -webkit-tap-highlight-color: transparent;
+          min-height: 44px;
+        }
+
+        .cg-menu-button:active {
+          transform: scale(0.98);
+          opacity: 0.9;
         }
 
         .cg-menu-button::before {

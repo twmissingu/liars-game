@@ -8,6 +8,7 @@ import App from './App';
 
 // 导入全局样式
 import './styles/global.css';
+import './styles/responsive.css';
 
 // 渲染应用
 const root = ReactDOM.createRoot(

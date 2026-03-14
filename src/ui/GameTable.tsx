@@ -265,7 +265,7 @@ export const GameTable: React.FC<GameTableProps> = ({
       )}
 
       <style>{`
-        .cg-game-table { position: fixed; inset: 0; display: flex; flex-direction: column; background: linear-gradient(180deg, #0a0a0f, #1a1a24); font-family: 'Noto Sans SC', sans-serif; }
+        .cg-game-table { position: fixed; inset: 0; display: flex; flex-direction: column; background: linear-gradient(180deg, #0a0a0f, #1a1a24); font-family: 'Noto Sans SC', sans-serif; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
         .cg-top-bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(212,175,55,0.2); }
         .cg-back-button { padding: 6px 12px; background: transparent; border: 1px solid #d4af37; color: #d4af37; border-radius: 4px; cursor: pointer; }
         .cg-round-info { font-size: 18px; color: #d4af37; font-weight: bold; }
@@ -308,14 +308,18 @@ export const GameTable: React.FC<GameTableProps> = ({
         
         .cg-hand-area { height: 110px; display: flex; align-items: center; justify-content: center; }
         .cg-hand { display: flex; justify-content: center; position: relative; height: 90px; }
-        .cg-card { width: 60px; height: 84px; border-radius: 6px; background: white; border: 2px solid #d4af37; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; position: relative; }
+        .cg-card { width: 60px; height: 84px; border-radius: 6px; background: white; border: 2px solid #d4af37; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; position: relative; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        .cg-card:active { transform: scale(0.95); }
         .cg-card.selected { transform: translateY(-20px); box-shadow: 0 0 15px rgba(212,175,55,0.5); }
+        @media (max-width: 414px) { .cg-card.selected { transform: translateY(-10px); } }
         .cg-card.disabled { opacity: 0.5; cursor: not-allowed; }
+        .cg-card.disabled:active { transform: none; }
         .cg-card-face { display: flex; flex-direction: column; align-items: center; gap: 5px; }
         .cg-check { position: absolute; top: -5px; right: -5px; width: 20px; height: 20px; background: #22c55e; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; }
         
         .cg-actions { display: flex; align-items: center; justify-content: center; gap: 15px; padding: 15px; background: rgba(0,0,0,0.3); border-top: 1px solid rgba(212,175,55,0.2); }
-        .cg-btn { padding: 10px 25px; font-size: 15px; border: none; border-radius: 6px; cursor: pointer; }
+        .cg-btn { padding: 10px 25px; font-size: 15px; border: none; border-radius: 6px; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; min-height: 44px; }
+        .cg-btn:active { transform: scale(0.98); opacity: 0.9; }
         .cg-btn-play { background: linear-gradient(135deg, #15803d, #22c55e); color: white; }
         .cg-btn-challenge { background: linear-gradient(135deg, #dc2626, #ef4444); color: white; }
         .cg-btn-skip { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); }

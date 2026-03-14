@@ -1,33 +1,41 @@
 /**
- * 牌组系统 - CardSystem.ts
- * Liar's Bar规则：20张牌（Q/K/A各6张 + 2张小丑牌）
+ * =============================================================================
+ * Code Geass: Liar's Game - 卡牌系统
+ * =============================================================================
+ * 
+ * Liar's Bar规则实现：
+ * - 20张牌：Q/K/A各6张 + 2张小丑牌
+ * - 小丑牌(JOKER)是万能牌，可当任意点数使用
+ * - 每局随机指定一张"骗子牌"(Q/K/A)
+ * 
+ * @author Code Agent
+ * @version 2.0.0
  */
 
-export type CardSuit = 'spades' | 'hearts' | 'clubs' | 'diamonds' | 'joker';
-export type CardRank = 'Q' | 'K' | 'A' | 'JOKER'; // Liar's Bar使用Q、K、A + 小丑
+import type { Card, CardSuit, CardRank } from '../types';
 
-export interface Card {
-  id: string;
-  suit: CardSuit;
-  rank: CardRank;
-  value: number;
-  isJoker: boolean;
-  owner: 'player' | 'ai' | 'ai2' | 'ai3' | 'table' | null;
-}
-
+/**
+ * 卡牌系统类
+ * 负责牌组生成、洗牌、发牌、骗子牌管理等核心功能
+ */
 export class CardSystem {
+  /** 牌组中的所有牌 */
   private cards: Card[] = [];
+  
+  /** 当前骗子牌 */
   private liarCard: CardRank | null = null;
 
   /**
    * 生成Liar's Bar牌组（20张：Q/K/A各6张 + 2张小丑牌）
+   * 
+   * @returns 生成的牌组
    */
   generateDeck(): Card[] {
     this.cards = [];
     const suits: CardSuit[] = ['spades', 'hearts', 'clubs', 'diamonds'];
     const ranks: CardRank[] = ['Q', 'K', 'A'];
 
-    // 生成Q/K/A各6张（每种点数6张，不区分花色，用随机花色）
+    // 生成Q/K/A各6张（每种点数6张，循环使用花色）
     for (const rank of ranks) {
       for (let i = 0; i < 6; i++) {
         const suit = suits[i % 4];
@@ -58,7 +66,10 @@ export class CardSystem {
   }
 
   /**
-   * Fisher-Yates 洗牌算法
+   * Fisher-Yates洗牌算法 - 均匀随机打乱牌组
+   * 时间复杂度: O(n)
+   * 
+   * @returns 打乱后的牌组
    */
   shuffle(): Card[] {
     for (let i = this.cards.length - 1; i > 0; i--) {
@@ -69,7 +80,10 @@ export class CardSystem {
   }
 
   /**
-   * 发牌 - 玩家和3个AI各发5张牌（Liar's Bar共20张牌，每人5张）
+   * 发牌 - 玩家和3个AI各发5张牌
+   * Liar's Bar共20张牌，4人游戏，每人5张
+   * 
+   * @returns 分发后的各人手牌
    */
   dealCards(): { 
     playerCards: Card[]; 
@@ -115,14 +129,14 @@ export class CardSystem {
       ai3Cards.push(card);
     }
 
-    // 没有剩余牌
-    const remaining: Card[] = [];
-
-    return { playerCards, ai1Cards, ai2Cards, ai3Cards, remaining };
+    return { playerCards, ai1Cards, ai2Cards, ai3Cards, remaining: [] };
   }
 
   /**
    * 随机指定骗子牌 (Q/K/A)
+   * 小丑牌不能作为骗子牌
+   * 
+   * @returns 指定的骗子牌
    */
   setLiarCard(): CardRank {
     const ranks: CardRank[] = ['Q', 'K', 'A'];
@@ -132,13 +146,17 @@ export class CardSystem {
 
   /**
    * 获取当前骗子牌
+   * 
+   * @returns 当前骗子牌，未设置则返回null
    */
   getLiarCard(): CardRank | null {
     return this.liarCard;
   }
 
   /**
-   * 设置骗子牌（鲁鲁修技能用）
+   * 强制设置骗子牌（鲁鲁修技能用）
+   * 
+   * @param rank - 要设置的骗子牌点数
    */
   forceSetLiarCard(rank: CardRank): void {
     if (rank !== 'JOKER') {
@@ -148,6 +166,8 @@ export class CardSystem {
 
   /**
    * 获取所有牌
+   * 
+   * @returns 牌组中的所有牌
    */
   getCards(): Card[] {
     return this.cards;
@@ -155,13 +175,18 @@ export class CardSystem {
 
   /**
    * 获取玩家手牌
+   * 
+   * @returns 属于玩家的牌
    */
   getPlayerCards(): Card[] {
     return this.cards.filter(c => c.owner === 'player');
   }
 
   /**
-   * 获取AI手牌
+   * 获取指定AI的手牌
+   * 
+   * @param aiId - AI的ID
+   * @returns 属于该AI的牌
    */
   getAICards(aiId: 'ai' | 'ai2' | 'ai3' = 'ai'): Card[] {
     return this.cards.filter(c => c.owner === aiId);
@@ -169,6 +194,9 @@ export class CardSystem {
 
   /**
    * 出牌 - 将牌移到桌面
+   * 
+   * @param cardIds - 要出的牌的ID列表
+   * @returns 实际出的牌
    */
   playCards(cardIds: string[]): Card[] {
     const playedCards: Card[] = [];
@@ -184,19 +212,63 @@ export class CardSystem {
 
   /**
    * 检查牌是否是骗子牌（包括小丑牌）
+   * 小丑牌可以当作任意骗子牌使用
+   * 
+   * @param card - 要检查的牌
+   * @returns 是否是骗子牌
    */
   isLiarCard(card: Card): boolean {
-    if (card.isJoker) return true; // 小丑牌可以当作骗子牌
+    if (card.isJoker) return true;
     return card.rank === this.liarCard;
   }
 
   /**
-   * 重置牌组
+   * 验证出牌是否撒谎
+   * 
+   * @param cards - 出的牌
+   * @param claimedRank - 声称的点数
+   * @returns 是否撒谎（true=撒谎，false=实话）
+   */
+  checkBluff(cards: Card[], claimedRank: CardRank): boolean {
+    return cards.some(c => c.rank !== claimedRank && !c.isJoker);
+  }
+
+  /**
+   * 重置牌组 - 清空所有牌和状态
    */
   reset(): void {
     this.cards = [];
     this.liarCard = null;
   }
+
+  /**
+   * 重新发牌 - 用于手牌耗尽时的处理
+   * 
+   * @returns 新的手牌分配
+   */
+  redealCards(): {
+    playerCards: Card[];
+    ai1Cards: Card[];
+    ai2Cards: Card[];
+    ai3Cards: Card[];
+  } {
+    // 重置并重新生成牌组
+    this.reset();
+    this.generateDeck();
+    this.shuffle();
+    
+    // 重新发牌
+    return this.dealCards();
+  }
 }
 
+/**
+ * 卡牌系统单例
+ */
 export const cardSystem = new CardSystem();
+
+// ============================================
+// 导出类型
+// ============================================
+
+export type { Card, CardSuit, CardRank };

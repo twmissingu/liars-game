@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="60" height="84" viewBox="0 0 60 84">
+  <defs>
+    <linearGradient id="backGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4c1d95;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e1b4b;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="60" height="84" rx="6" fill="url(#backGrad)" stroke="#d4af37" stroke-width="2"/>
+  <pattern id="geass" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+    <circle cx="10" cy="10" r="3" fill="#d4af37" opacity="0.3"/>
+  </pattern>
+  <rect width="56" height="80" x="2" y="2" rx="4" fill="url(#geass)"/>
+  <text x="30" y="45" text-anchor="middle" fill="#d4af37" font-size="12" font-weight="bold">GEASS</text>
+</svg>
