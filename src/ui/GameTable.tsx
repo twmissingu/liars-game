@@ -136,27 +136,27 @@ export const GameTable: React.FC<GameTableProps> = ({
 
         {/* 游戏区 */}
         <div className="cg-play-area">
-          {/* AI 1 - 顶部 */}
+          {/* AI 1 - 顶部 (id='ai') */}
           {renderCharacter(
-            getCharacterName(aiCharacters[0]), 
-            aiCharacters[0], 
+            getCharacterName(aiPlayers?.[0]?.character || aiCharacters[0]), 
+            aiPlayers?.[0]?.character || aiCharacters[0], 
             aiPlayers?.[0]?.stats?.hp || 3, 
             aiPlayers?.[0]?.hand?.length || 0, 
-            getCharacterColor(aiCharacters[0]), 
-            aiAvatars[aiCharacters[0]] || 1,
+            getCharacterColor(aiPlayers?.[0]?.character || aiCharacters[0]), 
+            aiAvatars[aiPlayers?.[0]?.character || aiCharacters[0]] || 1,
             true
           )}
 
           {/* 中间行 */}
           <div className="cg-middle-row">
-            {/* AI 2 - 左侧 */}
+            {/* AI 2 - 左侧 (id='ai2') */}
             {renderCharacter(
-              getCharacterName(aiCharacters[1]), 
-              aiCharacters[1], 
+              getCharacterName(aiPlayers?.[1]?.character || aiCharacters[1]), 
+              aiPlayers?.[1]?.character || aiCharacters[1], 
               aiPlayers?.[1]?.stats?.hp || 3, 
               aiPlayers?.[1]?.hand?.length || 0, 
-              getCharacterColor(aiCharacters[1]), 
-              aiAvatars[aiCharacters[1]] || 1
+              getCharacterColor(aiPlayers?.[1]?.character || aiCharacters[1]), 
+              aiAvatars[aiPlayers?.[1]?.character || aiCharacters[1]] || 1
             )}
 
             {/* 圆桌 */}
@@ -186,14 +186,14 @@ export const GameTable: React.FC<GameTableProps> = ({
               </div>
             </div>
 
-            {/* AI 3 - 右侧 */}
+            {/* AI 3 - 右侧 (id='ai3') */}
             {renderCharacter(
-              getCharacterName(aiCharacters[2]), 
-              aiCharacters[2], 
+              getCharacterName(aiPlayers?.[2]?.character || aiCharacters[2]), 
+              aiPlayers?.[2]?.character || aiCharacters[2], 
               aiPlayers?.[2]?.stats?.hp || 3, 
               aiPlayers?.[2]?.hand?.length || 0, 
-              getCharacterColor(aiCharacters[2]), 
-              aiAvatars[aiCharacters[2]] || 1
+              getCharacterColor(aiPlayers?.[2]?.character || aiCharacters[2]), 
+              aiAvatars[aiPlayers?.[2]?.character || aiCharacters[2]] || 1
             )}
           </div>
 

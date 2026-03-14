@@ -125,9 +125,14 @@ export class GameEngine {
    * 
    * @param playerCharacter - 玩家选择的角色
    * @param difficulty - 游戏难度
+   * @param aiCharacters - AI角色列表（可选，默认随机分配）
    * @returns 初始化后的游戏状态
    */
-  initializeGame(playerCharacter: CharacterId, difficulty: Difficulty = 'normal'): GameState {
+  initializeGame(
+    playerCharacter: CharacterId, 
+    difficulty: Difficulty = 'normal',
+    aiCharacters?: CharacterId[]
+  ): GameState {
     this.playerCharacter = playerCharacter;
     this.difficulty = difficulty;
     
@@ -147,6 +152,39 @@ export class GameEngine {
     // 根据角色调整初始HP（朱雀有4点HP）
     const playerMaxHp = playerCharacter === 'suzaku' ? 4 : 3;
     
+    // 确定AI角色（如果未提供则随机分配）
+    const allCharacters: CharacterId[] = ['lelouch', 'cc', 'suzaku', 'kallen'];
+    const remainingCharacters = allCharacters.filter(c => c !== playerCharacter);
+    const shuffled = remainingCharacters.sort(() => Math.random() - 0.5);
+    const finalAiCharacters = aiCharacters || shuffled;
+    
+    // 创建AI玩家列表
+    const aiPlayerConfigs = [
+      { id: 'ai' as const, hand: ai1Cards },
+      { id: 'ai2' as const, hand: ai2Cards },
+      { id: 'ai3' as const, hand: ai3Cards },
+    ];
+    
+    const aiPlayers: AIPlayer[] = aiPlayerConfigs.map((config, index) => {
+      const character = finalAiCharacters[index];
+      const name = getCharacterName(character);
+      const maxHp = character === 'suzaku' ? 4 : 3;
+      
+      return {
+        id: config.id,
+        name,
+        character,
+        hand: config.hand,
+        stats: { 
+          hp: maxHp, 
+          maxHp, 
+          geassSuccessCount: 0, 
+          geassFailCount: 0 
+        },
+        isActive: true,
+      };
+    });
+    
     this.state = {
       ...this.createInitialState(),
       phase: startingPlayerIndex === 0 ? 'player_turn' : 'ai_turn',
@@ -161,32 +199,7 @@ export class GameEngine {
         geassSuccessCount: 0, 
         geassFailCount: 0 
       },
-      aiPlayers: [
-        { 
-          id: 'ai', 
-          name: 'C.C.', 
-          character: 'cc', 
-          hand: ai1Cards, 
-          stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 }, 
-          isActive: true 
-        },
-        { 
-          id: 'ai2', 
-          name: '朱雀', 
-          character: 'suzaku', 
-          hand: ai2Cards, 
-          stats: { hp: 4, maxHp: 4, geassSuccessCount: 0, geassFailCount: 0 }, 
-          isActive: true 
-        },
-        { 
-          id: 'ai3', 
-          name: '卡莲', 
-          character: 'kallen', 
-          hand: ai3Cards, 
-          stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 }, 
-          isActive: true 
-        },
-      ],
+      aiPlayers,
       turnState: {
         turnNumber: 1,
         playedCards: null,
