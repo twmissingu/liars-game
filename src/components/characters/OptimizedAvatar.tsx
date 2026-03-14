@@ -56,7 +56,8 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
   // 使用传入的头像编号，如果没有则随机
   const num = avatarNumber || Math.floor(Math.random() * 4) + 1;
   
-  // 检测WebP支持
+  // 检测WebP支持（保留供将来使用）
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [webpSupported] = useState(() => supportsWebP());
   
   // 构建图片URL（优先WebP，回退PNG）
@@ -108,8 +109,11 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
     img.onerror = () => {
       setHasError(true);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isInView, getImageSrc, onLoad]);
   
+  // 根据设备像素比获取合适的图片尺寸（保留供将来使用）
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const optimalSize = getOptimalSize(size);
   
   return (
