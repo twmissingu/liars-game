@@ -22,15 +22,32 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
   onBack,
 }) => {
   const [hoveredId, setHoveredId] = useState<CharacterId | null>(null);
+  // 为每个角色存储固定的头像编号，确保UI一致性
+  const [characterAvatars, setCharacterAvatars] = useState<Record<CharacterId, number>>(() => {
+    // 初始化时随机分配头像
+    const avatars: Record<CharacterId, number> = {
+      lelouch: Math.floor(Math.random() * 4) + 1,
+      cc: Math.floor(Math.random() * 4) + 1,
+      suzaku: Math.floor(Math.random() * 4) + 1,
+      kallen: Math.floor(Math.random() * 4) + 1,
+    };
+    return avatars;
+  });
 
   const selectedCharacter = characters.find(c => c.id === selectedId);
   
   // 预加载选中角色的头像
   useEffect(() => {
     if (selectedId) {
-      AvatarPreloader.preloadCharacter(selectedId);
+      AvatarPreloader.preloadAvatar(selectedId, characterAvatars[selectedId]);
     }
-  }, [selectedId]);
+  }, [selectedId, characterAvatars]);
+
+  // 处理角色选择 - 使用已分配的头像编号
+  const handleSelect = (characterId: CharacterId) => {
+    const avatarNum = characterAvatars[characterId];
+    onSelect(characterId, avatarNum);
+  };
 
   return (
     <div className="cg-character-select">
@@ -68,7 +85,7 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
               <div
                 key={character.id}
                 className={`cg-character-card ${isSelected ? 'cg-selected' : ''} ${isHovered ? 'cg-hovered' : ''}`}
-                onClick={() => onSelect(character.id)}
+                onClick={() => handleSelect(character.id)}
                 onMouseEnter={() => setHoveredId(character.id)}
                 onMouseLeave={() => setHoveredId(null)}
               >
@@ -83,6 +100,7 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
                   <ChibiAvatar
                     characterId={character.id}
                     size={300}
+                    avatarNumber={characterAvatars[character.id]}
                     priority={hoveredId === character.id || selectedId === character.id}
                   />
                 </div>

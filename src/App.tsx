@@ -694,6 +694,7 @@ const App: React.FC = () => {
           <CharacterSelect
             characters={characters}
             selectedId={selectedCharacter}
+            selectedAvatar={selectedAvatar}
             onSelect={handleSelectCharacter}
             onConfirm={handleConfirmCharacter}
             onBack={handleBack}
