@@ -26,6 +26,7 @@ interface GameTableProps {
   funnyAction?: FunnyAction | null;
   isProcessing?: boolean;
   canUseSkill?: boolean;
+  currentChallengerIndex?: number | null;
 }
 
 // 获取角色颜色
@@ -51,6 +52,7 @@ export const GameTable: React.FC<GameTableProps> = ({
   gameLog = [],
   isProcessing = false,
   canUseSkill = true,
+  currentChallengerIndex = null,
 }) => {
   const [showLelouchSkill, setShowLelouchSkill] = useState(false);
 
@@ -80,6 +82,9 @@ export const GameTable: React.FC<GameTableProps> = ({
   const lastAI = currentPlayerId && currentPlayerId !== 'player' 
     ? aiPlayers?.find((ai: { id: string; isActive?: boolean }) => ai.id === currentPlayerId)
     : null;
+
+  // 判断是否是玩家的质疑回合（currentChallengerIndex === 0 表示轮到玩家）
+  const isPlayerChallengeTurn = isChallengePhase && currentChallengerIndex === 0;
 
   const handlePlayClick = () => {
     if (selectedCards.length > 0) onConfirmPlay();
@@ -253,13 +258,18 @@ export const GameTable: React.FC<GameTableProps> = ({
         {isPlayerTurn && selectedCards.length === 0 && (
           <button className="cg-btn cg-btn-skip" onClick={onPass} disabled={isProcessing}>跳过</button>
         )}
-        {isChallengePhase && !isPlayerLastPlayed && lastAI?.isActive && (
+        {/* 质疑阶段：轮到玩家质疑时显示质疑/不质疑按钮 */}
+        {isPlayerChallengeTurn && (
           <>
             <button className="cg-btn cg-btn-challenge" onClick={onChallenge} disabled={isProcessing}>⚔️ 质疑</button>
             <button className="cg-btn cg-btn-skip" onClick={onPass} disabled={isProcessing}>不质疑</button>
           </>
         )}
-        {isChallengePhase && isPlayerLastPlayed && <span className="cg-wait">等待AI...</span>}
+        {/* 质疑阶段：等待其他玩家质疑 */}
+        {isChallengePhase && !isPlayerChallengeTurn && (
+          <span className="cg-wait">等待其他玩家质疑...</span>
+        )}
+        {/* AI回合 */}
         {!isPlayerTurn && !isChallengePhase && <span className="cg-wait">AI回合...</span>}
       </div>
 

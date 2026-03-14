@@ -658,9 +658,6 @@ const App: React.FC = () => {
       processAIChallenge();
     }, 1000);
   }, [isProcessing, addLog, currentChallengerIndex, processAIChallenge, continueToNextTurn]);
-      }, 1000);
-    }
-  }, [isProcessing, addLog, processAITurn]);
 
   /** 鲁鲁修技能：改变骗子牌 */
   const handleLelouchSkill = useCallback((newRank: CardRank) => {
@@ -754,6 +751,7 @@ const App: React.FC = () => {
             funnyAction={currentFunnyAction}
             isProcessing={isProcessing}
             canUseSkill={gameEngineRef.current?.canPlayerUseSkill('player') ?? true}
+            currentChallengerIndex={currentChallengerIndex}
           />
         ) : null;
 
