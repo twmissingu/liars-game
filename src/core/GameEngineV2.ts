@@ -18,6 +18,7 @@ import { CardSystem, Card, CardRank } from './CardSystem';
 import { GeassSystem, GeassResult, PlayerStats, FUNNY_ACTIONS } from './GeassSystem';
 import { getCharacterName } from '../data/characters';
 import type { CharacterId, CharacterState } from '../types';
+import type { CharacterState as CharacterStateInternal } from '../characters/types';
 import { 
   createCharacterState, 
   canUseSkill, 
@@ -81,7 +82,7 @@ export interface GameState {
   geassResult: GeassResult | null;
   playerSelectedCards: string[];
   playerCharacter: CharacterId | null;
-  characterStates: Map<string, CharacterState>;  // 角色技能状态
+  characterStates: Map<string, CharacterStateInternal>;  // 角色技能状态
 }
 
 // ============================================
