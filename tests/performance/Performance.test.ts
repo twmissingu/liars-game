@@ -179,7 +179,15 @@ describe('性能测试', () => {
         } else if (state.phase === 'ai_turn') {
           const currentId = gameEngine.getCurrentPlayerId();
           if (currentId !== 'player') {
-            gameEngine.aiPlayCards(currentId);
+            // 检查AI是否有手牌
+            const aiIndex = state.aiPlayers.findIndex(ai => ai.id === currentId);
+            const ai = state.aiPlayers[aiIndex];
+            if (ai && ai.hand.length > 0 && ai.stats.hp > 0) {
+              gameEngine.aiPlayCards(currentId);
+            } else if (ai && ai.hand.length === 0) {
+              // AI没有手牌，跳过回合
+              state.currentPlayerIndex = (state.currentPlayerIndex + 1) % 4;
+            }
           }
         } else if (state.phase === 'geass') {
           // 推进到下一回合
