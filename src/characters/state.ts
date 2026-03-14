@@ -9,6 +9,15 @@ import { getCharacter } from './data';
 /** 创建初始角色状态 */
 export function createCharacterState(characterId: CharacterId): CharacterState {
   const character = getCharacter(characterId);
+  // 处理无效的角色ID
+  if (!character) {
+    return {
+      characterId,
+      skillUsesRemaining: 0,
+      cooldownRemaining: 0,
+      isSkillActive: false,
+    };
+  }
   return {
     characterId,
     skillUsesRemaining: character.skill.maxUses,
@@ -20,6 +29,11 @@ export function createCharacterState(characterId: CharacterId): CharacterState {
 /** 检查技能是否可用 */
 export function canUseSkill(state: CharacterState): boolean {
   const character = getCharacter(state.characterId);
+  
+  // 处理无效的角色ID
+  if (!character) {
+    return false;
+  }
 
   // 被动技能不能主动使用
   if (character.skill.type === 'passive') {
@@ -46,6 +60,11 @@ export function applySkill(state: CharacterState): CharacterState {
   }
 
   const character = getCharacter(state.characterId);
+  
+  // 处理无效的角色ID
+  if (!character) {
+    return state;
+  }
 
   return {
     ...state,
@@ -69,6 +88,15 @@ export function onTurnEnd(state: CharacterState): CharacterState {
 /** 重置技能（新一局） */
 export function resetSkill(state: CharacterState): CharacterState {
   const character = getCharacter(state.characterId);
+  // 处理无效的角色ID
+  if (!character) {
+    return {
+      ...state,
+      skillUsesRemaining: 0,
+      cooldownRemaining: 0,
+      isSkillActive: false,
+    };
+  }
   return {
     ...state,
     skillUsesRemaining: character.skill.maxUses,
@@ -80,6 +108,11 @@ export function resetSkill(state: CharacterState): CharacterState {
 /** 获取技能使用状态文本 */
 export function getSkillStatusText(state: CharacterState): string {
   const character = getCharacter(state.characterId);
+  
+  // 处理无效的角色ID
+  if (!character) {
+    return '不可用';
+  }
 
   if (character.skill.type === 'passive') {
     return '被动生效中';

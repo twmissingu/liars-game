@@ -297,13 +297,15 @@ describe('角色技能集成测试', () => {
     test('鲁鲁修技能每局限用逻辑', () => {
       gameEngine.initializeGame('lelouch');
       
-      // 第一次使用
+      // 第一次使用应该成功
       gameEngine.lelouchChangeLiarCard('K');
       expect(gameEngine.getState().liarCard).toBe('K');
       
-      // 再次使用（当前实现允许多次使用）
-      gameEngine.lelouchChangeLiarCard('A');
-      expect(gameEngine.getState().liarCard).toBe('A');
+      // 再次使用应该抛出错误（每局限用1次）
+      expect(() => gameEngine.lelouchChangeLiarCard('A')).toThrow('技能使用次数已耗尽');
+      
+      // 骗子牌应该保持不变
+      expect(gameEngine.getState().liarCard).toBe('K');
     });
 
     test('C.C.复活只触发一次', () => {
