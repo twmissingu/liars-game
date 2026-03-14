@@ -175,7 +175,14 @@ describe('性能测试', () => {
           gameEngine.toggleCardSelection(cardId);
           gameEngine.playerPlayCards();
         } else if (state.phase === 'challenge') {
-          gameEngine.playerChallengeDecision(Math.random() > 0.5);
+          // 检查是否有出牌记录
+          if (state.turnState.playedCards) {
+            gameEngine.playerChallengeDecision(Math.random() > 0.5);
+          } else {
+            // 没有出牌记录，手动推进
+            state.currentPlayerIndex = (state.currentPlayerIndex + 1) % 4;
+            state.phase = state.currentPlayerIndex === 0 ? 'player_turn' : 'ai_turn';
+          }
         } else if (state.phase === 'ai_turn') {
           const currentId = gameEngine.getCurrentPlayerId();
           if (currentId !== 'player') {

@@ -418,9 +418,55 @@ const App: React.FC = () => {
     isProcessingChallengeRef.current = false;
     hasProcessedChallengeRef.current = false;
     
-    // 直接调用continueToNextTurn，不经过engine.playerChallengeDecision
-    continueToNextTurnRef.current?.();
-  }, [addLog, selectedCharacter]);
+    // 直接处理下一回合逻辑，不依赖ref调用
+    // 将牌放到桌面
+    if (state.turnState.playedCards) {
+      state.turnState.tableCards = [
+        ...state.turnState.tableCards,
+        ...state.turnState.playedCards.actualCards,
+      ];
+    }
+    
+    // 使用之前已经计算好的playedByIndex
+    // 计算下一个玩家（从出牌者的下家开始）
+    let nextIndex = (playedByIndex + 1) % 4;
+    
+    // 跳过已淘汰的玩家
+    let attempts = 0;
+    while (attempts < 4) {
+      if (nextIndex === 0) {
+        // 玩家
+        if (state.playerStats.hp > 0) break;
+      } else {
+        // AI
+        const ai = state.aiPlayers[nextIndex - 1];
+        if (ai && ai.isActive && ai.stats.hp > 0) break;
+      }
+      nextIndex = (nextIndex + 1) % 4;
+      attempts++;
+    }
+    
+    state.currentPlayerIndex = nextIndex;
+    
+    if (nextIndex === 0) {
+      state.phase = 'player_turn';
+      state.turnState.turnNumber++;
+      addLog(`第 ${state.turnState.turnNumber} 回合开始`);
+    } else {
+      state.phase = 'ai_turn';
+      // 延迟执行AI回合
+      setTimeout(() => {
+        processAITurn();
+      }, 500);
+    }
+    
+    state.turnState.playedCards = null;
+    
+    // 重置质疑处理标记，为下一轮质疑做准备
+    hasProcessedChallengeRef.current = false;
+    
+    setGameState({ ...state });
+  }, [addLog, selectedCharacter, processAITurn]);
 
   // 更新ref - 必须在函数定义之后
   useEffect(() => {
