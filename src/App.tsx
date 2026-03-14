@@ -477,7 +477,7 @@ const App: React.FC = () => {
     
     // 初始化游戏引擎
     gameEngineRef.current = new GameEngine();
-    const initialState = gameEngineRef.current.initializeGame(selectedCharacter, difficulty);
+    const initialState = gameEngineRef.current.initializeGame(selectedCharacter, difficulty, shuffled);
     
     setGameState(initialState);
     setSelectedCards([]);
