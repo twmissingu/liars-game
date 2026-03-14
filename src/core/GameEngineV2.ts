@@ -461,7 +461,7 @@ export class GameEngine {
           this.state.geassResult = {
             hit: false,
             damage: 0,
-            funnyAction: FUNNY_ACTIONS[0],
+            funnyAction: FUNNY_ACTIONS[0].description,
             message: 'C.C.的不老不死发动，免疫了Geass！',
           };
           this.state.lastAction = `C.C.免疫了Geass！`;
@@ -493,7 +493,7 @@ export class GameEngine {
         }
       }
       
-      this.state.lastAction = `${targetId === 'player' ? '玩家' : targetId}受到了Geass！${result.funnyAction.description}`;
+      this.state.lastAction = `${targetId === 'player' ? '玩家' : targetId}受到了Geass！${result.funnyAction}`;
     } else {
       targetStats.geassFailCount++;
       this.state.lastAction = `${targetId === 'player' ? '玩家' : targetId}躲过了Geass！`;
