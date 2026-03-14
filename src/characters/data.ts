@@ -123,6 +123,8 @@ export const cc: Character = {
   color: '#00FF88',
   description: '赋予鲁鲁修Geass的神秘少女，拥有不老不死的能力。有概率免疫Geass效果。',
   skill: ccSkill,
+  skillName: ccSkill.name,
+  skillDescription: ccSkill.description,
   stats: {
     hp: 3,
     difficulty: 2,
@@ -140,6 +142,8 @@ export const suzaku: Character = {
   color: '#0088FF',
   description: '布里塔尼亚的枢木朱雀，拥有惊人的生存能力。生命值低时更难被Geass命中。',
   skill: suzakuSkill,
+  skillName: suzakuSkill.name,
+  skillDescription: suzakuSkill.description,
   stats: {
     hp: 4, // 朱雀有额外生命值
     difficulty: 2,
@@ -157,6 +161,8 @@ export const kallen: Character = {
   color: '#FF0044',
   description: '黑色骑士团的王牌驾驶员，驾驶红莲贰式。可以一次性出多张牌进行突击。',
   skill: kallenSkill,
+  skillName: kallenSkill.name,
+  skillDescription: kallenSkill.description,
   stats: {
     hp: 3,
     difficulty: 3,
