@@ -42,6 +42,7 @@ jobs:
     
     steps:
       - name: 📥 Download build artifacts from CI
+        id: download
         uses: actions/download-artifact@v4
         with:
           name: build-output
