@@ -162,6 +162,7 @@ const App: React.FC = () => {
 
   /**
    * 处理AI回合
+   * 按照Liar's Bar规则：玩家→AI1→AI2→AI3循环
    */
   const processAITurn = useCallback(() => {
     if (!gameEngineRef.current) return;
@@ -172,15 +173,21 @@ const App: React.FC = () => {
     // 检查是否是AI回合
     if (state.phase === 'player_turn' || state.phase === 'game_over') return;
     
-    // 找到当前活动的AI
+    // 根据currentPlayerIndex确定当前应该行动的AI
+    // currentPlayerIndex: 0=玩家, 1=AI1(cc), 2=AI2(suzaku), 3=AI3(kallen)
     const currentAIIndex = state.currentPlayerIndex - 1;
-    if (currentAIIndex < 0 || currentAIIndex >= state.aiPlayers.length) return;
+    if (currentAIIndex < 0 || currentAIIndex >= state.aiPlayers.length) {
+      // 不是AI回合，跳过
+      return;
+    }
     
     const ai = state.aiPlayers[currentAIIndex];
-    const currentAIId = ai?.id as 'ai' | 'ai2' | 'ai3';
+    if (!ai) return;
+    
+    const currentAIId = ai.id as 'ai' | 'ai2' | 'ai3';
     
     // 跳过已淘汰的AI
-    if (!ai || !ai.isActive || ai.stats.hp <= 0) {
+    if (!ai.isActive || ai.stats.hp <= 0) {
       // 自动进入下一个玩家
       const nextIndex = (state.currentPlayerIndex + 1) % 4;
       state.currentPlayerIndex = nextIndex;

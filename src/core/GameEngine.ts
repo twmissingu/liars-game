@@ -563,6 +563,17 @@ export class GameEngine {
     const playedCards = this.state.turnState.playedCards;
     if (!playedCards) throw new Error('没有出牌记录');
 
+    // 将牌放到桌面
+    this.state.turnState.tableCards = [
+      ...this.state.turnState.tableCards,
+      ...playedCards.actualCards,
+    ];
+    
+    // 检查是否所有玩家手牌都出完了
+    if (this.checkHandDepletion()) {
+      return this.handleEmptyHand();
+    }
+
     this.state.currentPlayerIndex = this.getNextPlayerIndex();
     const nextPlayerId = this.getCurrentPlayerId();
     
@@ -571,10 +582,6 @@ export class GameEngine {
       phase: nextPlayerId === 'player' ? 'player_turn' : 'ai_turn',
       turnState: {
         ...this.state.turnState,
-        tableCards: [
-          ...this.state.turnState.tableCards,
-          ...playedCards.actualCards,
-        ],
         playedCards: null,
         turnNumber: nextPlayerId === 'player' ? this.state.turnState.turnNumber + 1 : this.state.turnState.turnNumber,
       },
@@ -758,13 +765,59 @@ export class GameEngine {
 
   /**
    * 检查手牌耗尽 - 需要重新发牌
+   * Liar's Bar规则：当所有玩家手牌都出完后，重新洗牌发牌继续游戏
    * 
    * @returns 是否需要重新发牌
    */
   checkHandDepletion(): boolean {
     const playerEmpty = this.state.playerHand.length === 0;
-    const aiEmpty = this.state.aiPlayers.some(ai => ai.hand.length === 0);
-    return playerEmpty || aiEmpty;
+    const allAIEmpty = this.state.aiPlayers.every(ai => ai.hand.length === 0);
+    
+    // 只有当所有玩家都没牌时才需要重新发牌
+    if (playerEmpty && allAIEmpty) {
+      return true;
+    }
+    
+    return false;
+  }
+
+  /**
+   * 处理手牌耗尽 - 重新发牌继续游戏
+   * Liar's Bar规则：牌出完后重新洗牌发牌，继续游戏
+   * 
+   * @returns 更新后的游戏状态
+   */
+  handleEmptyHand(): GameState {
+    // 检查是否真的所有玩家都没牌了
+    if (!this.checkHandDepletion()) {
+      return this.state;
+    }
+    
+    // 重置牌组并重新发牌
+    this.cardSystem.reset();
+    this.cardSystem.generateDeck();
+    this.cardSystem.shuffle();
+    
+    // 重新发牌
+    const { playerCards, ai1Cards, ai2Cards, ai3Cards } = this.cardSystem.dealCards();
+    
+    // 设定新的骗子牌
+    const liarCard = this.cardSystem.setLiarCard();
+    
+    // 更新状态（保留HP和统计）
+    this.state.playerHand = playerCards;
+    this.state.aiPlayers[0].hand = ai1Cards;
+    this.state.aiPlayers[1].hand = ai2Cards;
+    this.state.aiPlayers[2].hand = ai3Cards;
+    this.state.liarCard = liarCard;
+    
+    // 清空桌面牌
+    this.state.turnState.tableCards = [];
+    this.state.turnState.playedCards = null;
+    
+    this.state.lastAction = '所有玩家手牌出完，重新洗牌发牌';
+    
+    return this.state;
   }
 
   /**
