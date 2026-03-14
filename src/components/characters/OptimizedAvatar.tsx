@@ -2,18 +2,18 @@
  * =============================================================================
  * Code Geass: Liar's Game - 优化的头像组件
  * =============================================================================
- * 
+ *
  * 功能特性：
  * - WebP格式优先，PNG回退
  * - Intersection Observer实现懒加载
- * - 分辨率适配
+ * - 分辨率适配 (根据设备DPR自动选择small/medium/large)
  * - Loading占位符
- * 
+ *
  * @author Code Agent
- * @version 2.0.0
+ * @version 3.0.0
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
 interface OptimizedAvatarProps {
   characterId: 'lelouch' | 'cc' | 'suzaku' | 'kallen';
@@ -32,12 +32,23 @@ const supportsWebP = (): boolean => {
   return false;
 };
 
-// 根据设备像素比获取合适的图片尺寸
-const getOptimalSize = (baseSize: number): number => {
+// 根据设备像素比和显示尺寸获取合适的图片尺寸名称
+const getOptimalSizeName = (displaySize: number): 'small' | 'medium' | 'large' => {
   const dpr = window.devicePixelRatio || 1;
-  if (dpr >= 3) return baseSize * 3;
-  if (dpr >= 2) return baseSize * 2;
-  return baseSize;
+  const actualSize = displaySize * dpr;
+
+  if (actualSize <= 50) return 'small';
+  if (actualSize <= 100) return 'medium';
+  return 'large';
+};
+
+// 缓存WebP支持检测结果
+let webpSupportedCache: boolean | null = null;
+const checkWebPSupport = (): boolean => {
+  if (webpSupportedCache === null) {
+    webpSupportedCache = supportsWebP();
+  }
+  return webpSupportedCache;
 };
 
 export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({ 
