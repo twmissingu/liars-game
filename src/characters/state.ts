@@ -3,7 +3,7 @@
  * Code Geass: Liar's Game - Phase 2
  */
 
-import type { CharacterId, CharacterState } from './types';
+import type { CharacterId, CharacterState } from '../types';
 import { getCharacter } from './data';
 
 /** 创建初始角色状态 */
@@ -11,32 +11,31 @@ export function createCharacterState(characterId: CharacterId): CharacterState {
   const character = getCharacter(characterId);
   return {
     characterId,
-    skillUsesLeft: character.skill.maxUses,
-    skillCooldown: 0,
-    skillActive: false,
-    passiveActive: character.skill.type === 'passive',
+    skillUsesRemaining: character.skill.maxUses,
+    cooldownRemaining: 0,
+    isSkillActive: false,
   };
 }
 
 /** 检查技能是否可用 */
 export function canUseSkill(state: CharacterState): boolean {
   const character = getCharacter(state.characterId);
-  
+
   // 被动技能不能主动使用
   if (character.skill.type === 'passive') {
     return false;
   }
-  
+
   // 检查使用次数
-  if (character.skill.maxUses > 0 && state.skillUsesLeft <= 0) {
+  if (character.skill.maxUses > 0 && state.skillUsesRemaining <= 0) {
     return false;
   }
-  
+
   // 检查冷却
-  if (state.skillCooldown > 0) {
+  if (state.cooldownRemaining > 0) {
     return false;
   }
-  
+
   return true;
 }
 
@@ -45,16 +44,16 @@ export function applySkill(state: CharacterState): CharacterState {
   if (!canUseSkill(state)) {
     return state;
   }
-  
+
   const character = getCharacter(state.characterId);
-  
+
   return {
     ...state,
-    skillUsesLeft: character.skill.maxUses > 0 
-      ? state.skillUsesLeft - 1 
+    skillUsesRemaining: character.skill.maxUses > 0
+      ? state.skillUsesRemaining - 1
       : -1,
-    skillCooldown: character.skill.cooldown,
-    skillActive: true,
+    cooldownRemaining: character.skill.cooldown,
+    isSkillActive: true,
   };
 }
 
@@ -62,8 +61,8 @@ export function applySkill(state: CharacterState): CharacterState {
 export function onTurnEnd(state: CharacterState): CharacterState {
   return {
     ...state,
-    skillCooldown: Math.max(0, state.skillCooldown - 1),
-    skillActive: false, // 重置技能激活状态
+    cooldownRemaining: Math.max(0, state.cooldownRemaining - 1),
+    isSkillActive: false, // 重置技能激活状态
   };
 }
 
@@ -72,28 +71,28 @@ export function resetSkill(state: CharacterState): CharacterState {
   const character = getCharacter(state.characterId);
   return {
     ...state,
-    skillUsesLeft: character.skill.maxUses,
-    skillCooldown: 0,
-    skillActive: false,
+    skillUsesRemaining: character.skill.maxUses,
+    cooldownRemaining: 0,
+    isSkillActive: false,
   };
 }
 
 /** 获取技能使用状态文本 */
 export function getSkillStatusText(state: CharacterState): string {
   const character = getCharacter(state.characterId);
-  
+
   if (character.skill.type === 'passive') {
     return '被动生效中';
   }
-  
-  if (state.skillCooldown > 0) {
-    return `冷却中 (${state.skillCooldown})`;
+
+  if (state.cooldownRemaining > 0) {
+    return `冷却中 (${state.cooldownRemaining})`;
   }
-  
-  if (character.skill.maxUses > 0 && state.skillUsesLeft <= 0) {
+
+  if (character.skill.maxUses > 0 && state.skillUsesRemaining <= 0) {
     return '已用完';
   }
-  
+
   return '可使用';
 }
 

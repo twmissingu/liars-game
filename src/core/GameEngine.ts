@@ -811,6 +811,9 @@ export class GameEngine {
   getCharacterState(playerId: 'player' | 'ai' | 'ai2' | 'ai3' = 'player'): CharacterState | undefined {
     return this.characterStates.get(playerId);
   }
+
+  /**
+   * 鲁鲁修技能：强制改变骗子牌
    * 
    * @param newRank - 新的骗子牌点数
    * @returns 更新后的游戏状态
