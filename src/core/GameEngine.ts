@@ -28,8 +28,10 @@ import type {
   GeassResult,
   PlayedCards,
   Difficulty,
+  CharacterState,
 } from '../types';
 import { getCharacterName } from '../data/characters';
+import { createCharacterState, canUseSkill, applySkill, resetSkill } from '../characters/state';
 
 /**
  * 游戏引擎类
@@ -50,6 +52,9 @@ export class GameEngine {
   
   /** 游戏难度 */
   private difficulty: Difficulty = 'normal';
+  
+  /** 角色状态映射 */
+  private characterStates: Map<string, CharacterState> = new Map();
 
   constructor() {
     this.cardSystem = new CardSystem();
@@ -190,6 +195,12 @@ export class GameEngine {
       },
     };
 
+    // 初始化角色状态
+    this.characterStates.set('player', createCharacterState(playerCharacter));
+    this.state.aiPlayers.forEach((ai) => {
+      this.characterStates.set(ai.id, createCharacterState(ai.character));
+    });
+
     return this.state;
   }
 
@@ -232,6 +243,11 @@ export class GameEngine {
     };
     this.state.geassResult = null;
     this.state.lastAction = '牌局重置，重新发牌';
+    
+    // 重置所有角色技能状态（每局限用次数）
+    this.characterStates.forEach((state, playerId) => {
+      this.characterStates.set(playerId, resetSkill(state));
+    });
     
     return this.state;
   }
@@ -756,7 +772,45 @@ export class GameEngine {
   }
 
   /**
-   * 鲁鲁修技能：强制改变骗子牌
+   * 检查玩家是否可以使用技能
+   * 
+   * @param playerId - 玩家ID
+   * @returns 是否可以使用技能
+   */
+  canPlayerUseSkill(playerId: 'player' | 'ai' | 'ai2' | 'ai3' = 'player'): boolean {
+    const state = this.characterStates.get(playerId);
+    if (!state) return false;
+    return canUseSkill(state);
+  }
+
+  /**
+   * 使用技能
+   * 
+   * @param playerId - 玩家ID
+   * @returns 是否成功使用技能
+   */
+  useSkill(playerId: 'player' | 'ai' | 'ai2' | 'ai3' = 'player'): boolean {
+    const state = this.characterStates.get(playerId);
+    if (!state) return false;
+    
+    if (!canUseSkill(state)) {
+      return false;
+    }
+    
+    const newState = applySkill(state);
+    this.characterStates.set(playerId, newState);
+    return true;
+  }
+
+  /**
+   * 获取角色状态
+   * 
+   * @param playerId - 玩家ID
+   * @returns 角色状态
+   */
+  getCharacterState(playerId: 'player' | 'ai' | 'ai2' | 'ai3' = 'player'): CharacterState | undefined {
+    return this.characterStates.get(playerId);
+  }
    * 
    * @param newRank - 新的骗子牌点数
    * @returns 更新后的游戏状态
@@ -765,6 +819,14 @@ export class GameEngine {
     if (this.playerCharacter !== 'lelouch') {
       throw new Error('只有鲁鲁修可以使用此技能');
     }
+    
+    // 检查技能是否可用
+    if (!this.canPlayerUseSkill('player')) {
+      throw new Error('技能使用次数已耗尽');
+    }
+    
+    // 使用技能
+    this.useSkill('player');
     
     this.cardSystem.forceSetLiarCard(newRank);
     this.state.liarCard = newRank;

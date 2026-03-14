@@ -631,11 +631,19 @@ const App: React.FC = () => {
   const handleLelouchSkill = useCallback((newRank: CardRank) => {
     if (!gameEngineRef.current || selectedCharacter !== 'lelouch') return;
     
-    playSound('sfx-geass-activate');
     const engine = gameEngineRef.current;
+    
+    // 检查技能是否可用
+    if (!engine.canPlayerUseSkill('player')) {
+      addLog('❌ 绝对命令使用次数已耗尽（每局限1次）');
+      return;
+    }
+    
+    playSound('sfx-geass-activate');
     const newState = engine.lelouchChangeLiarCard(newRank);
     setGameState(newState);
     addLog(`鲁鲁修发动绝对命令！骗子牌变为 ${newRank}`);
+    addLog('⚠️ 绝对命令已使用，本局无法再次使用');
   }, [selectedCharacter, addLog]);
 
   /** 重新开始游戏 */
