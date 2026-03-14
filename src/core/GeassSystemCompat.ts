@@ -18,6 +18,7 @@ export function executeGeassWithChance(
   const funnyAction = FUNNY_ACTIONS[Math.floor(Math.random() * FUNNY_ACTIONS.length)];
 
   return {
+    activated: true,
     hit,
     damage: hit ? 1 : 0,
     funnyAction: funnyAction.description,

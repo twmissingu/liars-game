@@ -459,10 +459,12 @@ export class GameEngine {
         const immune = checkGeassImmunity(charState);
         if (immune) {
           this.state.geassResult = {
+            activated: true,
             hit: false,
             damage: 0,
             funnyAction: FUNNY_ACTIONS[0].description,
             message: 'C.C.的不老不死发动，免疫了Geass！',
+            isImmune: true,
           };
           this.state.lastAction = `C.C.免疫了Geass！`;
           return;
