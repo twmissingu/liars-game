@@ -296,6 +296,10 @@ const App: React.FC = () => {
     if (newState.geassResult) {
       const challenger = challengerName || '玩家';
       const target = targetName || '对手';
+      const loser = newState.geassResult.target;
+      const loserName = loser === 'player' ? 
+        getCharacterName(selectedCharacter!) : 
+        newState.aiPlayers.find((ai: { id: string }) => ai.id === loser)?.name || loser;
       
       if (newState.geassResult.hit) {
         // Geass命中
@@ -303,12 +307,12 @@ const App: React.FC = () => {
         const funnyAction = FUNNY_ACTIONS[Math.floor(Math.random() * FUNNY_ACTIONS.length)];
         setCurrentFunnyAction(funnyAction);
         playSound(funnyAction.soundType as SoundType);
-        addLog(`✅ 质疑成功！${challenger} 对 ${target} 发动Geass！`);
+        addLog(`✅ ${challenger}质疑${target}成功！${loserName}受到Geass！`);
         addLog(`💥 Geass命中！${funnyAction.emoji} ${newState.geassResult.message}`);
       } else {
         // Geass未命中
         playSound('sfx-geass-miss');
-        addLog(`❌ 质疑失败！${challenger} 对 ${target} 发动Geass未命中！`);
+        addLog(`❌ ${challenger}质疑${target}失败！${loserName}闪避了Geass！`);
         if (newState.geassResult.isRevived) {
           addLog(`🔄 ${newState.geassResult.message}`);
         } else if (newState.geassResult.isCounter) {
@@ -373,8 +377,29 @@ const App: React.FC = () => {
       ];
     }
     
-    // 进入下一玩家
-    const nextIndex = (state.currentPlayerIndex + 1) % 4;
+    // 从出牌者计算下一个玩家（不是从currentPlayerIndex）
+    const playedBy = state.turnState.playedCards?.playerId;
+    const playedByIndex = playedBy === 'player' ? 0 : 
+      state.aiPlayers.findIndex((ai: { id: string }) => ai.id === playedBy) + 1;
+    
+    // 计算下一个玩家（从出牌者的下家开始）
+    let nextIndex = (playedByIndex + 1) % 4;
+    
+    // 跳过已淘汰的玩家
+    let attempts = 0;
+    while (attempts < 4) {
+      if (nextIndex === 0) {
+        // 玩家
+        if (state.playerStats.hp > 0) break;
+      } else {
+        // AI
+        const ai = state.aiPlayers[nextIndex - 1];
+        if (ai && ai.isActive && ai.stats.hp > 0) break;
+      }
+      nextIndex = (nextIndex + 1) % 4;
+      attempts++;
+    }
+    
     state.currentPlayerIndex = nextIndex;
     
     if (nextIndex === 0) {

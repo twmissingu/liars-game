@@ -639,11 +639,17 @@ export class GameEngine {
     // 记录实际出的牌
     const actualCardsStr = playedCards.actualCards.map(c => c.rank).join(', ');
 
+    // 生成清晰的日志信息
+    const challengerName = getPlayerName(challenger);
+    const playedByName = getPlayerName(playedCards.playerId);
+    const resultText = wasLie ? '成功' : '失败';
+    const loserName = getPlayerName(loser);
+
     // 进入Geass判定阶段
     this.state = {
       ...this.state,
       phase: 'geass',
-      lastAction: `${getPlayerName(challenger)} 质疑${getPlayerName(playedCards.playerId)}！${wasLie ? '质疑成功！' : '质疑失败！'} 实际出牌: ${actualCardsStr}`,
+      lastAction: `${challengerName}质疑${playedByName}${resultText}！实际出牌: ${actualCardsStr}`,
     };
 
     // 计算卡莲技能加成
@@ -665,6 +671,13 @@ export class GameEngine {
     // 执行Geass判定
     const geassResult = this.executeGeass(loser, kallenHitChance);
     this.state.geassResult = geassResult;
+
+    // 添加Geass结果到日志
+    if (geassResult.hit) {
+      this.state.lastAction = `${challengerName}质疑${playedByName}${resultText}！${loserName}受到Geass！`;
+    } else {
+      this.state.lastAction = `${challengerName}质疑${playedByName}${resultText}！${loserName}闪避了Geass！`;
+    }
 
     // 检查游戏结束
     return this.checkGameEnd();
