@@ -24,6 +24,7 @@ interface GameTableProps {
   gameLog?: string[];
   funnyAction?: FunnyAction | null;
   isProcessing?: boolean;
+  canUseSkill?: boolean;
 }
 
 // 获取角色颜色
@@ -48,6 +49,7 @@ export const GameTable: React.FC<GameTableProps> = ({
   onLelouchSkill,
   gameLog = [],
   isProcessing = false,
+  canUseSkill = true,
 }) => {
   const [showLelouchSkill, setShowLelouchSkill] = useState(false);
 
@@ -205,7 +207,14 @@ export const GameTable: React.FC<GameTableProps> = ({
               selectedAvatar
             )}
             {selectedCharacter === 'lelouch' && isPlayerTurn && (
-              <button className="cg-skill-btn" onClick={handleLelouchSkillClick} disabled={isProcessing}>绝对命令</button>
+              <button 
+                className="cg-skill-btn" 
+                onClick={handleLelouchSkillClick} 
+                disabled={isProcessing || !canUseSkill}
+                title={canUseSkill ? '每局限用1次' : '已使用'}
+              >
+                {canUseSkill ? '绝对命令' : '绝对命令 (已用)'}
+              </button>
             )}
           </div>
         </div>

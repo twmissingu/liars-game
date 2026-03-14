@@ -319,7 +319,7 @@ const App: React.FC = () => {
         setCurrentFunnyAction(funnyAction);
         playSound(funnyAction.soundType as SoundType);
         addLog(`✅ ${challenger}质疑${target}成功！${loser}受到Geass！`);
-        addLog(`💥 Geass命中！${funnyAction.emoji} ${newState.geassResult.message}`);
+        addLog(`💥 ${newState.geassResult.message}`);
       } else {
         // Geass未命中
         playSound('sfx-geass-miss');
@@ -717,6 +717,7 @@ const App: React.FC = () => {
             gameLog={gameLog}
             funnyAction={currentFunnyAction}
             isProcessing={isProcessing}
+            canUseSkill={gameEngineRef.current?.canPlayerUseSkill('player') ?? true}
           />
         ) : null;
 

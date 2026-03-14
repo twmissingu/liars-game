@@ -688,11 +688,11 @@ export class GameEngine {
     const geassResult = this.executeGeass(loser, kallenHitChance);
     this.state.geassResult = geassResult;
 
-    // 添加Geass结果到日志
+    // 添加Geass结果到日志（保留实际出牌信息）
     if (geassResult.hit) {
-      this.state.lastAction = `${challengerName}质疑${playedByName}${resultText}！${loserName}受到Geass！`;
+      this.state.lastAction = `${challengerName}质疑${playedByName}${resultText}！实际出牌: ${actualCardsStr} | ${loserName}受到Geass！`;
     } else {
-      this.state.lastAction = `${challengerName}质疑${playedByName}${resultText}！${loserName}闪避了Geass！`;
+      this.state.lastAction = `${challengerName}质疑${playedByName}${resultText}！实际出牌: ${actualCardsStr} | ${loserName}闪避了Geass！`;
     }
 
     // 检查游戏结束
