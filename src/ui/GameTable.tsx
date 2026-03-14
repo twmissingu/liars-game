@@ -3,7 +3,7 @@
  * 统一角色格式 + 显示AI手牌数 + 优化布局 + 头像预加载
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChibiAvatar, AvatarPreloader } from '../components/characters';
 import { characters, getCharacterName } from '../data/characters';
 import type { Card, CardRank, CharacterId, FunnyAction, GameState } from '../types';
