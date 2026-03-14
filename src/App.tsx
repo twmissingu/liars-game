@@ -304,13 +304,13 @@ const App: React.FC = () => {
     setTimeout(() => {
       try {
         console.log('[processAITurn] AI开始出牌:', ai.name);
-        
+
         // 【关键修复】在AI出牌前重置质疑处理标记，确保新的质疑流程可以正常触发
         console.log('[processAITurn] 重置质疑处理标记');
         hasProcessedChallengeRef.current = false;
         isProcessingChallengeRef.current = false;
         setCurrentChallengerIndex(null);
-        
+
         // AI出牌
         const newState = engine.aiPlayCards(currentAIId);
         console.log('[processAITurn] AI出牌完成, 新状态:', {
