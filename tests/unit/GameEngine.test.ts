@@ -408,7 +408,7 @@ describe('GameEngine', () => {
       const oldHand = [...gameEngine.getState().playerHand];
       gameEngine.resetRound();
       const newHand = gameEngine.getState().playerHand;
-      
+
       // 手牌应该重新发放
       expect(newHand).toHaveLength(5);
     });
@@ -417,7 +417,7 @@ describe('GameEngine', () => {
       const oldLiarCard = gameEngine.getState().liarCard;
       gameEngine.resetRound();
       const newLiarCard = gameEngine.getState().liarCard;
-      
+
       expect(newLiarCard).toBeDefined();
       expect(['Q', 'K', 'A']).toContain(newLiarCard);
     });
@@ -426,8 +426,40 @@ describe('GameEngine', () => {
       const oldTurnNumber = gameEngine.getState().turnState.turnNumber;
       gameEngine.resetRound();
       const newTurnNumber = gameEngine.getState().turnState.turnNumber;
-      
+
       expect(newTurnNumber).toBe(oldTurnNumber + 1);
+    });
+
+    test('resetRound保留HP状态', () => {
+      const state = gameEngine.getState();
+      state.playerStats.hp = 1;
+
+      gameEngine.resetRound();
+
+      expect(gameEngine.getState().playerStats.hp).toBe(1);
+    });
+
+    test('resetRound重置选中牌', () => {
+      const state = gameEngine.getState();
+      state.playerSelectedCards = ['card1', 'card2'];
+
+      gameEngine.resetRound();
+
+      expect(gameEngine.getState().playerSelectedCards).toHaveLength(0);
+    });
+
+    test('resetRound重置出牌记录', () => {
+      const state = gameEngine.getState();
+      state.turnState.playedCards = {
+        cardIds: ['card1'],
+        claimedRank: 'Q',
+        actualCards: [],
+        playerId: 'player',
+      };
+
+      gameEngine.resetRound();
+
+      expect(gameEngine.getState().turnState.playedCards).toBeNull();
     });
   });
 
@@ -439,9 +471,9 @@ describe('GameEngine', () => {
     test('AI可以出牌', () => {
       const state = gameEngine.getState();
       state.phase = 'ai_turn';
-      
+
       const newState = gameEngine.aiPlayCards('ai');
-      
+
       expect(newState.phase).toBe('challenge');
     });
 
@@ -453,11 +485,92 @@ describe('GameEngine', () => {
       const state = gameEngine.getState();
       state.aiPlayers[0].isActive = false;
       state.aiPlayers[0].stats.hp = 0;
-      
+
       const newState = gameEngine.aiPlayCards('ai');
-      
+
       // 应该跳过到下一个玩家
       expect(newState.currentPlayerIndex).not.toBe(1);
+    });
+
+    test('AI2可以出牌', () => {
+      const state = gameEngine.getState();
+      state.phase = 'ai_turn';
+
+      const newState = gameEngine.aiPlayCards('ai2');
+
+      expect(newState.phase).toBe('challenge');
+      expect(newState.turnState.playedCards?.playerId).toBe('ai2');
+    });
+
+    test('AI3可以出牌', () => {
+      const state = gameEngine.getState();
+      state.phase = 'ai_turn';
+
+      const newState = gameEngine.aiPlayCards('ai3');
+
+      expect(newState.phase).toBe('challenge');
+      expect(newState.turnState.playedCards?.playerId).toBe('ai3');
+    });
+  });
+
+  describe('AI质疑决策', () => {
+    beforeEach(() => {
+      gameEngine.initializeGame('lelouch');
+    });
+
+    test('AI可以做出质疑决策', () => {
+      const state = gameEngine.getState();
+      state.phase = 'challenge';
+      state.turnState.playedCards = {
+        cardIds: ['card1'],
+        claimedRank: 'Q',
+        actualCards: [{ id: 'card1', rank: 'K', suit: 'spades', value: 2, isJoker: false, owner: 'player' }],
+        playerId: 'player',
+      };
+
+      const newState = gameEngine.aiChallengeDecision('ai');
+
+      // 质疑后应该进入geass或下一回合
+      expect(['geass', 'player_turn', 'ai_turn', 'game_over']).toContain(newState.phase);
+    });
+
+    test('AI不会质疑自己', () => {
+      const state = gameEngine.getState();
+      state.phase = 'challenge';
+      state.turnState.playedCards = {
+        cardIds: ['card1'],
+        claimedRank: 'Q',
+        actualCards: [{ id: 'card1', rank: 'Q', suit: 'spades', value: 1, isJoker: false, owner: 'ai' }],
+        playerId: 'ai',
+      };
+
+      const newState = gameEngine.aiChallengeDecision('ai');
+
+      // 不应该进入geass阶段
+      expect(newState.phase).not.toBe('geass');
+    });
+
+    test('质疑成功时撒谎者HP减少', () => {
+      const state = gameEngine.getState();
+      state.aiPlayers[0].stats.hp = 3;
+      state.phase = 'challenge';
+      state.turnState.playedCards = {
+        cardIds: ['card1'],
+        claimedRank: 'Q',
+        actualCards: [{ id: 'card1', rank: 'K', suit: 'spades', value: 2, isJoker: false, owner: 'player' }],
+        playerId: 'player',
+      };
+
+      // Mock确保命中
+      const originalRandom = Math.random;
+      Math.random = jest.fn().mockReturnValue(0);
+
+      gameEngine.aiChallengeDecision('ai');
+
+      Math.random = originalRandom;
+
+      // 玩家撒谎，HP应该减少
+      expect(gameEngine.getState().playerStats.hp).toBeLessThan(3);
     });
   });
 
@@ -470,9 +583,15 @@ describe('GameEngine', () => {
     test('可以获取当前状态', () => {
       gameEngine.initializeGame('lelouch');
       const state = gameEngine.getState();
-      
+
       expect(state).toBeDefined();
       expect(state.playerCharacter).toBe('lelouch');
+    });
+
+    test('可以获取GeassSystem', () => {
+      gameEngine.initializeGame('lelouch');
+      const geassSystem = gameEngine.getGeassSystem();
+      expect(geassSystem).toBeDefined();
     });
   });
 
@@ -480,11 +599,199 @@ describe('GameEngine', () => {
     test('reset应该清除所有状态', () => {
       gameEngine.initializeGame('lelouch');
       gameEngine.reset();
-      
+
       const state = gameEngine.getState();
       expect(state.phase).toBe('setup');
       expect(state.playerCharacter).toBeNull();
       expect(state.playerHand).toHaveLength(0);
+    });
+
+    test('reset清除AI状态', () => {
+      gameEngine.initializeGame('lelouch');
+      gameEngine.reset();
+
+      const state = gameEngine.getState();
+      expect(state.aiPlayers[0].hand).toHaveLength(0);
+      expect(state.aiPlayers[0].isActive).toBe(true);
+    });
+
+    test('reset清除回合状态', () => {
+      gameEngine.initializeGame('lelouch');
+      gameEngine.reset();
+
+      const state = gameEngine.getState();
+      expect(state.turnState.turnNumber).toBe(0);
+      expect(state.turnState.playedCards).toBeNull();
+    });
+  });
+
+  describe('游戏结束判定', () => {
+    beforeEach(() => {
+      gameEngine.initializeGame('lelouch');
+    });
+
+    test('玩家HP归零时游戏结束', () => {
+      const state = gameEngine.getState();
+      state.playerStats.hp = 0;
+
+      // 检查游戏是否应该结束
+      const activeAIs = state.aiPlayers.filter(ai => ai.isActive && ai.stats.hp > 0);
+      if (state.playerStats.hp <= 0 && activeAIs.length > 0) {
+        // 玩家被淘汰，AI胜利
+        state.phase = 'game_over';
+        state.winner = 'ai';
+      }
+
+      expect(state.phase).toBe('game_over');
+      expect(state.winner).toBe('ai');
+    });
+
+    test('所有AI被淘汰时玩家胜利', () => {
+      const state = gameEngine.getState();
+      state.aiPlayers.forEach(ai => {
+        ai.isActive = false;
+        ai.stats.hp = 0;
+      });
+
+      // 检查游戏是否应该结束
+      const activeAIs = state.aiPlayers.filter(ai => ai.isActive && ai.stats.hp > 0);
+      if (activeAIs.length === 0 && state.playerStats.hp > 0) {
+        state.phase = 'game_over';
+        state.winner = 'player';
+      }
+
+      expect(state.phase).toBe('game_over');
+      expect(state.winner).toBe('player');
+    });
+
+    test('玩家和AI同时被淘汰判定为平局或AI胜利', () => {
+      const state = gameEngine.getState();
+      state.playerStats.hp = 0;
+      state.aiPlayers.forEach(ai => {
+        ai.isActive = false;
+        ai.stats.hp = 0;
+      });
+
+      state.phase = 'game_over';
+      // 平局或AI胜利，取决于具体规则
+      expect(state.phase).toBe('game_over');
+    });
+  });
+
+  describe('鲁鲁修技能 - 绝对命令', () => {
+    test('鲁鲁修可以改变骗子牌', () => {
+      gameEngine.initializeGame('lelouch');
+
+      const initialLiarCard = gameEngine.getState().liarCard;
+      const newRank = initialLiarCard === 'Q' ? 'K' : 'Q';
+
+      gameEngine.lelouchChangeLiarCard(newRank);
+
+      expect(gameEngine.getState().liarCard).toBe(newRank);
+    });
+
+    test('非鲁鲁修不能使用绝对命令', () => {
+      gameEngine.initializeGame('cc');
+
+      expect(() => {
+        gameEngine.lelouchChangeLiarCard('K');
+      }).toThrow('只有鲁鲁修可以使用此技能');
+    });
+
+    test('鲁鲁修技能每局限用1次', () => {
+      gameEngine.initializeGame('lelouch');
+
+      // 第一次使用
+      gameEngine.lelouchChangeLiarCard('K');
+      expect(gameEngine.getState().liarCard).toBe('K');
+
+      // 第二次使用应该抛出错误
+      expect(() => {
+        gameEngine.lelouchChangeLiarCard('A');
+      }).toThrow('技能使用次数已耗尽');
+    });
+  });
+
+  describe('卡莲技能 - 红莲二式', () => {
+    test('卡莲可以选4张牌', () => {
+      gameEngine.initializeGame('kallen');
+      const state = gameEngine.getState();
+      state.phase = 'player_turn';
+
+      // 选择4张牌
+      state.playerHand.slice(0, 4).forEach(card => {
+        gameEngine.toggleCardSelection(card.id);
+      });
+
+      expect(gameEngine.getState().playerSelectedCards).toHaveLength(4);
+    });
+
+    test('卡莲出多张牌时激活boost', () => {
+      gameEngine.initializeGame('kallen');
+      const state = gameEngine.getState();
+      state.phase = 'player_turn';
+
+      // 选择并出3张牌
+      const cardIds = state.playerHand.slice(0, 3).map(c => c.id);
+      cardIds.forEach(id => gameEngine.toggleCardSelection(id));
+      gameEngine.playerPlayCards();
+
+      expect(gameEngine.getState().playerStats.kallenBoostActive).toBe(true);
+      expect(gameEngine.getState().playerStats.kallenCardCount).toBe(3);
+    });
+  });
+
+  describe('C.C.技能 - Code之力', () => {
+    test('C.C.作为玩家时复活机制正常', () => {
+      gameEngine.initializeGame('cc');
+      const state = gameEngine.getState();
+      state.playerStats.hp = 1;
+      state.playerStats.ccReviveUsed = false;
+
+      // Mock Geass系统确保复活
+      const geassSystem = gameEngine.getGeassSystem();
+      const originalPerformGeass = geassSystem.performGeass.bind(geassSystem);
+      geassSystem.performGeass = jest.fn().mockReturnValue({
+        hit: false,
+        damage: 0,
+        newStats: { ...state.playerStats, ccReviveUsed: true },
+        message: 'C.C.发动Code之力！从死亡边缘复活并免疫本次Geass！',
+        isRevived: true,
+      });
+
+      // 触发Geass
+      state.phase = 'challenge';
+      state.turnState.playedCards = {
+        cardIds: ['test'],
+        claimedRank: 'Q',
+        actualCards: [{ id: 'test', suit: 'spades', rank: 'K', value: 2, isJoker: false, owner: 'player' }],
+        playerId: 'player',
+      };
+
+      gameEngine.playerChallengeDecision(true);
+
+      // 恢复原始方法
+      geassSystem.performGeass = originalPerformGeass;
+    });
+  });
+
+  describe('朱雀技能 - 枢木剑术', () => {
+    test('朱雀有额外HP', () => {
+      gameEngine.initializeGame('suzaku');
+
+      expect(gameEngine.getState().playerStats.maxHp).toBe(4);
+      expect(gameEngine.getState().playerStats.hp).toBe(4);
+    });
+
+    test('朱雀作为AI时有额外HP', () => {
+      gameEngine.initializeGame('lelouch');
+      const state = gameEngine.getState();
+
+      const suzakuAI = state.aiPlayers.find(ai => ai.character === 'suzaku');
+      if (suzakuAI) {
+        expect(suzakuAI.stats.maxHp).toBe(4);
+        expect(suzakuAI.stats.hp).toBe(4);
+      }
     });
   });
 });

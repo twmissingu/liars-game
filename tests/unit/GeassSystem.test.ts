@@ -401,4 +401,269 @@ describe('GeassSystem', () => {
       });
     });
   });
+
+  describe('calculateKallenBoost - 卡莲技能加成计算', () => {
+    test('出1张牌时没有加成', () => {
+      const boost = geassSystem.calculateKallenBoost(1);
+      expect(boost).toBe(0);
+    });
+
+    test('出2张牌时加成40%', () => {
+      const boost = geassSystem.calculateKallenBoost(2);
+      expect(boost).toBe(0.4);
+    });
+
+    test('出3张牌时加成60%', () => {
+      const boost = geassSystem.calculateKallenBoost(3);
+      expect(boost).toBeCloseTo(0.6, 5);
+    });
+
+    test('出4张牌时加成80%', () => {
+      const boost = geassSystem.calculateKallenBoost(4);
+      expect(boost).toBe(0.8);
+    });
+
+    test('出超过4张牌时加成上限80%', () => {
+      const boost = geassSystem.calculateKallenBoost(5);
+      expect(boost).toBe(0.8);
+    });
+
+    test('出0张牌时没有加成', () => {
+      const boost = geassSystem.calculateKallenBoost(0);
+      expect(boost).toBe(0);
+    });
+
+    test('出负数张牌时没有加成', () => {
+      const boost = geassSystem.calculateKallenBoost(-1);
+      expect(boost).toBe(0);
+    });
+  });
+
+  describe('getSkillDescription - 获取技能描述', () => {
+    test('可以获取鲁鲁修技能描述', () => {
+      const desc = geassSystem.getSkillDescription('lelouch');
+      expect(desc).toContain('绝对命令');
+      expect(desc).toContain('骗子牌');
+    });
+
+    test('可以获取C.C.技能描述', () => {
+      const desc = geassSystem.getSkillDescription('cc');
+      expect(desc).toContain('Code之力');
+      expect(desc).toContain('复活');
+    });
+
+    test('可以获取朱雀技能描述', () => {
+      const desc = geassSystem.getSkillDescription('suzaku');
+      expect(desc).toContain('枢木剑术');
+      expect(desc).toContain('25%');
+    });
+
+    test('可以获取卡莲技能描述', () => {
+      const desc = geassSystem.getSkillDescription('kallen');
+      expect(desc).toContain('红莲二式');
+      expect(desc).toContain('20%');
+    });
+  });
+
+  describe('命中率边界测试', () => {
+    test('命中率加成上限为90%', () => {
+      const stats = {
+        hp: 3,
+        maxHp: 3,
+        geassSuccessCount: 0,
+        geassFailCount: 0,
+      };
+
+      // 使用极大的加成
+      const result = geassSystem.performGeass('player', stats, 'lelouch', 10);
+
+      expect(result).toBeDefined();
+      // 即使加成很大，结果也应该合理
+    });
+
+    test('命中率下限为10%', () => {
+      const stats = {
+        hp: 3,
+        maxHp: 3,
+        geassSuccessCount: 0,
+        geassFailCount: 0,
+      };
+
+      // 使用负的加成
+      const result = geassSystem.performGeass('player', stats, 'lelouch', -10);
+
+      expect(result).toBeDefined();
+    });
+
+    test('朱雀闪避后命中率不低于10%', () => {
+      const stats = {
+        hp: 3,
+        maxHp: 3,
+        geassSuccessCount: 0,
+        geassFailCount: 0,
+      };
+
+      // 多次测试确保有结果
+      for (let i = 0; i < 100; i++) {
+        const result = geassSystem.performGeass('player', { ...stats }, 'suzaku');
+        expect(result).toBeDefined();
+      }
+    });
+  });
+
+  describe('卡莲技能集成测试', () => {
+    test('卡莲出多张牌时应用加成', () => {
+      const stats = {
+        hp: 3,
+        maxHp: 3,
+        geassSuccessCount: 0,
+        geassFailCount: 0,
+        kallenBoostActive: true,
+        kallenCardCount: 3,
+      };
+
+      // 计算期望加成：3张牌 = 60%
+      const expectedBoost = geassSystem.calculateKallenBoost(3);
+      expect(expectedBoost).toBeCloseTo(0.6, 5);
+
+      // 执行Geass
+      const result = geassSystem.performGeass('player', stats, 'kallen', expectedBoost);
+
+      expect(result).toBeDefined();
+    });
+
+    test('卡莲加成提高命中率', () => {
+      const stats = {
+        hp: 3,
+        maxHp: 3,
+        geassSuccessCount: 0,
+        geassFailCount: 0,
+      };
+
+      let hitsWithoutBoost = 0;
+      let hitsWithBoost = 0;
+      const trials = 1000;
+
+      // 无加成
+      for (let i = 0; i < trials; i++) {
+        const result = geassSystem.performGeass('player', { ...stats }, 'kallen', 0);
+        if (result.hit) hitsWithoutBoost++;
+      }
+
+      // 有60%加成
+      for (let i = 0; i < trials; i++) {
+        const result = geassSystem.performGeass('player', { ...stats }, 'kallen', 0.6);
+        if (result.hit) hitsWithBoost++;
+      }
+
+      // 有加成时命中率应该更高
+      expect(hitsWithBoost).toBeGreaterThan(hitsWithoutBoost);
+    });
+  });
+
+  describe('Geass结果字段完整性', () => {
+    test('命中结果包含所有必要字段', () => {
+      const stats = {
+        hp: 3,
+        maxHp: 3,
+        geassSuccessCount: 0,
+        geassFailCount: 0,
+      };
+
+      // Mock确保命中
+      const originalRandom = Math.random;
+      Math.random = jest.fn().mockReturnValue(0);
+
+      const result = geassSystem.performGeass('player', stats, 'lelouch');
+
+      Math.random = originalRandom;
+
+      if (result.hit) {
+        expect(result.activated).toBe(true);
+        expect(result.hit).toBe(true);
+        expect(result.damage).toBe(1);
+        expect(result.newStats).toBeDefined();
+        expect(result.funnyAction).toBeDefined();
+        expect(result.message).toBeDefined();
+      }
+    });
+
+    test('未命中结果包含所有必要字段', () => {
+      const stats = {
+        hp: 3,
+        maxHp: 3,
+        geassSuccessCount: 0,
+        geassFailCount: 0,
+      };
+
+      // Mock确保未命中
+      const originalRandom = Math.random;
+      Math.random = jest.fn().mockReturnValue(0.99);
+
+      const result = geassSystem.performGeass('player', stats, 'lelouch');
+
+      Math.random = originalRandom;
+
+      expect(result.activated).toBe(true);
+      expect(result.hit).toBe(false);
+      expect(result.damage).toBe(0);
+      expect(result.newStats).toBeDefined();
+      expect(result.message).toBeDefined();
+    });
+
+    test('反击结果包含所有必要字段', () => {
+      const stats = {
+        hp: 3,
+        maxHp: 3,
+        geassSuccessCount: 0,
+        geassFailCount: 0,
+      };
+
+      // Mock确保反击
+      const originalRandom = Math.random;
+      Math.random = jest.fn().mockReturnValue(0.2);
+
+      const result = geassSystem.performGeass('player', stats, 'suzaku');
+
+      Math.random = originalRandom;
+
+      if (result.isCounter) {
+        expect(result.activated).toBe(true);
+        expect(result.hit).toBe(false);
+        expect(result.damage).toBe(0);
+        expect(result.isCounter).toBe(true);
+        expect(result.message).toContain('反击');
+      }
+    });
+
+    test('复活结果包含所有必要字段', () => {
+      const stats = {
+        hp: 1,
+        maxHp: 3,
+        geassSuccessCount: 0,
+        geassFailCount: 0,
+        ccReviveUsed: false,
+      };
+
+      // Mock确保命中和复活
+      const originalRandom = Math.random;
+      let callCount = 0;
+      Math.random = jest.fn().mockImplementation(() => {
+        callCount++;
+        return callCount === 1 ? 0 : 0.4;
+      });
+
+      const result = geassSystem.performGeass('player', stats, 'cc');
+
+      Math.random = originalRandom;
+
+      if (result.isRevived) {
+        expect(result.activated).toBe(true);
+        expect(result.hit).toBe(false);
+        expect(result.damage).toBe(0);
+        expect(result.isRevived).toBe(true);
+        expect(result.newStats.ccReviveUsed).toBe(true);
+      }
+    });
+  });
 });

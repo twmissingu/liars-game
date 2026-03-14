@@ -285,7 +285,7 @@ describe('CardSystem', () => {
     test('出不存在的牌应该返回空数组', () => {
       cardSystem.generateDeck();
       const playedCards = cardSystem.playCards(['non-existent-id']);
-      
+
       expect(playedCards).toHaveLength(0);
     });
 
@@ -293,13 +293,215 @@ describe('CardSystem', () => {
       cardSystem.generateDeck();
       cardSystem.shuffle();
       cardSystem.dealCards();
-      
+
       const playerCards = cardSystem.getPlayerCards();
       const mixedIds = [playerCards[0].id, 'non-existent'];
-      
+
       const playedCards = cardSystem.playCards(mixedIds);
-      
+
       expect(playedCards).toHaveLength(1);
+    });
+  });
+
+  describe('checkBluff - 撒谎检测', () => {
+    beforeEach(() => {
+      cardSystem.generateDeck();
+      cardSystem.setLiarCard();
+    });
+
+    test('出的牌与声称点数相同不算撒谎', () => {
+      const liarCard = cardSystem.getLiarCard();
+      const cards = cardSystem.getCards();
+      const sameRankCards = cards.filter(c => c.rank === liarCard && !c.isJoker).slice(0, 2);
+
+      if (sameRankCards.length > 0) {
+        const isBluff = cardSystem.checkBluff(sameRankCards, liarCard!);
+        expect(isBluff).toBe(false);
+      }
+    });
+
+    test('出的牌与声称点数不同算撒谎', () => {
+      const liarCard = cardSystem.getLiarCard();
+      const cards = cardSystem.getCards();
+
+      // 找到与骗子牌不同的牌
+      const differentRank = liarCard === 'Q' ? 'K' : 'Q';
+      const differentCards = cards.filter(c => c.rank === differentRank && !c.isJoker).slice(0, 2);
+
+      if (differentCards.length > 0) {
+        const isBluff = cardSystem.checkBluff(differentCards, liarCard!);
+        expect(isBluff).toBe(true);
+      }
+    });
+
+    test('小丑牌不算撒谎', () => {
+      const liarCard = cardSystem.getLiarCard();
+      const cards = cardSystem.getCards();
+      const jokers = cards.filter(c => c.isJoker);
+
+      if (jokers.length > 0) {
+        const isBluff = cardSystem.checkBluff(jokers, liarCard!);
+        expect(isBluff).toBe(false);
+      }
+    });
+
+    test('混合牌中有非骗子牌算撒谎', () => {
+      const liarCard = cardSystem.getLiarCard();
+      const cards = cardSystem.getCards();
+
+      const liarCards = cards.filter(c => c.rank === liarCard && !c.isJoker).slice(0, 1);
+      const differentRank = liarCard === 'Q' ? 'K' : 'Q';
+      const differentCards = cards.filter(c => c.rank === differentRank && !c.isJoker).slice(0, 1);
+
+      if (liarCards.length > 0 && differentCards.length > 0) {
+        const mixedCards = [...liarCards, ...differentCards];
+        const isBluff = cardSystem.checkBluff(mixedCards, liarCard!);
+        expect(isBluff).toBe(true);
+      }
+    });
+  });
+
+  describe('drawCards - 抽牌', () => {
+    beforeEach(() => {
+      cardSystem.generateDeck();
+    });
+
+    test('可以抽取指定数量的牌', () => {
+      const drawnCards = cardSystem.drawCards(3);
+
+      expect(drawnCards).toHaveLength(3);
+    });
+
+    test('抽牌后owner设置为player', () => {
+      const drawnCards = cardSystem.drawCards(2);
+
+      expect(drawnCards.every(c => c.owner === 'player')).toBe(true);
+    });
+
+    test('抽牌后剩余牌数减少', () => {
+      const initialRemaining = cardSystem.getRemainingCards();
+      cardSystem.drawCards(3);
+      const finalRemaining = cardSystem.getRemainingCards();
+
+      expect(finalRemaining).toBe(initialRemaining - 3);
+    });
+
+    test('不能抽取超过剩余数量的牌', () => {
+      const remaining = cardSystem.getRemainingCards();
+      const drawnCards = cardSystem.drawCards(remaining + 10);
+
+      expect(drawnCards.length).toBeLessThanOrEqual(remaining);
+    });
+
+    test('抽取0张牌返回空数组', () => {
+      const drawnCards = cardSystem.drawCards(0);
+
+      expect(drawnCards).toHaveLength(0);
+    });
+  });
+
+  describe('redealCards - 重新发牌', () => {
+    test('重新发牌返回新的手牌分配', () => {
+      cardSystem.generateDeck();
+      cardSystem.shuffle();
+      cardSystem.dealCards();
+
+      const oldPlayerCards = cardSystem.getPlayerCards().map(c => c.id);
+
+      const { playerCards, ai1Cards, ai2Cards, ai3Cards } = cardSystem.redealCards();
+
+      expect(playerCards).toHaveLength(5);
+      expect(ai1Cards).toHaveLength(5);
+      expect(ai2Cards).toHaveLength(5);
+      expect(ai3Cards).toHaveLength(5);
+    });
+
+    test('重新发牌后牌组重置', () => {
+      cardSystem.generateDeck();
+      cardSystem.dealCards();
+
+      // 出一些牌
+      const playerCards = cardSystem.getPlayerCards();
+      cardSystem.playCards(playerCards.slice(0, 2).map(c => c.id));
+
+      cardSystem.redealCards();
+
+      // 重新发牌后应该又有20张牌
+      expect(cardSystem.getCards()).toHaveLength(20);
+    });
+
+    test('重新发牌后骗子牌重新设置', () => {
+      cardSystem.generateDeck();
+      cardSystem.dealCards();
+
+      cardSystem.redealCards();
+      // redealCards不会自动设置骗子牌，需要手动设置
+      cardSystem.setLiarCard();
+      const newLiarCard = cardSystem.getLiarCard();
+
+      expect(newLiarCard).toBeDefined();
+      expect(newLiarCard).not.toBeNull();
+      expect(['Q', 'K', 'A']).toContain(newLiarCard);
+    });
+  });
+
+  describe('getAICards - 获取AI手牌', () => {
+    beforeEach(() => {
+      cardSystem.generateDeck();
+      cardSystem.shuffle();
+      cardSystem.dealCards();
+    });
+
+    test('可以获取AI1的手牌', () => {
+      const ai1Cards = cardSystem.getAICards('ai');
+
+      expect(ai1Cards).toHaveLength(5);
+      expect(ai1Cards.every(c => c.owner === 'ai')).toBe(true);
+    });
+
+    test('可以获取AI2的手牌', () => {
+      const ai2Cards = cardSystem.getAICards('ai2');
+
+      expect(ai2Cards).toHaveLength(5);
+      expect(ai2Cards.every(c => c.owner === 'ai2')).toBe(true);
+    });
+
+    test('可以获取AI3的手牌', () => {
+      const ai3Cards = cardSystem.getAICards('ai3');
+
+      expect(ai3Cards).toHaveLength(5);
+      expect(ai3Cards.every(c => c.owner === 'ai3')).toBe(true);
+    });
+
+    test('默认获取AI1的手牌', () => {
+      const aiCards = cardSystem.getAICards();
+
+      expect(aiCards).toHaveLength(5);
+      expect(aiCards.every(c => c.owner === 'ai')).toBe(true);
+    });
+  });
+
+  describe('getRemainingCards - 获取剩余牌数', () => {
+    test('初始状态剩余20张牌', () => {
+      cardSystem.generateDeck();
+
+      expect(cardSystem.getRemainingCards()).toBe(20);
+    });
+
+    test('发牌后剩余0张', () => {
+      cardSystem.generateDeck();
+      cardSystem.shuffle();
+      cardSystem.dealCards();
+
+      expect(cardSystem.getRemainingCards()).toBe(0);
+    });
+
+    test('抽牌后剩余减少', () => {
+      cardSystem.generateDeck();
+
+      cardSystem.drawCards(5);
+
+      expect(cardSystem.getRemainingCards()).toBe(15);
     });
   });
 });
