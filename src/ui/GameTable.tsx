@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { ChibiAvatar, AvatarPreloader } from '../components/characters';
 import { characters, getCharacterName } from '../data/characters';
 import type { Card, CardRank, CharacterId, FunnyAction, GameState } from '../types';
+import cardBack from '/assets/cards/card-back.svg';
 
 interface GameTableProps {
   gameState: GameState;
@@ -173,7 +174,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                       {/* 出牌时显示背面，质疑后才显示实际牌 */}
                       {turnState.playedCards.actualCards.map((c: Card) => (
                         <div key={c.id} className="cg-card-small cg-card-back">
-                          <img src="/assets/cards/card-back.svg" alt="牌背" />
+                          <img src={cardBack} alt="牌背" />
                         </div>
                       ))}
                     </div>

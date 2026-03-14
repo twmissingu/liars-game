@@ -17,6 +17,22 @@
 /** 角色ID枚举 - 游戏内所有可用角色 */
 export type CharacterId = 'lelouch' | 'cc' | 'suzaku' | 'kallen';
 
+/** 角色阵营 */
+export type CharacterFaction = 'black-knights' | 'britannia' | 'neutral';
+
+/** 技能类型 */
+export type SkillType = 'active' | 'passive' | 'trigger';
+
+/** 技能目标 */
+export type SkillTarget = 'self' | 'enemy' | 'card' | 'none';
+
+/** 技能效果 */
+export interface SkillEffect {
+  type: 'force-liar' | 'geass-immunity' | 'geass-resistance' | 'multi-play';
+  value: number | boolean;
+  duration?: number; // 持续回合数，undefined表示永久/即时
+}
+
 /** 游戏难度等级 */
 export type Difficulty = 'easy' | 'normal' | 'hard';
 
@@ -102,14 +118,11 @@ export interface CharacterSkill {
   name: string;
   nameEn: string;
   description: string;
-  type: 'active' | 'passive';
-  target: 'self' | 'card' | 'opponent';
+  type: SkillType;
+  target: SkillTarget;
   maxUses: number;      // -1表示无限使用
   cooldown: number;     // 冷却回合数
-  effect: {
-    type: SkillEffectType;
-    value: number | boolean;
-  };
+  effect: SkillEffect;
   icon: string;
 }
 
@@ -121,7 +134,7 @@ export interface Character {
   name: string;
   nameEn: string;
   nameJa: string;
-  faction: 'black-knights' | 'britannia' | 'neutral';
+  faction: CharacterFaction;
   avatar: string;
   color: string;
   description: string;
@@ -166,6 +179,15 @@ export interface PlayerStats {
   suzakuCounterActive?: boolean;
   kallenBoostActive?: boolean;
   kallenCardCount?: number;
+}
+
+/**
+ * 角色选择信息
+ */
+export interface CharacterSelection {
+  playerId: string;
+  characterId: CharacterId;
+  isReady: boolean;
 }
 
 /**
