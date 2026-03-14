@@ -1,19 +1,15 @@
 /** @type {import('eslint').Linter.Config} */
 export default {
-  env: { browser: true, es2020: true },
-  extends: [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-    'plugin:react-hooks/recommended',
-  ],
-  ignorePatterns: ['dist', '.eslintrc.cjs', 'node_modules'],
-  files: ['src/**/*.{ts,tsx}'],
-  parser: '@typescript-eslint/parser',
-  plugins: ['react-refresh'],
-  rules: {
-    'react-refresh/only-export-components': [
-      'warn',
-      { allowConstantExport: true },
-    ],
+  languageOptions: {
+    globals: {
+      browser: true,
+      es2020: true,
+    },
+    parserOptions: {
+      ecmaVersion: 2020,
+      sourceType: 'module',
+    },
   },
+  files: ['src/**/*.{ts,tsx}'],
+  ignores: ['dist/**', '.eslintrc.cjs', 'node_modules/**'],
 }
