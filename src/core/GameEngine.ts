@@ -768,6 +768,46 @@ export class GameEngine {
       return this.state;
     }
 
+    // 游戏未结束，继续流转回合
+    // 从质疑失败者（或出牌者，如果质疑成功）的下家开始
+    const playedCards = this.state.turnState.playedCards;
+    if (playedCards) {
+      // 从出牌者的下家开始
+      const playedByIndex = playedCards.playerId === 'player' ? 0 : 
+        this.state.aiPlayers.findIndex(ai => ai.id === playedCards.playerId) + 1;
+      
+      // 计算下一个玩家（从出牌者的下家开始）
+      let nextIndex = (playedByIndex + 1) % 4;
+      
+      // 跳过已淘汰的玩家
+      let attempts = 0;
+      while (attempts < 4) {
+        if (nextIndex === 0) {
+          // 玩家
+          if (this.state.playerStats.hp > 0) break;
+        } else {
+          // AI (索引1-3对应aiPlayers[0-2])
+          const ai = this.state.aiPlayers[nextIndex - 1];
+          if (ai && ai.isActive && ai.stats.hp > 0) break;
+        }
+        nextIndex = (nextIndex + 1) % 4;
+        attempts++;
+      }
+      
+      this.state.currentPlayerIndex = nextIndex;
+      const nextPlayerId = this.getCurrentPlayerId();
+      
+      this.state = {
+        ...this.state,
+        phase: nextPlayerId === 'player' ? 'player_turn' : 'ai_turn',
+        turnState: {
+          ...this.state.turnState,
+          playedCards: null,
+          turnNumber: nextPlayerId === 'player' ? this.state.turnState.turnNumber + 1 : this.state.turnState.turnNumber,
+        },
+      };
+    }
+
     return this.state;
   }
 
