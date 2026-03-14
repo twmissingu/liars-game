@@ -6,7 +6,7 @@
 import { Howl, Howler } from 'howler';
 
 // 音效类型
-export type SoundType = 
+export type SoundType =
   // BGM
   | 'bgm-menu'
   | 'bgm-game'
@@ -81,12 +81,14 @@ const SOUND_URLS: Record<SoundType, string> = {
   'sfx-geass-activate': 'https://assets.mixkit.co/sfx/preview/mixkit-magical-coin-win-193.mp3',
   'sfx-geass-hit': 'https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-explosion-2759.mp3',
   'sfx-geass-miss': 'https://assets.mixkit.co/sfx/preview/mixkit-falling-into-mud-391.mp3',
-  'sfx-button-click': 'https://assets.mixkit.co/sfx/preview/mixkit-modern-technology-select-3124.mp3',
+  'sfx-button-click':
+    'https://assets.mixkit.co/sfx/preview/mixkit-modern-technology-select-3124.mp3',
   'sfx-card-shuffle': 'https://assets.mixkit.co/sfx/preview/mixkit-shuffling-cards-1698.mp3',
   'sfx-win': 'https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3',
   'sfx-lose': 'https://assets.mixkit.co/sfx/preview/mixkit-fail-drum-and-bells-571.mp3',
   'sfx-character-select': 'https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3',
-  'sfx-turn-start': 'https://assets.mixkit.co/sfx/preview/mixkit-game-notification-wave-alarm-987.mp3',
+  'sfx-turn-start':
+    'https://assets.mixkit.co/sfx/preview/mixkit-game-notification-wave-alarm-987.mp3',
   // 搞笑动作音效
   'sfx-funny-dance': 'https://assets.mixkit.co/sfx/preview/mixkit-funny-clown-horn-sound-560.mp3',
   'sfx-funny-monkey': 'https://assets.mixkit.co/sfx/preview/mixkit-monkey-laugh-96.mp3',
@@ -117,7 +119,7 @@ class SoundManager {
     Object.entries(SOUND_URLS).forEach(([type, url]) => {
       const soundType = type as SoundType;
       const config = DEFAULT_CONFIG[soundType];
-      
+
       try {
         const howl = new Howl({
           src: [url],
@@ -136,7 +138,7 @@ class SoundManager {
             });
           },
         });
-        
+
         this.sounds.set(soundType, howl);
       } catch (e) {
         console.warn(`Error creating sound: ${soundType}`, e);
@@ -159,7 +161,7 @@ class SoundManager {
    */
   play(type: SoundType): void {
     if (!this.enabled) return;
-    
+
     const sound = this.sounds.get(type);
     if (sound) {
       // 如果是BGM，先停止当前BGM
@@ -167,7 +169,7 @@ class SoundManager {
         this.stopBGM();
         this.currentBGM = type;
       }
-      
+
       sound.play();
     }
   }
@@ -281,7 +283,7 @@ class SoundManager {
       'sfx-funny-chunibyo',
       'sfx-funny-butterfly',
     ];
-    
+
     const soundType = funnySounds[actionIndex % funnySounds.length];
     if (soundType) {
       this.play(soundType);
@@ -292,16 +294,16 @@ class SoundManager {
    * 预加载音效（用于游戏开始前）
    */
   preload(): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       let loadedCount = 0;
       const totalSounds = this.sounds.size;
-      
+
       if (totalSounds === 0) {
         resolve();
         return;
       }
-      
-      this.sounds.forEach((sound) => {
+
+      this.sounds.forEach(sound => {
         if (sound.state() === 'loaded') {
           loadedCount++;
           if (loadedCount >= totalSounds) {
@@ -314,7 +316,7 @@ class SoundManager {
               resolve();
             }
           });
-          
+
           sound.once('loaderror', () => {
             loadedCount++;
             if (loadedCount >= totalSounds) {
@@ -323,7 +325,7 @@ class SoundManager {
           });
         }
       });
-      
+
       // 超时处理
       setTimeout(() => resolve(), 5000);
     });
@@ -332,7 +334,13 @@ class SoundManager {
   /**
    * 获取当前状态
    */
-  getStatus(): { enabled: boolean; masterVolume: number; bgmVolume: number; sfxVolume: number; currentBGM: SoundType | null } {
+  getStatus(): {
+    enabled: boolean;
+    masterVolume: number;
+    bgmVolume: number;
+    sfxVolume: number;
+    currentBGM: SoundType | null;
+  } {
     return {
       enabled: this.enabled,
       masterVolume: this.masterVolume,
@@ -349,6 +357,7 @@ export const soundManager = new SoundManager();
 // 便捷函数
 export const playSound = (type: SoundType) => soundManager.play(type);
 export const stopSound = (type: SoundType) => soundManager.stop(type);
-export const playBGM = (type: 'bgm-menu' | 'bgm-game' | 'bgm-victory' | 'bgm-defeat') => soundManager.play(type);
+export const playBGM = (type: 'bgm-menu' | 'bgm-game' | 'bgm-victory' | 'bgm-defeat') =>
+  soundManager.play(type);
 export const stopBGM = () => soundManager.stopBGM();
 export const playFunnyAction = (index: number) => soundManager.playFunnyAction(index);

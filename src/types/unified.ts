@@ -1,9 +1,9 @@
 /**
  * Code Geass: Liar's Game - 统一类型定义
- * 
+ *
  * 本文件整合所有类型定义，解决类型冲突问题
  * 遵循Liar's Bar规则：使用Q/K/A + JOKER牌组
- * 
+ *
  * @module types/unified
  * @version 2.1.0
  * @author Liars Game Team
@@ -23,17 +23,17 @@ export type CharacterFaction = 'black-knights' | 'britannia' | 'neutral';
 export type Difficulty = 'easy' | 'normal' | 'hard';
 
 /** 游戏阶段 */
-export type GamePhase = 
-  | 'setup'           // 游戏初始化
-  | 'player_turn'     // 玩家回合
-  | 'ai_turn'         // AI回合
-  | 'challenge'       // 质疑阶段
-  | 'resolve'         // 结算阶段
-  | 'geass'           // Geass判定
-  | 'game_over';      // 游戏结束
+export type GamePhase =
+  | 'setup' // 游戏初始化
+  | 'player_turn' // 玩家回合
+  | 'ai_turn' // AI回合
+  | 'challenge' // 质疑阶段
+  | 'resolve' // 结算阶段
+  | 'geass' // Geass判定
+  | 'game_over'; // 游戏结束
 
 /** 屏幕类型 */
-export type ScreenType = 
+export type ScreenType =
   | 'main-menu'
   | 'character-select'
   | 'game-table'
@@ -42,12 +42,7 @@ export type ScreenType =
   | 'help';
 
 /** 动画状态 */
-export type AnimationState = 
-  | 'idle'
-  | 'breathing'
-  | 'playing-card'
-  | 'win'
-  | 'lose';
+export type AnimationState = 'idle' | 'breathing' | 'playing-card' | 'win' | 'lose';
 
 // ============================================
 // 卡牌类型 - Liar's Bar规则
@@ -56,13 +51,13 @@ export type AnimationState =
 /** 卡牌花色 - 包含小丑 */
 export type CardSuit = 'spades' | 'hearts' | 'clubs' | 'diamonds' | 'joker';
 
-/** 
+/**
  * 卡牌点数 - Liar's Bar只使用Q、K、A + JOKER
  * Q=1分, K=2分, A=3分, JOKER=0分（万能牌）
  */
 export type CardRank = 'Q' | 'K' | 'A' | 'JOKER';
 
-/** 
+/**
  * 卡牌接口 - 统一的卡牌定义
  * @property id - 唯一标识符
  * @property suit - 花色
@@ -95,7 +90,7 @@ export type SkillType = 'active' | 'passive' | 'trigger';
 /** 技能目标 */
 export type SkillTarget = 'self' | 'enemy' | 'card' | 'none';
 
-/** 
+/**
  * 技能效果类型
  * - force-liar: 强制指定骗子牌（鲁鲁修）
  * - geass-immunity: Geass免疫（C.C.）
@@ -142,7 +137,7 @@ export interface Character {
   };
 }
 
-/** 
+/**
  * 角色状态 - 游戏中动态变化的状态
  * @property skillUsesLeft - 剩余技能使用次数
  * @property skillCooldown - 当前冷却回合数
@@ -168,7 +163,7 @@ export interface CharacterSelection {
 // 玩家状态类型
 // ============================================
 
-/** 
+/**
  * 玩家统计信息
  * @property hp - 当前生命值
  * @property maxHp - 最大生命值
@@ -204,7 +199,7 @@ export interface PlayedCards {
 // 游戏状态类型
 // ============================================
 
-/** 
+/**
  * 游戏状态 - 完整的游戏状态对象
  * 用于状态管理和存档
  */
@@ -212,37 +207,37 @@ export interface GameState {
   // 基础状态
   phase: GamePhase;
   currentScreen: ScreenType;
-  
+
   // 角色信息
   selectedCharacter: CharacterId | null;
   playerCharacter: CharacterId | null;
   aiCharacters: CharacterId[];
-  
+
   // 角色状态映射（用于技能系统）
   characterStates: Map<string, CharacterState>;
-  
+
   // 卡牌状态
   liarCard: LiarCard | null;
   playerHand: Card[];
   aiPlayers: AIPlayer[];
   tableCards: Card[];
-  
+
   // 回合状态
   currentPlayerIndex: number;
   turnNumber: number;
   playedCards: PlayedCards | null;
   lastPlayerId: 'player' | 'ai' | 'ai2' | 'ai3' | null;
-  
+
   // 玩家统计
   playerStats: PlayerStats;
-  
+
   // 游戏结果
   winner: 'player' | 'ai' | null;
   lastAction: string;
-  
+
   // Geass结果
   geassResult: GeassResult | null;
-  
+
   // UI状态
   playerSelectedCards: string[];
   gameLog: string[];
@@ -252,7 +247,7 @@ export interface GameState {
 // Geass系统类型
 // ============================================
 
-/** 
+/**
  * Geass判定结果
  * @property hit - 是否命中
  * @property damage - 伤害值
@@ -266,7 +261,7 @@ export interface GeassResult {
   message: string;
 }
 
-/** 
+/**
  * 搞笑动作
  * Geass命中时触发的趣味效果
  */
@@ -310,7 +305,7 @@ export interface AIDecision {
 }
 
 /** AI动画状态 */
-export type AIAnimationState = 
+export type AIAnimationState =
   | 'idle'
   | 'thinking'
   | 'deciding'

@@ -2,14 +2,14 @@
  * =============================================================================
  * Code Geass: Liar's Game - 工具函数
  * =============================================================================
- * 
+ *
  * 提供各种通用的工具函数，包括：
  * - 卡牌工具
  * - 角色工具
  * - 动画工具
  * - 存储工具
  * - 随机工具
- * 
+ *
  * @author Code Agent
  * @version 2.0.0
  */
@@ -32,7 +32,7 @@ const LOG_STORAGE_KEY = 'code-geass-game-logs';
 
 /**
  * 创建一副Liar's Bar扑克牌（20张：Q/K/A各6张 + 2张小丑牌）
- * 
+ *
  * @returns 新牌组
  */
 export const createDeck = (): Card[] => {
@@ -72,7 +72,7 @@ export const createDeck = (): Card[] => {
 
 /**
  * 洗牌（Fisher-Yates算法）
- * 
+ *
  * @param deck - 要洗的牌组
  * @returns 打乱后的牌组
  */
@@ -87,16 +87,16 @@ export const shuffleDeck = (deck: Card[]): Card[] => {
 
 /**
  * 发牌 - 1v3模式，每人5张
- * 
+ *
  * @param deck - 牌组
  * @param handSize - 手牌大小（默认5张）
  * @returns 分发后的手牌
  */
 export const dealCards = (
-  deck: Card[], 
+  deck: Card[],
   handSize: number = 5
-): { 
-  playerHand: Card[]; 
+): {
+  playerHand: Card[];
   ai1Hand: Card[];
   ai2Hand: Card[];
   ai3Hand: Card[];
@@ -114,7 +114,7 @@ export const dealCards = (
 
 /**
  * 获取花色符号
- * 
+ *
  * @param suit - 花色
  * @returns 符号
  */
@@ -131,7 +131,7 @@ export const getSuitSymbol = (suit: CardSuit): string => {
 
 /**
  * 获取花色颜色
- * 
+ *
  * @param suit - 花色
  * @returns 颜色代码
  */
@@ -146,7 +146,7 @@ export const getSuitColor = (suit: CardSuit): string => {
 
 /**
  * 获取角色主色调
- * 
+ *
  * @param characterId - 角色ID
  * @returns 颜色代码
  */
@@ -162,7 +162,7 @@ export const getCharacterColor = (characterId: CharacterId): string => {
 
 /**
  * 获取角色名字
- * 
+ *
  * @param characterId - 角色ID
  * @returns 角色名
  */
@@ -178,12 +178,14 @@ export const getCharacterName = (characterId: CharacterId): string => {
 
 /**
  * 获取角色技能信息
- * 
+ *
  * @param characterId - 角色ID
  * @returns 技能信息
  */
-export const getCharacterSkill = (characterId: CharacterId): { 
-  name: string; 
+export const getCharacterSkill = (
+  characterId: CharacterId
+): {
+  name: string;
   description: string;
 } => {
   const skills: Record<CharacterId, { name: string; description: string }> = {
@@ -213,7 +215,7 @@ export const getCharacterSkill = (characterId: CharacterId): {
 
 /**
  * 延迟函数
- * 
+ *
  * @param ms - 毫秒数
  * @returns Promise
  */
@@ -227,32 +229,31 @@ export const delay = (ms: number): Promise<void> => {
 export const easing = {
   /**
    * 缓入缓出
-   * 
+   *
    * @param t - 时间 0-1
    * @returns 缓动值
    */
-  easeInOut: (t: number): number => 
-    t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
-  
+  easeInOut: (t: number): number => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t),
+
   /**
    * 缓出
-   * 
+   *
    * @param t - 时间 0-1
    * @returns 缓动值
    */
   easeOut: (t: number): number => t * (2 - t),
-  
+
   /**
    * 缓入
-   * 
+   *
    * @param t - 时间 0-1
    * @returns 缓动值
    */
   easeIn: (t: number): number => t * t,
-  
+
   /**
    * 弹性效果
-   * 
+   *
    * @param t - 时间 0-1
    * @returns 缓动值
    */
@@ -295,7 +296,7 @@ export interface GameLogEntry {
 export const storage = {
   /**
    * 保存数据
-   * 
+   *
    * @param data - 要保存的数据
    */
   save: (data: unknown): void => {
@@ -308,13 +309,13 @@ export const storage = {
 
   /**
    * 加载数据
-   * 
+   *
    * @returns 保存的数据
    */
   load: <T>(): T | null => {
     try {
       const data = localStorage.getItem(STORAGE_KEY);
-      return data ? JSON.parse(data) as T : null;
+      return data ? (JSON.parse(data) as T) : null;
     } catch (e) {
       console.error('Failed to load from localStorage:', e);
       return null;
@@ -339,7 +340,7 @@ export const storage = {
 export const gameLogStorage = {
   /**
    * 保存游戏日志
-   * 
+   *
    * @param log - 日志条目
    */
   save: (log: GameLogEntry): void => {
@@ -352,10 +353,10 @@ export const gameLogStorage = {
       console.error('Failed to save game log:', e);
     }
   },
-  
+
   /**
    * 加载所有日志
-   * 
+   *
    * @returns 日志列表
    */
   loadAll: (): GameLogEntry[] => {
@@ -367,7 +368,7 @@ export const gameLogStorage = {
       return [];
     }
   },
-  
+
   /**
    * 清除所有日志
    */
@@ -390,7 +391,7 @@ export const gameLogStorage = {
 export const random = {
   /**
    * 生成指定范围内的随机整数
-   * 
+   *
    * @param min - 最小值（包含）
    * @param max - 最大值（包含）
    * @returns 随机整数
@@ -401,7 +402,7 @@ export const random = {
 
   /**
    * 生成指定范围内的随机浮点数
-   * 
+   *
    * @param min - 最小值
    * @param max - 最大值
    * @returns 随机浮点数
@@ -412,7 +413,7 @@ export const random = {
 
   /**
    * 从数组中随机选择一个元素
-   * 
+   *
    * @param arr - 数组
    * @returns 随机元素
    */
@@ -422,7 +423,7 @@ export const random = {
 
   /**
    * 随机打乱数组
-   * 
+   *
    * @param arr - 数组
    * @returns 打乱后的数组
    */
@@ -434,16 +435,16 @@ export const random = {
     }
     return shuffled;
   },
-  
+
   /**
    * 生成UUID
-   * 
+   *
    * @returns UUID字符串
    */
   uuid: (): string => {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = Math.random() * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
       return v.toString(16);
     });
   },

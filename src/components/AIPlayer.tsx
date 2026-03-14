@@ -4,10 +4,10 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { AIEngineManager } from '../ai/AIEngine';
-import type { 
-  AIPlayer as AIPlayerType, 
-  GameState, 
-  AIDecision, 
+import type {
+  AIPlayer as AIPlayerType,
+  GameState,
+  AIDecision,
   AIThought,
   Difficulty,
   Personality,
@@ -43,54 +43,54 @@ export const AIPlayer: React.FC<AIPlayerProps> = ({
   liarCard,
   onDecision,
   isActive,
-  className = ''
+  className = '',
 }) => {
-  const [aiEngine] = useState(() => 
+  const [aiEngine] = useState(() =>
     AIEngineManager.getInstance(player.id, difficulty, personality)
   );
-  
+
   const [state, setState] = useState<AIPlayerState>({
     thought: null,
     lastDecision: null,
     decisionCount: 0,
-    isThinking: false
+    isThinking: false,
   });
-  
+
   const [showThinkingBubble, setShowThinkingBubble] = useState(false);
-  
+
   // 设置思考回调
   useEffect(() => {
-    aiEngine.setThoughtCallback((thought) => {
+    aiEngine.setThoughtCallback(thought => {
       setState(prev => ({ ...prev, thought }));
     });
   }, [aiEngine]);
-  
+
   // 执行决策
   const executeDecision = useCallback(async () => {
     if (!isActive || state.isThinking) return;
-    
+
     setState(prev => ({ ...prev, isThinking: true }));
     setShowThinkingBubble(true);
-    
+
     const context = {
       gameState,
       aiPlayer: player,
       liarCard,
       history: [],
     };
-    
+
     try {
       const decision = await aiEngine.makeDecision(context);
-      
+
       setState(prev => ({
         ...prev,
         lastDecision: decision,
         decisionCount: prev.decisionCount + 1,
-        isThinking: false
+        isThinking: false,
       }));
-      
+
       onDecision(decision);
-      
+
       // 延迟隐藏思考气泡
       setTimeout(() => setShowThinkingBubble(false), 1000);
     } catch (error) {
@@ -99,7 +99,7 @@ export const AIPlayer: React.FC<AIPlayerProps> = ({
       setShowThinkingBubble(false);
     }
   }, [isActive, state.isThinking, aiEngine, gameState, player, liarCard, onDecision]);
-  
+
   // 当轮到AI时自动执行
   useEffect(() => {
     if (isActive && !state.isThinking) {
@@ -110,18 +110,23 @@ export const AIPlayer: React.FC<AIPlayerProps> = ({
   // 获取情绪对应的表情
   const getEmotionEmoji = (emotion?: string) => {
     switch (emotion) {
-      case 'confident': return '😏';
-      case 'uncertain': return '🤔';
-      case 'surprised': return '😮';
-      case 'calm': return '😐';
-      default: return '😐';
+      case 'confident':
+        return '😏';
+      case 'uncertain':
+        return '🤔';
+      case 'surprised':
+        return '😮';
+      case 'calm':
+        return '😐';
+      default:
+        return '😐';
     }
   };
 
   // 获取动画状态对应的样式
   const getAnimationClass = () => {
     if (!state.thought) return '';
-    
+
     switch (state.thought.state) {
       case 'thinking':
         return 'ai-thinking';
@@ -141,26 +146,21 @@ export const AIPlayer: React.FC<AIPlayerProps> = ({
       {/* AI头像 */}
       <div className="ai-avatar-container">
         <div className={`ai-avatar ${state.isThinking ? 'thinking' : ''}`}>
-          <img 
+          <img
             src={`/avatars/${player.character}/1.png`}
             alt={player.name}
             className="avatar-image"
           />
-          <div className="emotion-indicator">
-            {getEmotionEmoji(state.thought?.emotion)}
-          </div>
+          <div className="emotion-indicator">{getEmotionEmoji(state.thought?.emotion)}</div>
         </div>
-        
+
         {/* 思考气泡 */}
         {showThinkingBubble && state.thought && (
           <div className="thinking-bubble">
             <div className="bubble-content">
               <p className="thought-message">{state.thought.message}</p>
               <div className="progress-bar">
-                <div 
-                  className="progress-fill"
-                  style={{ width: `${state.thought.progress}%` }}
-                />
+                <div className="progress-fill" style={{ width: `${state.thought.progress}%` }} />
               </div>
             </div>
           </div>
@@ -175,22 +175,15 @@ export const AIPlayer: React.FC<AIPlayerProps> = ({
             <div className="hp-label">HP</div>
             <div className="hp-value">
               {Array.from({ length: player.stats.maxHp }).map((_, i) => (
-                <span 
-                  key={i} 
-                  className={`hp-heart ${i < player.stats.hp ? 'active' : ''}`}
-                >
+                <span key={i} className={`hp-heart ${i < player.stats.hp ? 'active' : ''}`}>
                   ❤️
                 </span>
               ))}
             </div>
           </div>
-          
-          <div className="hand-count">
-            🃏 {player.hand.length}张
-          </div>
+
+          <div className="hand-count">🃏 {player.hand.length}张</div>
         </div>
-        
-        
       </div>
 
       <style>{`

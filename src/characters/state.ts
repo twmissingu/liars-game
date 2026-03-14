@@ -29,7 +29,7 @@ export function createCharacterState(characterId: CharacterId): CharacterState {
 /** 检查技能是否可用 */
 export function canUseSkill(state: CharacterState): boolean {
   const character = getCharacter(state.characterId);
-  
+
   // 处理无效的角色ID
   if (!character) {
     return false;
@@ -60,7 +60,7 @@ export function applySkill(state: CharacterState): CharacterState {
   }
 
   const character = getCharacter(state.characterId);
-  
+
   // 处理无效的角色ID
   if (!character) {
     return state;
@@ -68,9 +68,7 @@ export function applySkill(state: CharacterState): CharacterState {
 
   return {
     ...state,
-    skillUsesRemaining: character.skill.maxUses > 0
-      ? state.skillUsesRemaining - 1
-      : -1,
+    skillUsesRemaining: character.skill.maxUses > 0 ? state.skillUsesRemaining - 1 : -1,
     cooldownRemaining: character.skill.cooldown,
     isSkillActive: true,
   };
@@ -108,7 +106,7 @@ export function resetSkill(state: CharacterState): CharacterState {
 /** 获取技能使用状态文本 */
 export function getSkillStatusText(state: CharacterState): string {
   const character = getCharacter(state.characterId);
-  
+
   // 处理无效的角色ID
   if (!character) {
     return '不可用';
@@ -132,7 +130,7 @@ export function getSkillStatusText(state: CharacterState): string {
 /** C.C. - 检查Geass免疫 */
 export function checkGeassImmunity(state: CharacterState): boolean {
   if (state.characterId !== 'cc') return false;
-  
+
   // 50%概率免疫
   return Math.random() < 0.5;
 }
@@ -140,22 +138,22 @@ export function checkGeassImmunity(state: CharacterState): boolean {
 /** 朱雀 - 获取Geass抗性倍率 */
 export function getGeassResistance(state: CharacterState, currentHp: number): number {
   if (state.characterId !== 'suzaku') return 1;
-  
+
   // 生命值≤1时，概率减半
   if (currentHp <= 1) {
     return 0.5;
   }
-  
+
   return 1;
 }
 
 /** 卡莲 - 获取最大出牌数 */
 export function getMaxPlayCount(state: CharacterState): number {
   if (state.characterId !== 'kallen') return 1;
-  
+
   // 检查技能是否可用
   if (!canUseSkill(state)) return 1;
-  
+
   return 4;
 }
 

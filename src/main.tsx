@@ -11,9 +11,7 @@ import './styles/global.css';
 import './styles/responsive.css';
 
 // 渲染应用
-const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement
-);
+const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
 
 root.render(
   <React.StrictMode>

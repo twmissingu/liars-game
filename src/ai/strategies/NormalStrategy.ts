@@ -2,19 +2,19 @@
  * =============================================================================
  * Code Geass: Liar's Game - 普通难度AI策略
  * =============================================================================
- * 
+ *
  * 特点：基础算牌，合理质疑，有一定策略性
  * 适合大多数玩家
- * 
+ *
  * @author Code Agent
  * @version 2.0.0
  */
 
 import { AIStrategy } from './StrategyInterface';
-import type { 
-  AIDecision, 
-  StrategyContext, 
-  AIConfig, 
+import type {
+  AIDecision,
+  StrategyContext,
+  AIConfig,
   PersonalityTraits,
   AIAnimationState,
   CardRank,
@@ -23,7 +23,7 @@ import type {
 export class NormalStrategy implements AIStrategy {
   readonly name = 'Normal';
   readonly description = '基础算牌，合理质疑，有策略性';
-  
+
   /** 记忆存储 */
   private memory: {
     playedCards: string[];
@@ -41,14 +41,14 @@ export class NormalStrategy implements AIStrategy {
    * 做出决策
    */
   makeDecision(
-    context: StrategyContext, 
+    context: StrategyContext,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     config: AIConfig
   ): AIDecision {
     // 决定是否质疑
     const challengeProb = this.calculateChallengeProbability(context);
     const shouldChallenge = Math.random() < challengeProb;
-    
+
     if (shouldChallenge) {
       return {
         action: 'challenge',
@@ -57,10 +57,10 @@ export class NormalStrategy implements AIStrategy {
         animationState: 'challenging' as AIAnimationState,
       };
     }
-    
+
     // 选择出牌
     const cardSelection = this.selectCard(context);
-    
+
     if (cardSelection) {
       return {
         action: 'play',
@@ -72,7 +72,7 @@ export class NormalStrategy implements AIStrategy {
         isBluff: cardSelection.isBluff,
       };
     }
-    
+
     return {
       action: 'pass',
       confidence: 0.5,
@@ -80,7 +80,7 @@ export class NormalStrategy implements AIStrategy {
       animationState: 'playing' as AIAnimationState,
     };
   }
-  
+
   /**
    * 计算质疑概率
    * 普通策略：根据多种因素综合判断
@@ -88,50 +88,50 @@ export class NormalStrategy implements AIStrategy {
   calculateChallengeProbability(context: StrategyContext): number {
     const traits = this.getPersonalityTraits('balanced');
     let probability = 0.3;
-    
+
     const playedCards = context.gameState.turnState.playedCards;
     if (!playedCards) return 0;
-    
+
     // 根据出牌数量调整
     const cardCount = playedCards.cardIds.length;
     if (cardCount >= 3) probability += 0.25;
     else if (cardCount === 2) probability += 0.1;
-    
+
     // 根据AI血条调整
     const aiHP = context.aiPlayer.stats.hp;
     if (aiHP === 1) probability -= 0.15;
     else if (aiHP >= 3) probability += 0.1;
-    
+
     // 根据历史记录调整
     const recentChallenges = this.memory.challengeHistory.slice(-3);
-    const successRate = recentChallenges.filter(c => c.wasLie).length / 
-      (recentChallenges.length || 1);
+    const successRate =
+      recentChallenges.filter(c => c.wasLie).length / (recentChallenges.length || 1);
     if (successRate > 0.5) probability += 0.1;
-    
+
     // 应用性格影响
-    probability *= (2 - traits.challengeThreshold);
-    
+    probability *= 2 - traits.challengeThreshold;
+
     return Math.max(0.1, Math.min(0.9, probability));
   }
-  
+
   /**
    * 选择要出的牌
    * 普通策略：优先出骗子牌，没有则考虑是否撒谎
    */
-  selectCard(context: StrategyContext): { 
-    cardIds: string[]; 
+  selectCard(context: StrategyContext): {
+    cardIds: string[];
     claimedRank: string;
     isBluff: boolean;
   } | null {
     const hand = context.aiPlayer.hand;
     const liarCard = context.liarCard;
-    
+
     if (hand.length === 0) return null;
-    
+
     // 分类手牌
     const liarCards = hand.filter(c => c.rank === liarCard || c.isJoker);
     const otherCards = hand.filter(c => c.rank !== liarCard && !c.isJoker);
-    
+
     // 优先出骗子牌
     if (liarCards.length > 0 && Math.random() > 0.3) {
       const card = liarCards[0];
@@ -141,7 +141,7 @@ export class NormalStrategy implements AIStrategy {
         isBluff: false,
       };
     }
-    
+
     // 出其他牌（撒谎）
     if (otherCards.length > 0) {
       const card = otherCards[0];
@@ -151,7 +151,7 @@ export class NormalStrategy implements AIStrategy {
         isBluff: true,
       };
     }
-    
+
     // 保底选择
     const card = hand[0];
     return {
@@ -160,7 +160,7 @@ export class NormalStrategy implements AIStrategy {
       isBluff: card.rank !== liarCard,
     };
   }
-  
+
   /**
    * 更新记忆
    */
@@ -170,7 +170,7 @@ export class NormalStrategy implements AIStrategy {
       this.memory.playedCards.push(...playedCards.cardIds);
     }
   }
-  
+
   /**
    * 获取性格特征
    */
@@ -198,7 +198,7 @@ export class NormalStrategy implements AIStrategy {
         adaptability: 0.6,
       },
     };
-    
+
     return traits[personality] || traits.balanced;
   }
 }

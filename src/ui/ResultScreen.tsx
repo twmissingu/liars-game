@@ -33,7 +33,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
       {/* 背景 */}
       <div className="cg-result-bg">
         <div className="cg-result-bg-gradient" />
-        
+
         {isWin ? (
           <div className="cg-result-bg-win">
             <div className="cg-victory-rays" />
@@ -76,8 +76,8 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
                 {[...Array(5)].map((_, i) => (
                   <circle
                     key={i}
-                    cx={50 + 35 * Math.cos((i * 72 - 90) * Math.PI / 180)}
-                    cy={50 + 35 * Math.sin((i * 72 - 90) * Math.PI / 180)}
+                    cx={50 + 35 * Math.cos(((i * 72 - 90) * Math.PI) / 180)}
+                    cy={50 + 35 * Math.sin(((i * 72 - 90) * Math.PI) / 180)}
                     r="3"
                     fill="#d4af37"
                   >
@@ -125,11 +125,8 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
         {/* 角色展示 */}
         <div className="cg-result-character">
           <div className="cg-character-showcase">
-            <ChibiAvatar
-              characterId={resultCharacter}
-              size={300}
-            />
-            
+            <ChibiAvatar characterId={resultCharacter} size={300} />
+
             {/* 角色光环效果 */}
             <div className={`cg-character-aura ${isWin ? 'cg-aura-win' : 'cg-aura-lose'}`} />
           </div>
@@ -501,7 +498,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 // 彩花效果组件
 const ConfettiEffect: React.FC = () => {
   const colors = ['#d4af37', '#f4d03f', '#dc2626', '#f5f5f5', '#71717a'];
-  
+
   return (
     <div className="cg-confetti-container">
       {[...Array(50)].map((_, i) => (

@@ -2,23 +2,18 @@
  * =============================================================================
  * Code Geass: Liar's Game - AI引擎
  * =============================================================================
- * 
+ *
  * 负责管理AI决策、动画状态和配置
- * 
+ *
  * @author Code Agent
  * @version 2.0.0
  */
 
-import { 
-  AIStrategy, 
-  EasyStrategy, 
-  NormalStrategy, 
-  HardStrategy 
-} from './strategies';
-import type { 
-  AIDecision, 
-  AIConfig, 
-  StrategyContext, 
+import { AIStrategy, EasyStrategy, NormalStrategy, HardStrategy } from './strategies';
+import type {
+  AIDecision,
+  AIConfig,
+  StrategyContext,
   AIThought,
   AIAnimationState,
   Difficulty,
@@ -33,22 +28,22 @@ import type {
 export class AIEngine {
   /** 当前策略 */
   private strategy: AIStrategy;
-  
+
   /** AI配置 */
   private config: AIConfig;
-  
+
   /** 思考状态回调 */
   private thoughtCallback?: (thought: AIThought) => void;
-  
+
   /** 当前动画状态 */
   private currentState: AIAnimationState = 'idle';
-  
+
   /** 是否正在决策中 */
   private decisionInProgress: boolean = false;
 
   /**
    * 构造函数
-   * 
+   *
    * @param difficulty - 难度等级
    * @param personality - AI性格
    */
@@ -56,19 +51,19 @@ export class AIEngine {
     this.config = this.createDefaultConfig(difficulty, personality);
     this.strategy = this.createStrategy(difficulty);
   }
-  
+
   /**
    * 设置思考状态回调
-   * 
+   *
    * @param callback - 回调函数
    */
   setThoughtCallback(callback: (thought: AIThought) => void): void {
     this.thoughtCallback = callback;
   }
-  
+
   /**
    * 更新AI配置
-   * 
+   *
    * @param config - 新的配置
    */
   updateConfig(config: Partial<AIConfig>): void {
@@ -76,22 +71,22 @@ export class AIEngine {
     if (config.difficulty && config.difficulty !== this.config.difficulty) {
       this.strategy = this.createStrategy(config.difficulty);
     }
-    
+
     this.config = { ...this.config, ...config };
   }
-  
+
   /**
    * 获取当前配置
-   * 
+   *
    * @returns AI配置
    */
   getConfig(): AIConfig {
     return { ...this.config };
   }
-  
+
   /**
    * 执行AI决策（带动画效果）
-   * 
+   *
    * @param context - 策略上下文
    * @returns AI决策结果
    */
@@ -99,42 +94,42 @@ export class AIEngine {
     if (this.decisionInProgress) {
       throw new Error('AI决策正在进行中');
     }
-    
+
     this.decisionInProgress = true;
-    
+
     try {
       // 1. 思考阶段动画
       await this.playThinkingAnimation();
-      
+
       // 2. 决策阶段
       await this.playDecidingAnimation();
-      
+
       // 3. 执行策略决策
       const decision = this.strategy.makeDecision(context, this.config);
-      
+
       // 4. 执行动作动画
       await this.playActionAnimation(decision);
-      
+
       return decision;
     } finally {
       this.decisionInProgress = false;
       this.setAnimationState('idle');
     }
   }
-  
+
   /**
    * 快速决策（无动画）
-   * 
+   *
    * @param context - 策略上下文
    * @returns AI决策结果
    */
   makeDecisionInstant(context: StrategyContext): AIDecision {
     return this.strategy.makeDecision(context, this.config);
   }
-  
+
   /**
    * 获取AI思考信息（用于UI显示）
-   * 
+   *
    * @returns 当前思考信息
    */
   getCurrentThought(): AIThought {
@@ -142,40 +137,40 @@ export class AIEngine {
       state: this.currentState,
       progress: this.getProgressForState(this.currentState),
       message: this.getMessageForState(this.currentState),
-      emotion: this.getEmotionForState(this.currentState)
+      emotion: this.getEmotionForState(this.currentState),
     };
   }
-  
+
   /**
    * 获取策略名称
-   * 
+   *
    * @returns 策略名称
    */
   getStrategyName(): string {
     return this.strategy.name;
   }
-  
+
   /**
    * 获取策略描述
-   * 
+   *
    * @returns 策略描述
    */
   getStrategyDescription(): string {
     return this.strategy.description;
   }
-  
+
   /**
    * 更新算牌记忆
-   * 
+   *
    * @param context - 策略上下文
    */
   updateMemory(context: StrategyContext): void {
     this.strategy.updateMemory(context);
   }
-  
+
   /**
    * 获取性格参数
-   * 
+   *
    * @returns 性格特征
    */
   getPersonalityTraits(): PersonalityTraits {
@@ -186,7 +181,7 @@ export class AIEngine {
 
   /**
    * 创建策略实例
-   * 
+   *
    * @param difficulty - 难度等级
    * @returns 策略实例
    */
@@ -205,7 +200,7 @@ export class AIEngine {
 
   /**
    * 创建默认配置
-   * 
+   *
    * @param difficulty - 难度等级
    * @param personality - AI性格
    * @returns 默认配置
@@ -214,14 +209,14 @@ export class AIEngine {
     const delayMap: Record<Difficulty, number> = {
       easy: 800,
       normal: 1200,
-      hard: 1500
+      hard: 1500,
     };
-    
+
     return {
       difficulty,
       personality,
       reactionDelay: delayMap[difficulty],
-      enableAnimation: true
+      enableAnimation: true,
     };
   }
 
@@ -230,25 +225,20 @@ export class AIEngine {
    */
   private async playThinkingAnimation(): Promise<void> {
     this.setAnimationState('thinking');
-    
-    const messages = [
-      '分析局势中...',
-      '计算概率...',
-      '观察对手...',
-      '评估风险...'
-    ];
-    
+
+    const messages = ['分析局势中...', '计算概率...', '观察对手...', '评估风险...'];
+
     const steps = 4;
     const stepDelay = this.config.reactionDelay / steps;
-    
+
     for (let i = 0; i < steps; i++) {
       this.notifyThought({
         state: 'thinking',
         progress: (i / steps) * 100,
         message: messages[i % messages.length],
-        emotion: 'calm'
+        emotion: 'calm',
       });
-      
+
       await this.delay(stepDelay);
     }
   }
@@ -258,45 +248,45 @@ export class AIEngine {
    */
   private async playDecidingAnimation(): Promise<void> {
     this.setAnimationState('deciding');
-    
+
     this.notifyThought({
       state: 'deciding',
       progress: 75,
       message: '做出决策...',
-      emotion: 'confident'
+      emotion: 'confident',
     });
-    
+
     await this.delay(this.config.reactionDelay * 0.3);
   }
 
   /**
    * 播放动作动画
-   * 
+   *
    * @param decision - AI决策
    */
   private async playActionAnimation(decision: AIDecision): Promise<void> {
     const state = decision.action === 'challenge' ? 'challenging' : 'playing';
     this.setAnimationState(state);
-    
+
     const messages: Record<string, string> = {
       play: decision.isBluff ? '打出卡牌（虚张声势）' : '打出卡牌',
       challenge: '质疑！',
-      pass: '选择观望'
+      pass: '选择观望',
     };
-    
+
     this.notifyThought({
       state,
       progress: 100,
       message: messages[decision.action] || '执行动作',
-      emotion: decision.confidence > 0.7 ? 'confident' : 'uncertain'
+      emotion: decision.confidence > 0.7 ? 'confident' : 'uncertain',
     });
-    
+
     await this.delay(300);
   }
 
   /**
    * 设置动画状态
-   * 
+   *
    * @param state - 动画状态
    */
   private setAnimationState(state: AIAnimationState): void {
@@ -305,7 +295,7 @@ export class AIEngine {
 
   /**
    * 通知思考状态
-   * 
+   *
    * @param thought - 思考信息
    */
   private notifyThought(thought: AIThought): void {
@@ -316,7 +306,7 @@ export class AIEngine {
 
   /**
    * 获取状态对应的进度
-   * 
+   *
    * @param state - 动画状态
    * @returns 进度 0-100
    */
@@ -327,14 +317,14 @@ export class AIEngine {
       deciding: 75,
       playing: 90,
       challenging: 90,
-      reacting: 100
+      reacting: 100,
     };
     return progressMap[state] || 0;
   }
 
   /**
    * 获取状态对应的消息
-   * 
+   *
    * @param state - 动画状态
    * @returns 消息文本
    */
@@ -345,14 +335,14 @@ export class AIEngine {
       deciding: '决策中...',
       playing: '出牌中...',
       challenging: '质疑中...',
-      reacting: '反应中...'
+      reacting: '反应中...',
     };
     return messageMap[state];
   }
 
   /**
    * 获取状态对应的情绪
-   * 
+   *
    * @param state - 动画状态
    * @returns 情绪类型
    */
@@ -373,7 +363,7 @@ export class AIEngine {
 
   /**
    * 延迟函数
-   * 
+   *
    * @param ms - 毫秒数
    * @returns Promise
    */
@@ -387,17 +377,17 @@ export class AIEngine {
  */
 export class AIEngineManager {
   private static instances: Map<string, AIEngine> = new Map();
-  
+
   /**
    * 获取AI引擎实例
-   * 
+   *
    * @param playerId - 玩家ID
    * @param difficulty - 难度等级
    * @param personality - AI性格
    * @returns AI引擎实例
    */
   static getInstance(
-    playerId: string, 
+    playerId: string,
     difficulty: Difficulty = 'normal',
     personality: Personality = 'balanced'
   ): AIEngine {
@@ -406,16 +396,16 @@ export class AIEngineManager {
     }
     return this.instances.get(playerId)!;
   }
-  
+
   /**
    * 移除AI引擎实例
-   * 
+   *
    * @param playerId - 玩家ID
    */
   static removeInstance(playerId: string): void {
     this.instances.delete(playerId);
   }
-  
+
   /**
    * 清除所有实例
    */

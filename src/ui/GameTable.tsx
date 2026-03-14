@@ -63,7 +63,7 @@ export const GameTable: React.FC<GameTableProps> = ({
       AvatarPreloader.preloadAvatar(selectedCharacter, selectedAvatar);
     }
     // 预加载所有AI角色头像
-    aiCharacters.forEach((char) => {
+    aiCharacters.forEach(char => {
       const avatarNum = aiAvatars[char] || 1;
       AvatarPreloader.preloadAvatar(char, avatarNum);
     });
@@ -90,20 +90,39 @@ export const GameTable: React.FC<GameTableProps> = ({
     onLelouchSkill?.(rank);
   };
 
-  const getSuitSymbol = (suit: string) => ({ spades: '♠', hearts: '♥', clubs: '♣', diamonds: '♦', joker: '🃏' }[suit] || suit);
-  const getSuitColor = (suit: string) => suit === 'joker' ? '#d4af37' : (suit === 'hearts' || suit === 'diamonds' ? '#dc2626' : '#1a1a24');
+  const getSuitSymbol = (suit: string) =>
+    ({ spades: '♠', hearts: '♥', clubs: '♣', diamonds: '♦', joker: '🃏' })[suit] || suit;
+  const getSuitColor = (suit: string) =>
+    suit === 'joker' ? '#d4af37' : suit === 'hearts' || suit === 'diamonds' ? '#dc2626' : '#1a1a24';
 
   const playerName = getCharacterName(selectedCharacter);
   const playerColor = getCharacterColor(selectedCharacter);
 
   // 渲染角色（统一格式）
-  const renderCharacter = (name: string, characterId: CharacterId | null, hp: number, cardCount: number, color: string, avatarNum: number, isTop: boolean = false) => (
+  const renderCharacter = (
+    name: string,
+    characterId: CharacterId | null,
+    hp: number,
+    cardCount: number,
+    color: string,
+    avatarNum: number,
+    isTop: boolean = false
+  ) => (
     <div className={`cg-character ${isTop ? 'cg-character-top' : ''}`}>
       <div className="cg-character-avatar">
-        {characterId && <ChibiAvatar characterId={characterId} size={160} avatarNumber={avatarNum} priority={true} />}
+        {characterId && (
+          <ChibiAvatar
+            characterId={characterId}
+            size={160}
+            avatarNumber={avatarNum}
+            priority={true}
+          />
+        )}
       </div>
       <div className="cg-character-info">
-        <div className="cg-character-name" style={{ color }}>{name}</div>
+        <div className="cg-character-name" style={{ color }}>
+          {name}
+        </div>
         <div className="cg-character-stats">
           <span>{Array(hp).fill('❤️').join('')}</span>
           <span className="cg-card-count">🃏{cardCount}</span>
@@ -116,9 +135,13 @@ export const GameTable: React.FC<GameTableProps> = ({
     <div className="cg-game-table">
       {/* 顶部栏 */}
       <div className="cg-top-bar">
-        <button className="cg-back-button" onClick={onBackToMenu}>← 主页面</button>
+        <button className="cg-back-button" onClick={onBackToMenu}>
+          ← 主页面
+        </button>
         <div className="cg-round-info">回合 {currentRound}</div>
-        <div className="cg-liar-card">骗子牌 <span>{liarCard}</span></div>
+        <div className="cg-liar-card">
+          骗子牌 <span>{liarCard}</span>
+        </div>
         <div className="cg-placeholder"></div>
       </div>
 
@@ -128,7 +151,12 @@ export const GameTable: React.FC<GameTableProps> = ({
           <div className="cg-log-title">📜 游戏记录</div>
           <div className="cg-log-content">
             {gameLog.map((log, i) => (
-              <div key={i} className={`cg-log-item ${log.includes('质疑') ? 'challenge' : ''} ${log.includes('Geass') ? 'geass' : ''}`}>{log}</div>
+              <div
+                key={i}
+                className={`cg-log-item ${log.includes('质疑') ? 'challenge' : ''} ${log.includes('Geass') ? 'geass' : ''}`}
+              >
+                {log}
+              </div>
             ))}
           </div>
         </div>
@@ -137,11 +165,11 @@ export const GameTable: React.FC<GameTableProps> = ({
         <div className="cg-play-area">
           {/* AI 1 - 顶部 (id='ai') */}
           {renderCharacter(
-            getCharacterName(aiPlayers?.[0]?.character || aiCharacters[0]), 
-            aiPlayers?.[0]?.character || aiCharacters[0], 
-            aiPlayers?.[0]?.stats?.hp || 3, 
-            aiPlayers?.[0]?.hand?.length || 0, 
-            getCharacterColor(aiPlayers?.[0]?.character || aiCharacters[0]), 
+            getCharacterName(aiPlayers?.[0]?.character || aiCharacters[0]),
+            aiPlayers?.[0]?.character || aiCharacters[0],
+            aiPlayers?.[0]?.stats?.hp || 3,
+            aiPlayers?.[0]?.hand?.length || 0,
+            getCharacterColor(aiPlayers?.[0]?.character || aiCharacters[0]),
             aiAvatars[aiPlayers?.[0]?.character || aiCharacters[0]] || 1,
             true
           )}
@@ -150,11 +178,11 @@ export const GameTable: React.FC<GameTableProps> = ({
           <div className="cg-middle-row">
             {/* AI 2 - 左侧 (id='ai2') */}
             {renderCharacter(
-              getCharacterName(aiPlayers?.[1]?.character || aiCharacters[1]), 
-              aiPlayers?.[1]?.character || aiCharacters[1], 
-              aiPlayers?.[1]?.stats?.hp || 3, 
-              aiPlayers?.[1]?.hand?.length || 0, 
-              getCharacterColor(aiPlayers?.[1]?.character || aiCharacters[1]), 
+              getCharacterName(aiPlayers?.[1]?.character || aiCharacters[1]),
+              aiPlayers?.[1]?.character || aiCharacters[1],
+              aiPlayers?.[1]?.stats?.hp || 3,
+              aiPlayers?.[1]?.hand?.length || 0,
+              getCharacterColor(aiPlayers?.[1]?.character || aiCharacters[1]),
               aiAvatars[aiPlayers?.[1]?.character || aiCharacters[1]] || 1
             )}
 
@@ -163,11 +191,20 @@ export const GameTable: React.FC<GameTableProps> = ({
               <div className="cg-table-inner">
                 {turnState?.playedCards ? (
                   <div className="cg-played">
-                    <div className="cg-player-name" style={{color: '#d4af37', fontWeight: 'bold', marginBottom: '8px'}}>
-                      {turnState.playedCards.playerId === 'player' ? playerName : 
-                       turnState.playedCards.playerId.startsWith('ai') ? 
-                       getCharacterName(aiPlayers?.find((ai: { id: string }) => ai.id === turnState.playedCards.playerId)?.character || 'cc') : 
-                       '未知玩家'} 出牌
+                    <div
+                      className="cg-player-name"
+                      style={{ color: '#d4af37', fontWeight: 'bold', marginBottom: '8px' }}
+                    >
+                      {turnState.playedCards.playerId === 'player'
+                        ? playerName
+                        : turnState.playedCards.playerId.startsWith('ai')
+                          ? getCharacterName(
+                              aiPlayers?.find(
+                                (ai: { id: string }) => ai.id === turnState.playedCards.playerId
+                              )?.character || 'cc'
+                            )
+                          : '未知玩家'}{' '}
+                      出牌
                     </div>
                     <div className="cg-cards">
                       {/* 出牌时显示背面，质疑后才显示实际牌 */}
@@ -177,7 +214,9 @@ export const GameTable: React.FC<GameTableProps> = ({
                         </div>
                       ))}
                     </div>
-                    <div className="cg-card-count-display">{turnState.playedCards.cardIds.length} 张牌</div>
+                    <div className="cg-card-count-display">
+                      {turnState.playedCards.cardIds.length} 张牌
+                    </div>
                   </div>
                 ) : (
                   <div className="cg-placeholder-text">等待出牌...</div>
@@ -187,11 +226,11 @@ export const GameTable: React.FC<GameTableProps> = ({
 
             {/* AI 3 - 右侧 (id='ai3') */}
             {renderCharacter(
-              getCharacterName(aiPlayers?.[2]?.character || aiCharacters[2]), 
-              aiPlayers?.[2]?.character || aiCharacters[2], 
-              aiPlayers?.[2]?.stats?.hp || 3, 
-              aiPlayers?.[2]?.hand?.length || 0, 
-              getCharacterColor(aiPlayers?.[2]?.character || aiCharacters[2]), 
+              getCharacterName(aiPlayers?.[2]?.character || aiCharacters[2]),
+              aiPlayers?.[2]?.character || aiCharacters[2],
+              aiPlayers?.[2]?.stats?.hp || 3,
+              aiPlayers?.[2]?.hand?.length || 0,
+              getCharacterColor(aiPlayers?.[2]?.character || aiCharacters[2]),
               aiAvatars[aiPlayers?.[2]?.character || aiCharacters[2]] || 1
             )}
           </div>
@@ -199,17 +238,17 @@ export const GameTable: React.FC<GameTableProps> = ({
           {/* 玩家 */}
           <div className="cg-player-position">
             {renderCharacter(
-              playerName, 
-              selectedCharacter, 
-              playerStats.hp, 
-              playerHand.length, 
+              playerName,
+              selectedCharacter,
+              playerStats.hp,
+              playerHand.length,
               playerColor,
               selectedAvatar
             )}
             {selectedCharacter === 'lelouch' && isPlayerTurn && (
-              <button 
-                className="cg-skill-btn" 
-                onClick={handleLelouchSkillClick} 
+              <button
+                className="cg-skill-btn"
+                onClick={handleLelouchSkillClick}
                 disabled={isProcessing || !canUseSkill}
                 title={canUseSkill ? '每局限用1次' : '已使用'}
               >
@@ -230,12 +269,16 @@ export const GameTable: React.FC<GameTableProps> = ({
                 key={card.id}
                 className={`cg-card ${isSelected ? 'selected' : ''} ${!isPlayerTurn || isProcessing ? 'disabled' : ''}`}
                 onClick={() => onToggleCardSelection(card.id)}
-                style={{ transform: `translateX(${(i - playerHand.length / 2) * 45}px) ${isSelected ? 'translateY(-20px)' : ''}` }}
+                style={{
+                  transform: `translateX(${(i - playerHand.length / 2) * 45}px) ${isSelected ? 'translateY(-20px)' : ''}`,
+                }}
                 disabled={!isPlayerTurn || isProcessing}
               >
                 <div className="cg-card-face">
                   <div style={{ color: getSuitColor(card.suit) }}>{card.rank}</div>
-                  <div style={{ color: getSuitColor(card.suit), fontSize: '20px' }}>{getSuitSymbol(card.suit)}</div>
+                  <div style={{ color: getSuitColor(card.suit), fontSize: '20px' }}>
+                    {getSuitSymbol(card.suit)}
+                  </div>
                 </div>
                 {isSelected && <div className="cg-check">✓</div>}
               </button>
@@ -247,16 +290,28 @@ export const GameTable: React.FC<GameTableProps> = ({
       {/* 操作栏 */}
       <div className="cg-actions">
         {isPlayerTurn && selectedCards.length > 0 && (
-          <button className="cg-btn cg-btn-play" onClick={handlePlayClick} disabled={isProcessing}>出牌 ({selectedCards.length})</button>
+          <button className="cg-btn cg-btn-play" onClick={handlePlayClick} disabled={isProcessing}>
+            出牌 ({selectedCards.length})
+          </button>
         )}
         {isPlayerTurn && selectedCards.length === 0 && (
-          <button className="cg-btn cg-btn-skip" onClick={onPass} disabled={isProcessing}>跳过</button>
+          <button className="cg-btn cg-btn-skip" onClick={onPass} disabled={isProcessing}>
+            跳过
+          </button>
         )}
         {/* 质疑阶段：轮到玩家质疑时显示质疑/不质疑按钮 */}
         {isPlayerChallengeTurn && (
           <>
-            <button className="cg-btn cg-btn-challenge" onClick={onChallenge} disabled={isProcessing}>⚔️ 质疑</button>
-            <button className="cg-btn cg-btn-skip" onClick={onPass} disabled={isProcessing}>不质疑</button>
+            <button
+              className="cg-btn cg-btn-challenge"
+              onClick={onChallenge}
+              disabled={isProcessing}
+            >
+              ⚔️ 质疑
+            </button>
+            <button className="cg-btn cg-btn-skip" onClick={onPass} disabled={isProcessing}>
+              不质疑
+            </button>
           </>
         )}
         {/* 质疑阶段：等待其他玩家质疑 */}
@@ -274,10 +329,18 @@ export const GameTable: React.FC<GameTableProps> = ({
             <h3>选择新的骗子牌</h3>
             <div className="cg-rank-btns">
               {['Q', 'K', 'A'].map(r => (
-                <button key={r} className={r === liarCard ? 'current' : ''} onClick={() => handleLelouchRankSelect(r as CardRank)}>{r}</button>
+                <button
+                  key={r}
+                  className={r === liarCard ? 'current' : ''}
+                  onClick={() => handleLelouchRankSelect(r as CardRank)}
+                >
+                  {r}
+                </button>
               ))}
             </div>
-            <button className="cg-btn-skip" onClick={() => setShowLelouchSkill(false)}>取消</button>
+            <button className="cg-btn-skip" onClick={() => setShowLelouchSkill(false)}>
+              取消
+            </button>
           </div>
         </div>
       )}

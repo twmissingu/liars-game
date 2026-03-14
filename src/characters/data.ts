@@ -2,15 +2,15 @@
  * =============================================================================
  * Code Geass: Liar's Game - 角色数据
  * =============================================================================
- * 
+ *
  * 定义游戏中所有角色的基础数据和技能
- * 
+ *
  * 角色列表：
  * - 鲁鲁修：绝对命令（强制改变骗子牌）
  * - C.C.：Code之力（复活）
  * - 朱雀：枢木剑术（闪避反击）
  * - 卡莲：红莲二式（多张出牌）
- * 
+ *
  * @author Code Agent
  * @version 2.0.0
  */
@@ -190,7 +190,7 @@ export const characterList: Character[] = [lelouch, cc, suzaku, kallen];
 
 /**
  * 获取角色数据
- * 
+ *
  * @param id - 角色ID
  * @returns 角色数据
  */
@@ -200,7 +200,7 @@ export function getCharacter(id: CharacterId): Character {
 
 /**
  * 获取所有角色ID
- * 
+ *
  * @returns 角色ID数组
  */
 export function getCharacterIds(): CharacterId[] {
@@ -209,7 +209,7 @@ export function getCharacterIds(): CharacterId[] {
 
 /**
  * 获取角色名称
- * 
+ *
  * @param id - 角色ID
  * @returns 角色名称
  */
@@ -219,7 +219,7 @@ export function getCharacterName(id: CharacterId): string {
 
 /**
  * 获取角色技能描述
- * 
+ *
  * @param id - 角色ID
  * @returns 技能描述
  */
@@ -231,7 +231,7 @@ export function getCharacterSkillDescription(id: CharacterId): string {
 
 /**
  * 获取角色颜色
- * 
+ *
  * @param id - 角色ID
  * @returns 角色主题色
  */

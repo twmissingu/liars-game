@@ -41,7 +41,7 @@ export const GeassSymbol: React.FC<GeassSymbolProps> = ({
           </feMerge>
         </filter>
       </defs>
-      
+
       {/* 外圈 */}
       <circle
         cx="50"
@@ -53,7 +53,7 @@ export const GeassSymbol: React.FC<GeassSymbolProps> = ({
         filter="url(#geassGlow)"
         opacity="0.8"
       />
-      
+
       {/* Geass星形 */}
       <path
         d="M50 10 L57 40 L90 50 L57 60 L50 90 L43 60 L10 50 L43 40 Z"
@@ -73,28 +73,17 @@ export const GeassSymbol: React.FC<GeassSymbolProps> = ({
           />
         )}
       </path>
-      
+
       {/* 内圈 */}
-      <circle
-        cx="50"
-        cy="50"
-        r="15"
-        fill="#dc2626"
-        filter="url(#geassGlow)"
-      >
+      <circle cx="50" cy="50" r="15" fill="#dc2626" filter="url(#geassGlow)">
         {animate && (
-          <animate
-            attributeName="r"
-            values="15;18;15"
-            dur="2s"
-            repeatCount="indefinite"
-          />
+          <animate attributeName="r" values="15;18;15" dur="2s" repeatCount="indefinite" />
         )}
       </circle>
-      
+
       {/* 中心点 */}
       <circle cx="50" cy="50" r="5" fill="#f5f5f5" />
-      
+
       {/* 装饰符文 */}
       {[0, 45, 90, 135, 180, 225, 270, 315].map((angle, i) => (
         <line
@@ -142,23 +131,23 @@ export const GeassFullscreenEffect: React.FC<GeassFullscreenEffectProps> = ({
   useEffect(() => {
     if (isActive && phase === 'idle') {
       setPhase('charging');
-      
+
       // 充能阶段
       const chargeTimer = setTimeout(() => {
         setPhase('release');
       }, 1500);
-      
+
       // 释放阶段
       const releaseTimer = setTimeout(() => {
         setPhase('fade');
       }, 2500);
-      
+
       // 结束
       const endTimer = setTimeout(() => {
         setPhase('idle');
         onComplete?.();
       }, 3500);
-      
+
       return () => {
         clearTimeout(chargeTimer);
         clearTimeout(releaseTimer);
@@ -173,22 +162,22 @@ export const GeassFullscreenEffect: React.FC<GeassFullscreenEffectProps> = ({
     <div className={`cg-geass-fullscreen cg-phase-${phase}`}>
       {/* 背景暗化 */}
       <div className="cg-geass-overlay" />
-      
+
       {/* 红色光晕 */}
       <div className="cg-geass-aura" />
-      
+
       {/* 中央Geass符号 */}
       <div className="cg-geass-center">
         <GeassSymbol size={200} animate={phase === 'charging'} />
       </div>
-      
+
       {/* 旋转符文环 */}
       <div className="cg-geass-rings">
         <div className="cg-ring cg-ring-1" />
         <div className="cg-ring cg-ring-2" />
         <div className="cg-ring cg-ring-3" />
       </div>
-      
+
       {/* 能量光束 */}
       {phase === 'release' && (
         <div className="cg-geass-beams">
@@ -204,7 +193,7 @@ export const GeassFullscreenEffect: React.FC<GeassFullscreenEffectProps> = ({
           ))}
         </div>
       )}
-      
+
       {/* 目标标记 */}
       {phase === 'release' && (
         <div className={`cg-geass-target cg-target-${target}`}>
@@ -212,7 +201,7 @@ export const GeassFullscreenEffect: React.FC<GeassFullscreenEffectProps> = ({
           <div className="cg-target-crosshair" />
         </div>
       )}
-      
+
       {/* 文字效果 */}
       <div className="cg-geass-text">
         <span className="cg-geass-command">以鲁鲁修·vi·布里塔尼亚之名</span>
@@ -481,9 +470,11 @@ export const GeassControlled: React.FC<GeassControlledProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`cg-geass-controlled ${isControlled ? 'cg-controlled-active' : ''} ${className}`}>
+    <div
+      className={`cg-geass-controlled ${isControlled ? 'cg-controlled-active' : ''} ${className}`}
+    >
       {children}
-      
+
       {/* Geass眼睛覆盖层 */}
       {isControlled && (
         <div className="cg-geass-eye-overlay">
@@ -561,18 +552,10 @@ export const GeassButton: React.FC<GeassButtonProps> = ({
   ...props
 }) => {
   return (
-    <button
-      className={`cg-geass-button ${isCharged ? 'cg-charged' : ''} ${className}`}
-      {...props}
-    >
+    <button className={`cg-geass-button ${isCharged ? 'cg-charged' : ''} ${className}`} {...props}>
       {/* 充能进度环 */}
       <svg className="cg-charge-ring" viewBox="0 0 100 100">
-        <circle
-          className="cg-charge-bg"
-          cx="50"
-          cy="50"
-          r="45"
-        />
+        <circle className="cg-charge-bg" cx="50" cy="50" r="45" />
         <circle
           className="cg-charge-progress"
           cx="50"
@@ -584,9 +567,9 @@ export const GeassButton: React.FC<GeassButtonProps> = ({
           }}
         />
       </svg>
-      
+
       <span className="cg-button-content">{children}</span>
-      
+
       {/* Geass符号 */}
       {isCharged && (
         <div className="cg-button-geass-icon">

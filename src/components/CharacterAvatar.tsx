@@ -33,7 +33,7 @@ export interface CharacterAvatarProps {
 
 /**
  * 角色头像组件
- * 
+ *
  * 使用示例：
  * ```tsx
  * <CharacterAvatar characterId="lelouch" size="large" showName animate />
@@ -51,14 +51,14 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
   className = '',
 }) => {
   const character = getCharacter(characterId);
-  
+
   const sizeClasses: Record<AvatarSize, string> = {
     small: 'character-avatar--small',
     medium: 'character-avatar--medium',
     large: 'character-avatar--large',
     xlarge: 'character-avatar--xlarge',
   };
-  
+
   return (
     <div
       className={`
@@ -74,15 +74,11 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
     >
       {/* 头像主体 */}
       <div className="character-avatar__image">
-        <div className="character-avatar__placeholder">
-          {character.avatar}
-        </div>
-        
+        <div className="character-avatar__placeholder">{character.avatar}</div>
+
         {/* 选中光环 */}
-        {selected && (
-          <div className="character-avatar__glow" />
-        )}
-        
+        {selected && <div className="character-avatar__glow" />}
+
         {/* 动画效果 */}
         {animate && (
           <div className="character-avatar__effects">
@@ -90,25 +86,17 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
             <div className="character-avatar__particles" />
           </div>
         )}
-        
+
         {/* 技能图标 */}
-        {showSkill && (
-          <div className="character-avatar__skill">
-            {character.skill.icon}
-          </div>
-        )}
+        {showSkill && <div className="character-avatar__skill">{character.skill.icon}</div>}
       </div>
-      
+
       {/* 信息区域 */}
       {(showName || showFaction) && (
         <div className="character-avatar__info">
-          {showName && (
-            <span className="character-avatar__name">{character.name}</span>
-          )}
+          {showName && <span className="character-avatar__name">{character.name}</span>}
           {showFaction && (
-            <span className="character-avatar__faction">
-              {getFactionLabel(character.faction)}
-            </span>
+            <span className="character-avatar__faction">{getFactionLabel(character.faction)}</span>
           )}
         </div>
       )}
@@ -120,8 +108,8 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
 function getFactionLabel(faction: string): string {
   const labels: Record<string, string> = {
     'black-knights': '黑骑',
-    'britannia': '帝国',
-    'neutral': '中立',
+    britannia: '帝国',
+    neutral: '中立',
   };
   return labels[faction] || faction;
 }
@@ -148,12 +136,12 @@ export const SkillIndicator: React.FC<SkillIndicatorProps> = ({
 }) => {
   const character = getCharacter(characterId);
   const skill = character.skill;
-  
+
   const isPassive = skill.type === 'passive';
   const isAvailable = !isPassive && cooldown === 0 && (usesLeft === undefined || usesLeft > 0);
-  
+
   return (
-    <div 
+    <div
       className={`
         skill-indicator
         skill-indicator--${size}
@@ -163,20 +151,20 @@ export const SkillIndicator: React.FC<SkillIndicatorProps> = ({
       `}
     >
       <div className="skill-indicator__icon">{skill.icon}</div>
-      
+
       {!isPassive && (
         <div className="skill-indicator__status">
           {cooldown > 0 ? (
             <span className="skill-indicator__cooldown">{cooldown}</span>
           ) : usesLeft !== undefined && skill.maxUses > 0 ? (
-            <span className="skill-indicator__uses">{usesLeft}/{skill.maxUses}</span>
+            <span className="skill-indicator__uses">
+              {usesLeft}/{skill.maxUses}
+            </span>
           ) : null}
         </div>
       )}
-      
-      {isActive && (
-        <div className="skill-indicator__pulse" />
-      )}
+
+      {isActive && <div className="skill-indicator__pulse" />}
     </div>
   );
 };

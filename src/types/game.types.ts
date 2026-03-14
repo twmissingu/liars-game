@@ -8,7 +8,7 @@
 
 export type CharacterId = 'lelouch' | 'cc' | 'suzaku' | 'kallen';
 
-export type ScreenType = 
+export type ScreenType =
   | 'main-menu'
   | 'character-select'
   | 'game-table'
@@ -16,19 +16,9 @@ export type ScreenType =
   | 'settings'
   | 'help';
 
-export type AnimationState = 
-  | 'idle'
-  | 'breathing'
-  | 'playing-card'
-  | 'win'
-  | 'lose';
+export type AnimationState = 'idle' | 'breathing' | 'playing-card' | 'win' | 'lose';
 
-export type GamePhase = 
-  | 'setup'
-  | 'playing'
-  | 'challenge'
-  | 'resolve'
-  | 'end';
+export type GamePhase = 'setup' | 'playing' | 'challenge' | 'resolve' | 'end';
 
 export type Difficulty = 'easy' | 'normal' | 'hard';
 
@@ -139,7 +129,7 @@ export interface ResultScreenProps {
 // AI相关类型
 // ============================================
 
-export type AIAnimationState = 
+export type AIAnimationState =
   | 'idle'
   | 'thinking'
   | 'deciding'

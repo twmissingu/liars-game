@@ -9,13 +9,13 @@ interface ChibiAvatarProps {
   priority?: boolean; // 是否优先加载
 }
 
-export const ChibiAvatar: React.FC<ChibiAvatarProps> = ({ 
-  characterId, 
+export const ChibiAvatar: React.FC<ChibiAvatarProps> = ({
+  characterId,
   size = 160,
   avatarNumber,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   animationState = 'idle',
-  priority = false
+  priority = false,
 }) => {
   return (
     <OptimizedAvatar

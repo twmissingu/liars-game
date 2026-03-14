@@ -102,7 +102,10 @@ export const GeassPulse: React.FC<GeassPulseProps> = ({
   const intensityMap = {
     low: { shadow: `0 0 10px ${color}40`, spread: '20px' },
     medium: { shadow: `0 0 20px ${color}60, 0 0 40px ${color}40`, spread: '40px' },
-    high: { shadow: `0 0 30px ${color}80, 0 0 60px ${color}60, 0 0 90px ${color}40`, spread: '60px' },
+    high: {
+      shadow: `0 0 30px ${color}80, 0 0 60px ${color}60, 0 0 90px ${color}40`,
+      spread: '60px',
+    },
   };
 
   const config = intensityMap[intensity];
@@ -179,9 +182,7 @@ export const PlayCardAnimation: React.FC<PlayCardAnimationProps> = ({
   }, [isPlaying, onComplete]);
 
   return (
-    <div
-      className={`cg-play-card ${isAnimating ? 'cg-playing' : ''} ${className}`}
-    >
+    <div className={`cg-play-card ${isAnimating ? 'cg-playing' : ''} ${className}`}>
       {children}
       <style>{`
         .cg-play-card {
@@ -218,9 +219,7 @@ export const VictoryAnimation: React.FC<VictoryAnimationProps> = ({
   className = '',
 }) => {
   return (
-    <div
-      className={`cg-victory ${isVictory ? 'cg-victory-active' : ''} ${className}`}
-    >
+    <div className={`cg-victory ${isVictory ? 'cg-victory-active' : ''} ${className}`}>
       {children}
       <style>{`
         .cg-victory {
@@ -257,9 +256,7 @@ export const DefeatAnimation: React.FC<DefeatAnimationProps> = ({
   className = '',
 }) => {
   return (
-    <div
-      className={`cg-defeat ${isDefeat ? 'cg-defeat-active' : ''} ${className}`}
-    >
+    <div className={`cg-defeat ${isDefeat ? 'cg-defeat-active' : ''} ${className}`}>
       {children}
       <style>{`
         .cg-defeat {
@@ -290,10 +287,7 @@ interface GoldShimmerProps {
   className?: string;
 }
 
-export const GoldShimmer: React.FC<GoldShimmerProps> = ({
-  children,
-  className = '',
-}) => {
+export const GoldShimmer: React.FC<GoldShimmerProps> = ({ children, className = '' }) => {
   return (
     <div className={`cg-gold-shimmer ${className}`}>
       {children}
@@ -382,7 +376,7 @@ export const useAnimation = (initialState: AnimationState = 'idle') => {
   const playAnimation = (newState: AnimationState, duration: number = 1000) => {
     setState(newState);
     setIsAnimating(true);
-    
+
     setTimeout(() => {
       setIsAnimating(false);
       setState('idle');

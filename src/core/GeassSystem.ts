@@ -2,28 +2,22 @@
  * =============================================================================
  * Code Geass: Liar's Game - Geass系统
  * =============================================================================
- * 
+ *
  * Geass系统是游戏的核心惩罚机制：
  * - 质疑失败的一方需要接受Geass判定
  * - 基础命中率：1/3 (33.3%)
  * - 角色技能可影响命中率和效果
- * 
+ *
  * 角色技能：
  * - C.C.: 首次致命伤害50%概率复活
  * - 朱雀: 25%概率反击，15%基础闪避
  * - 卡莲: 出牌张数增加命中率
- * 
+ *
  * @author Code Agent
  * @version 2.0.0
  */
 
-import type { 
-  CardRank, 
-  PlayerStats, 
-  GeassResult, 
-  CharacterId,
-  FunnyAction 
-} from '../types';
+import type { CardRank, PlayerStats, GeassResult, CharacterId, FunnyAction } from '../types';
 
 /**
  * 预定义的搞笑动作列表
@@ -50,7 +44,7 @@ export class GeassSystem {
 
   /**
    * 执行Geass判定
-   * 
+   *
    * @param target - 目标玩家ID
    * @param targetStats - 目标玩家当前状态
    * @param character - 目标角色ID
@@ -64,7 +58,7 @@ export class GeassSystem {
     hitChanceBoost: number = 0
   ): GeassResult {
     let hitChance = this.BASE_HIT_CHANCE;
-    
+
     // 应用命中率加成
     hitChance += hitChanceBoost;
 
@@ -73,7 +67,7 @@ export class GeassSystem {
     if (character === 'cc' && !targetStats.ccReviveUsed) {
       const roll = Math.random();
       const willHit = roll < hitChance;
-      
+
       // 如果会命中且会导致HP归零，触发复活
       if (willHit && targetStats.hp <= 1) {
         const reviveRoll = Math.random();
@@ -153,7 +147,7 @@ export class GeassSystem {
   /**
    * 计算卡莲技能加成
    * 出2张+被质疑且质疑失败，Geass命中率 = 20% × 出牌张数（最高80%）
-   * 
+   *
    * @param cardCount - 出牌张数
    * @returns 命中率加成
    */
@@ -165,7 +159,7 @@ export class GeassSystem {
   /**
    * 鲁鲁修技能：绝对命令
    * 强制指定骗子牌
-   * 
+   *
    * @param newRank - 新的骗子牌点数
    * @returns 技能执行结果
    */
@@ -178,7 +172,7 @@ export class GeassSystem {
 
   /**
    * 获取角色技能描述
-   * 
+   *
    * @param character - 角色ID
    * @returns 技能描述
    */
@@ -194,7 +188,7 @@ export class GeassSystem {
 
   /**
    * 获取C.C.技能描述
-   * 
+   *
    * @returns C.C.技能描述
    */
   getCCSkillDescription(): string {
@@ -203,7 +197,7 @@ export class GeassSystem {
 
   /**
    * 获取朱雀技能描述
-   * 
+   *
    * @returns 朱雀技能描述
    */
   getSuzakuSkillDescription(): string {
@@ -212,7 +206,7 @@ export class GeassSystem {
 
   /**
    * 获取卡莲技能描述
-   * 
+   *
    * @returns 卡莲技能描述
    */
   getKallenSkillDescription(): string {

@@ -51,12 +51,12 @@ const checkWebPSupport = (): boolean => {
   return webpSupportedCache;
 };
 
-export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({ 
-  characterId, 
+export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
+  characterId,
   size = 160,
   avatarNumber,
   priority = false,
-  onLoad
+  onLoad,
 }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(priority);
@@ -64,29 +64,32 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
   const [useWebP, setUseWebP] = useState(true);
   const imgRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
   // 使用传入的头像编号，如果没有则只随机一次并保存到state
   const [randomNum] = useState(() => Math.floor(Math.random() * 4) + 1);
   const num = avatarNumber || randomNum;
 
   // 获取最优尺寸名称
   const sizeName = useMemo(() => getOptimalSizeName(size), [size]);
-  
+
   // 构建图片URL（优先WebP，回退PNG）
-  const getImageSrc = useCallback((useWebPFormat: boolean = true): string => {
-    const basePath = `avatars/${characterId}/${num}`;
-    const ext = useWebPFormat ? 'webp' : 'png';
-    // 使用对应尺寸的图片
-    return `${basePath}-${sizeName}.${ext}`;
-  }, [characterId, num, sizeName]);
-  
+  const getImageSrc = useCallback(
+    (useWebPFormat: boolean = true): string => {
+      const basePath = `avatars/${characterId}/${num}`;
+      const ext = useWebPFormat ? 'webp' : 'png';
+      // 使用对应尺寸的图片
+      return `${basePath}-${sizeName}.${ext}`;
+    },
+    [characterId, num, sizeName]
+  );
+
   // Intersection Observer实现懒加载
   useEffect(() => {
     if (priority || isInView) return;
-    
+
     const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
+      entries => {
+        entries.forEach(entry => {
           if (entry.isIntersecting) {
             setIsInView(true);
             observer.disconnect();
@@ -95,17 +98,17 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
       },
       {
         rootMargin: '50px', // 提前50px开始加载
-        threshold: 0.1
+        threshold: 0.1,
       }
     );
-    
+
     if (containerRef.current) {
       observer.observe(containerRef.current);
     }
-    
+
     return () => observer.disconnect();
   }, [priority]);
-  
+
   // 预加载图片，支持WebP/PNG回退
   useEffect(() => {
     if (!isInView) return;
@@ -113,17 +116,17 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
     const tryLoadImage = async () => {
       // 首先检查WebP支持
       const webpSupported = checkWebPSupport();
-      
+
       // 尝试加载WebP
       if (webpSupported && useWebP) {
         const webpImg = new Image();
         webpImg.src = getImageSrc(true);
-        
+
         webpImg.onload = () => {
           setIsLoaded(true);
           onLoad?.();
         };
-        
+
         webpImg.onerror = () => {
           // WebP加载失败，回退到PNG
           setUseWebP(false);
@@ -132,21 +135,21 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
         // 直接加载PNG
         const pngImg = new Image();
         pngImg.src = getImageSrc(false);
-        
+
         pngImg.onload = () => {
           setIsLoaded(true);
           onLoad?.();
         };
-        
+
         pngImg.onerror = () => {
           setHasError(true);
         };
       }
     };
-    
+
     tryLoadImage();
   }, [isInView, getImageSrc, onLoad, useWebP]);
-  
+
   return (
     <div
       ref={containerRef}
@@ -183,7 +186,7 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
           />
         </div>
       )}
-      
+
       {/* 错误状态 */}
       {hasError && (
         <div
@@ -201,17 +204,12 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
           ?
         </div>
       )}
-      
+
       {/* 实际图片 */}
       {isInView && (
         <picture>
           {/* WebP格式 - 优先加载 */}
-          {checkWebPSupport() && useWebP && (
-            <source
-              srcSet={getImageSrc(true)}
-              type="image/webp"
-            />
-          )}
+          {checkWebPSupport() && useWebP && <source srcSet={getImageSrc(true)} type="image/webp" />}
           {/* PNG回退 */}
           <img
             ref={imgRef}
@@ -231,7 +229,7 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
           />
         </picture>
       )}
-      
+
       <style>{`
         @keyframes avatar-spin {
           to { transform: rotate(360deg); }
@@ -279,7 +277,12 @@ export class AvatarPreloader {
    * 预加载所有角色头像
    */
   static preloadAll(): void {
-    const characters: ('lelouch' | 'cc' | 'suzaku' | 'kallen')[] = ['lelouch', 'cc', 'suzaku', 'kallen'];
+    const characters: ('lelouch' | 'cc' | 'suzaku' | 'kallen')[] = [
+      'lelouch',
+      'cc',
+      'suzaku',
+      'kallen',
+    ];
     characters.forEach(char => this.preloadCharacter(char));
   }
 

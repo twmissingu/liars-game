@@ -1,18 +1,14 @@
 /**
  * 游戏引擎 - 角色系统集成
  * Code Geass: Liar's Game - Phase 2
- * 
+ *
  * 与Phase 1游戏引擎对接 - 扩展版本
  */
 
-import type { 
-  CharacterId, 
-  CharacterState, 
-  CharacterSelection 
-} from '../characters/types';
-import { 
-  createCharacterState, 
-  canUseSkill, 
+import type { CharacterId, CharacterState, CharacterSelection } from '../characters/types';
+import {
+  createCharacterState,
+  canUseSkill,
   applySkill,
   onTurnEnd,
   resetSkill,
@@ -24,8 +20,8 @@ import {
 
 // ==================== 角色状态管理 ====================
 
-/** 
- * 角色游戏状态 - 扩展GameState 
+/**
+ * 角色游戏状态 - 扩展GameState
  * 与Phase 1的GameState兼容
  */
 export interface CharacterGameState {
@@ -47,10 +43,10 @@ export function selectCharacterForPlayer(
   characterId: CharacterId
 ): CharacterGameState {
   const characterState = createCharacterState(characterId);
-  
+
   const newPlayerStates = new Map(state.playerStates);
   newPlayerStates.set(playerId, characterState);
-  
+
   return {
     ...state,
     playerStates: newPlayerStates,
@@ -66,13 +62,10 @@ export function getPlayerCharacterState(
 }
 
 /** 检查玩家是否可以使用技能 */
-export function canPlayerUseCharacterSkill(
-  state: CharacterGameState,
-  playerId: string
-): boolean {
+export function canPlayerUseCharacterSkill(state: CharacterGameState, playerId: string): boolean {
   const playerState = state.playerStates.get(playerId);
   if (!playerState) return false;
-  
+
   return canUseSkill(playerState);
 }
 
@@ -85,15 +78,15 @@ export function playerUseCharacterSkill(
   if (!playerState) {
     return { state, success: false };
   }
-  
+
   if (!canUseSkill(playerState)) {
     return { state, success: false };
   }
-  
+
   const newState = applySkill(playerState);
   const newPlayerStates = new Map(state.playerStates);
   newPlayerStates.set(playerId, newState);
-  
+
   return {
     state: {
       ...state,
@@ -108,11 +101,11 @@ export function playerUseCharacterSkill(
 export function endCharacterTurn(state: CharacterGameState, playerId: string): CharacterGameState {
   const playerState = state.playerStates.get(playerId);
   if (!playerState) return state;
-  
+
   const newState = onTurnEnd(playerState);
   const newPlayerStates = new Map(state.playerStates);
   newPlayerStates.set(playerId, newState);
-  
+
   return {
     ...state,
     playerStates: newPlayerStates,
@@ -122,11 +115,11 @@ export function endCharacterTurn(state: CharacterGameState, playerId: string): C
 /** 开始新一局 - 重置所有技能 */
 export function resetCharacterRound(state: CharacterGameState): CharacterGameState {
   const newPlayerStates = new Map<string, CharacterState>();
-  
+
   state.playerStates.forEach((playerState, playerId) => {
     newPlayerStates.set(playerId, resetSkill(playerState));
   });
-  
+
   return {
     ...state,
     playerStates: newPlayerStates,
@@ -135,7 +128,7 @@ export function resetCharacterRound(state: CharacterGameState): CharacterGameSta
 
 // ==================== 角色特定技能集成 ====================
 
-/** 
+/**
  * 鲁鲁修 - 发动绝对命令
  * 强制指定一张牌为骗子牌
  */
@@ -148,17 +141,17 @@ export function activateAbsoluteOrder(
   if (!playerState || playerState.characterId !== 'lelouch') {
     return { state, success: false };
   }
-  
+
   if (!canUseAbsoluteOrder(playerState)) {
     return { state, success: false };
   }
-  
+
   // 使用技能
   const result = playerUseCharacterSkill(state, playerId);
   if (!result.success) {
     return { state, success: false };
   }
-  
+
   return {
     state: result.state,
     success: true,
@@ -178,9 +171,9 @@ export function tryGeassImmunity(
   if (!playerState || playerState.characterId !== 'cc') {
     return { state, immune: false };
   }
-  
+
   const immune = checkGeassImmunity(playerState);
-  
+
   return { state, immune };
 }
 
@@ -198,10 +191,10 @@ export function calculateGeassChance(
   if (!playerState) {
     return { state, chance: baseChance };
   }
-  
+
   const resistance = getGeassResistance(playerState, currentHp);
   const chance = baseChance * resistance;
-  
+
   return { state, chance };
 }
 
@@ -216,9 +209,9 @@ export function getPlayerMaxPlayCount(
   if (!playerState) {
     return { state, count: 1 };
   }
-  
+
   const count = getMaxPlayCount(playerState);
-  
+
   return { state, count };
 }
 
@@ -250,7 +243,7 @@ export function selectCharacterInPhase(
     characterId,
     isReady: false,
   });
-  
+
   return {
     ...phaseState,
     selections: newSelections,
@@ -264,18 +257,16 @@ export function confirmSelection(
 ): SelectionPhaseState {
   const selection = phaseState.selections.get(playerId);
   if (!selection) return phaseState;
-  
+
   const newSelections = new Map(phaseState.selections);
   newSelections.set(playerId, {
     ...selection,
     isReady: true,
   });
-  
+
   // 从未可用列表中移除
-  const newAvailable = phaseState.availableCharacters.filter(
-    id => id !== selection.characterId
-  );
-  
+  const newAvailable = phaseState.availableCharacters.filter(id => id !== selection.characterId);
+
   return {
     selections: newSelections,
     availableCharacters: newAvailable,
@@ -283,30 +274,22 @@ export function confirmSelection(
 }
 
 /** 检查是否所有玩家都准备就绪 */
-export function isAllReady(
-  phaseState: SelectionPhaseState,
-  playerCount: number
-): boolean {
+export function isAllReady(phaseState: SelectionPhaseState, playerCount: number): boolean {
   if (phaseState.selections.size !== playerCount) return false;
-  
+
   for (const selection of phaseState.selections.values()) {
     if (!selection.isReady) return false;
   }
-  
+
   return true;
 }
 
 /** 获取已选择的角色ID列表 */
-export function getSelectedCharacterIds(
-  phaseState: SelectionPhaseState
-): CharacterId[] {
-  return Array.from(phaseState.selections.values())
-    .map(s => s.characterId);
+export function getSelectedCharacterIds(phaseState: SelectionPhaseState): CharacterId[] {
+  return Array.from(phaseState.selections.values()).map(s => s.characterId);
 }
 
 /** 获取已选择的玩家ID列表 */
-export function getSelectedPlayerIds(
-  phaseState: SelectionPhaseState
-): string[] {
+export function getSelectedPlayerIds(phaseState: SelectionPhaseState): string[] {
   return Array.from(phaseState.selections.keys());
 }

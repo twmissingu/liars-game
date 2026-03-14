@@ -67,7 +67,7 @@ export interface AIDecision {
 }
 
 // AI动画状态
-export type AIAnimationState = 
+export type AIAnimationState =
   | 'idle'
   | 'thinking'
   | 'deciding'

@@ -10,11 +10,7 @@ interface MainMenuProps {
   onHelp: () => void;
 }
 
-export const MainMenu: React.FC<MainMenuProps> = ({
-  onStart,
-  onSettings,
-  onHelp,
-}) => {
+export const MainMenu: React.FC<MainMenuProps> = ({ onStart, onSettings, onHelp }) => {
   return (
     <div className="cg-main-menu">
       {/* 背景层 */}
@@ -41,10 +37,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             <div className="cg-title-line-left" />
             <div className="cg-title-ornament">
               <svg viewBox="0 0 40 40" className="cg-ornament-icon">
-                <path
-                  d="M20 5 L23 18 L36 20 L23 22 L20 35 L17 22 L4 20 L17 18 Z"
-                  fill="#d4af37"
-                />
+                <path d="M20 5 L23 18 L36 20 L23 22 L20 35 L17 22 L4 20 L17 18 Z" fill="#d4af37" />
               </svg>
             </div>
             <div className="cg-title-line-right" />
@@ -56,9 +49,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             <span className="cg-title-sub">LIAR'S GAME</span>
           </h1>
 
-          <p className="cg-game-subtitle">
-            布里塔尼亚的谎言对决
-          </p>
+          <p className="cg-game-subtitle">布里塔尼亚的谎言对决</p>
 
           <div className="cg-menu-title-decoration cg-decoration-bottom">
             <div className="cg-title-line-left" />
@@ -74,10 +65,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
         {/* 按钮区域 */}
         <nav className="cg-menu-nav">
-          <button
-            className="cg-menu-button cg-button-primary"
-            onClick={onStart}
-          >
+          <button className="cg-menu-button cg-button-primary" onClick={onStart}>
             <span className="cg-button-icon">
               <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M8 5v14l11-7z" />
@@ -87,10 +75,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             <div className="cg-button-shimmer" />
           </button>
 
-          <button
-            className="cg-menu-button"
-            onClick={onSettings}
-          >
+          <button className="cg-menu-button" onClick={onSettings}>
             <span className="cg-button-icon">
               <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L3.16 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
@@ -99,10 +84,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             <span className="cg-button-text">设置</span>
           </button>
 
-          <button
-            className="cg-menu-button"
-            onClick={onHelp}
-          >
+          <button className="cg-menu-button" onClick={onHelp}>
             <span className="cg-button-icon">
               <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" />

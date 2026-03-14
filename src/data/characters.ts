@@ -2,30 +2,25 @@ import type { Character } from '../types';
 
 // 角色头像配置 - 每个角色4张备选头像
 export const CHARACTER_AVATARS: Record<string, string[]> = {
-  'lelouch': [
+  lelouch: [
     '/avatars/lelouch/1.png',
     '/avatars/lelouch/2.png',
     '/avatars/lelouch/3.png',
-    '/avatars/lelouch/4.png'
+    '/avatars/lelouch/4.png',
   ],
-  'cc': [
-    '/avatars/cc/1.png',
-    '/avatars/cc/2.png',
-    '/avatars/cc/3.png',
-    '/avatars/cc/4.png'
-  ],
-  'suzaku': [
+  cc: ['/avatars/cc/1.png', '/avatars/cc/2.png', '/avatars/cc/3.png', '/avatars/cc/4.png'],
+  suzaku: [
     '/avatars/suzaku/1.png',
     '/avatars/suzaku/2.png',
     '/avatars/suzaku/3.png',
-    '/avatars/suzaku/4.png'
+    '/avatars/suzaku/4.png',
   ],
-  'kallen': [
+  kallen: [
     '/avatars/kallen/1.png',
     '/avatars/kallen/2.png',
     '/avatars/kallen/3.png',
-    '/avatars/kallen/4.png'
-  ]
+    '/avatars/kallen/4.png',
+  ],
 };
 
 // 随机获取角色头像
@@ -159,7 +154,7 @@ export const characters: Character[] = [
       hp: 3,
       difficulty: 3,
     },
-  }
+  },
 ];
 
 export function getCharacterById(id: string): Character | undefined {

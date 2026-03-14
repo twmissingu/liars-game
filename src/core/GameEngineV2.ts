@@ -1,13 +1,13 @@
 /**
  * Code Geass: Liar's Game - 游戏引擎（优化版）
- * 
+ *
  * 核心游戏逻辑，包含：
  * - 卡牌系统管理
  * - 回合制流程控制
  * - Geass判定系统
  * - 角色技能集成
  * - 胜负判定
- * 
+ *
  * @module core/GameEngine
  * @version 2.1.0
  * @requires CardSystem
@@ -21,9 +21,9 @@ import { executeGeassWithChance } from './GeassSystemCompat';
 import { getCharacterName } from '../data/characters';
 import type { CharacterId } from '../types';
 import type { CharacterState as CharacterStateInternal } from '../characters/types';
-import { 
-  createCharacterState, 
-  canUseSkill, 
+import {
+  createCharacterState,
+  canUseSkill,
   applySkill,
   onTurnEnd,
   resetSkill,
@@ -37,14 +37,14 @@ import {
 // ============================================
 
 /** 游戏阶段 */
-export type GamePhase = 
-  | 'setup'           // 游戏初始化
-  | 'player_turn'     // 玩家回合
-  | 'ai_turn'         // AI回合
-  | 'challenge'       // 质疑阶段
-  | 'resolve'         // 结算阶段
-  | 'geass'           // Geass判定
-  | 'game_over';      // 游戏结束
+export type GamePhase =
+  | 'setup' // 游戏初始化
+  | 'player_turn' // 玩家回合
+  | 'ai_turn' // AI回合
+  | 'challenge' // 质疑阶段
+  | 'resolve' // 结算阶段
+  | 'geass' // Geass判定
+  | 'game_over'; // 游戏结束
 
 /** AI玩家 */
 export interface AIPlayer {
@@ -62,7 +62,7 @@ export interface PlayedCards {
   claimedRank: CardRank;
   actualCards: Card[];
   playerId: 'player' | 'ai' | 'ai2' | 'ai3';
-  isBluff: boolean;  // 是否为虚张声势
+  isBluff: boolean; // 是否为虚张声势
 }
 
 /** 游戏状态 */
@@ -84,7 +84,7 @@ export interface GameState {
   geassResult: GeassResult | null;
   playerSelectedCards: string[];
   playerCharacter: CharacterId | null;
-  characterStates: Map<string, CharacterStateInternal>;  // 角色技能状态
+  characterStates: Map<string, CharacterStateInternal>; // 角色技能状态
 }
 
 // ============================================
@@ -118,9 +118,30 @@ export class GameEngine {
       playerStats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 },
       playerHand: [],
       aiPlayers: [
-        { id: 'ai', name: 'C.C.', character: 'cc', hand: [], stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 }, isActive: true },
-        { id: 'ai2', name: '朱雀', character: 'suzaku', hand: [], stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 }, isActive: true },
-        { id: 'ai3', name: '卡莲', character: 'kallen', hand: [], stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 }, isActive: true },
+        {
+          id: 'ai',
+          name: 'C.C.',
+          character: 'cc',
+          hand: [],
+          stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 },
+          isActive: true,
+        },
+        {
+          id: 'ai2',
+          name: '朱雀',
+          character: 'suzaku',
+          hand: [],
+          stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 },
+          isActive: true,
+        },
+        {
+          id: 'ai3',
+          name: '卡莲',
+          character: 'kallen',
+          hand: [],
+          stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 },
+          isActive: true,
+        },
       ],
       currentPlayerIndex: 0,
       turnState: {
@@ -145,27 +166,27 @@ export class GameEngine {
    */
   initializeGame(playerCharacter: CharacterId): GameState {
     this.playerCharacter = playerCharacter;
-    
+
     // 生成并洗牌
     this.cardSystem.generateDeck();
     this.cardSystem.shuffle();
-    
+
     // 发牌
     const { playerCards, ai1Cards, ai2Cards, ai3Cards } = this.cardSystem.dealCards();
-    
+
     // 设定骗子牌
     const liarCard = this.cardSystem.setLiarCard();
-    
+
     // 随机选择起始玩家
     const startingPlayerIndex = Math.floor(Math.random() * 4);
-    
+
     // 初始化角色技能状态
     const characterStates = new Map<string, CharacterStateInternal>();
     characterStates.set('player', createCharacterState(playerCharacter) as CharacterStateInternal);
     characterStates.set('ai', createCharacterState('cc') as CharacterStateInternal);
     characterStates.set('ai2', createCharacterState('suzaku') as CharacterStateInternal);
     characterStates.set('ai3', createCharacterState('kallen') as CharacterStateInternal);
-    
+
     this.state = {
       ...this.createInitialState(),
       phase: startingPlayerIndex === 0 ? 'player_turn' : 'ai_turn',
@@ -174,9 +195,30 @@ export class GameEngine {
       currentPlayerIndex: startingPlayerIndex,
       playerHand: playerCards,
       aiPlayers: [
-        { id: 'ai', name: 'C.C.', character: 'cc', hand: ai1Cards, stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 }, isActive: true },
-        { id: 'ai2', name: '朱雀', character: 'suzaku', hand: ai2Cards, stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 }, isActive: true },
-        { id: 'ai3', name: '卡莲', character: 'kallen', hand: ai3Cards, stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 }, isActive: true },
+        {
+          id: 'ai',
+          name: 'C.C.',
+          character: 'cc',
+          hand: ai1Cards,
+          stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 },
+          isActive: true,
+        },
+        {
+          id: 'ai2',
+          name: '朱雀',
+          character: 'suzaku',
+          hand: ai2Cards,
+          stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 },
+          isActive: true,
+        },
+        {
+          id: 'ai3',
+          name: '卡莲',
+          character: 'kallen',
+          hand: ai3Cards,
+          stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 },
+          isActive: true,
+        },
       ],
       turnState: {
         turnNumber: 1,
@@ -209,7 +251,7 @@ export class GameEngine {
    */
   private getNextPlayerIndex(): number {
     let nextIndex = (this.state.currentPlayerIndex + 1) % 4;
-    
+
     // 跳过已淘汰的玩家
     let attempts = 0;
     while (attempts < 4) {
@@ -222,7 +264,7 @@ export class GameEngine {
       nextIndex = (nextIndex + 1) % 4;
       attempts++;
     }
-    
+
     return -1; // 游戏结束
   }
 
@@ -231,16 +273,16 @@ export class GameEngine {
    */
   private moveToNextPlayer(): void {
     const nextIndex = this.getNextPlayerIndex();
-    
+
     if (nextIndex === -1) {
       // 游戏结束
       this.checkGameOver();
       return;
     }
-    
+
     this.state.currentPlayerIndex = nextIndex;
     this.state.phase = nextIndex === 0 ? 'player_turn' : 'ai_turn';
-    
+
     // 处理角色技能冷却
     const playerId = this.getCurrentPlayerId();
     const charState = this.state.characterStates.get(playerId);
@@ -262,7 +304,7 @@ export class GameEngine {
    */
   playCards(cardIds: string[], claimedRank: CardRank): boolean {
     if (this.state.phase !== 'player_turn') return false;
-    
+
     // 检查玩家手牌
     const cards: Card[] = [];
     for (const cardId of cardIds) {
@@ -270,20 +312,18 @@ export class GameEngine {
       if (!card) return false;
       cards.push(card);
     }
-    
+
     // 检查出牌数量限制（卡莲技能）
     const playerCharState = this.state.characterStates.get('player');
     const maxCards = playerCharState ? getMaxPlayCount(playerCharState) : 1;
     if (cardIds.length > maxCards) return false;
-    
+
     // 从手牌中移除
-    this.state.playerHand = this.state.playerHand.filter(
-      c => !cardIds.includes(c.id)
-    );
-    
+    this.state.playerHand = this.state.playerHand.filter(c => !cardIds.includes(c.id));
+
     // 检查是否为虚张声势
     const isBluff = cards.some(c => c.rank !== claimedRank && !c.isJoker);
-    
+
     // 记录出牌
     this.state.turnState.playedCards = {
       cardIds,
@@ -293,17 +333,17 @@ export class GameEngine {
       isBluff,
     };
     this.state.turnState.lastPlayerId = 'player';
-    
+
     // 将牌添加到桌面
     this.state.turnState.tableCards.push(...cards);
-    
+
     this.state.lastAction = `玩家出了${cardIds.length}张牌，声称是${claimedRank}`;
-    
+
     // 检查手牌是否耗尽
     if (this.state.playerHand.length === 0) {
       this.handleEmptyHand('player');
     }
-    
+
     return true;
   }
 
@@ -314,16 +354,12 @@ export class GameEngine {
    * @param claimedRank - 声称的牌型
    * @returns 是否成功出牌
    */
-  aiPlayCards(
-    aiId: 'ai' | 'ai2' | 'ai3',
-    cardIds: string[],
-    claimedRank: CardRank
-  ): boolean {
+  aiPlayCards(aiId: 'ai' | 'ai2' | 'ai3', cardIds: string[], claimedRank: CardRank): boolean {
     if (this.state.phase !== 'ai_turn') return false;
-    
+
     const ai = this.state.aiPlayers.find(a => a.id === aiId);
     if (!ai) return false;
-    
+
     // 检查AI手牌
     const cards: Card[] = [];
     for (const cardId of cardIds) {
@@ -331,18 +367,18 @@ export class GameEngine {
       if (!card) return false;
       cards.push(card);
     }
-    
+
     // 检查出牌数量限制
     const charState = this.state.characterStates.get(aiId);
     const maxCards = charState ? getMaxPlayCount(charState) : 1;
     if (cardIds.length > maxCards) return false;
-    
+
     // 从手牌中移除
     ai.hand = ai.hand.filter(c => !cardIds.includes(c.id));
-    
+
     // 检查是否为虚张声势
     const isBluff = cards.some(c => c.rank !== claimedRank && !c.isJoker);
-    
+
     // 记录出牌
     this.state.turnState.playedCards = {
       cardIds,
@@ -352,17 +388,17 @@ export class GameEngine {
       isBluff,
     };
     this.state.turnState.lastPlayerId = aiId;
-    
+
     // 将牌添加到桌面
     this.state.turnState.tableCards.push(...cards);
-    
+
     this.state.lastAction = `${ai.name}出了${cardIds.length}张牌，声称是${claimedRank}`;
-    
+
     // 检查手牌是否耗尽
     if (ai.hand.length === 0) {
       this.handleEmptyHand(aiId);
     }
-    
+
     return true;
   }
 
@@ -372,10 +408,10 @@ export class GameEngine {
    */
   private handleEmptyHand(playerId: 'player' | 'ai' | 'ai2' | 'ai3'): void {
     this.state.lastAction = `${playerId === 'player' ? '玩家' : playerId}手牌耗尽，重新发牌`;
-    
+
     // 检查剩余牌堆
     const remainingCards = this.cardSystem.getRemainingCards();
-    
+
     if (remainingCards < 4) {
       // 牌堆不足，重置牌局
       this.resetRound();
@@ -409,19 +445,19 @@ export class GameEngine {
     if (!playedCards) {
       return { success: false, isBluff: false, targetId: 'player' };
     }
-    
+
     // 检查是否为虚张声势
     const isBluff = playedCards.isBluff;
     const targetId = playedCards.playerId;
-    
+
     this.state.phase = 'geass';
-    
+
     // 确定谁受到Geass
     const victimId = isBluff ? targetId : challengerId;
-    
+
     // 执行Geass判定
     this.executeGeass(victimId);
-    
+
     return {
       success: true,
       isBluff,
@@ -439,11 +475,11 @@ export class GameEngine {
    */
   private executeGeass(targetId: 'player' | 'ai' | 'ai2' | 'ai3'): void {
     let baseChance = 1 / 3; // 基础1/3概率
-    
+
     // 获取目标角色状态
     const charState = this.state.characterStates.get(targetId);
     let targetStats: PlayerStats;
-    
+
     if (targetId === 'player') {
       targetStats = this.state.playerStats;
     } else {
@@ -451,7 +487,7 @@ export class GameEngine {
       if (!ai) return;
       targetStats = ai.stats;
     }
-    
+
     // 应用角色技能效果
     if (charState) {
       // C.C. - 尝试免疫
@@ -470,23 +506,23 @@ export class GameEngine {
           return;
         }
       }
-      
+
       // 朱雀 - 计算抗性
       if (charState.characterId === 'suzaku') {
         const resistance = getGeassResistance(charState, targetStats.hp);
         baseChance *= resistance;
       }
     }
-    
+
     // 执行判定
     const result = executeGeassWithChance(targetId, baseChance);
     this.state.geassResult = result;
-    
+
     // 应用伤害
     if (result.hit) {
       targetStats.hp -= result.damage;
       targetStats.geassSuccessCount++;
-      
+
       // 检查是否被淘汰
       if (targetStats.hp <= 0) {
         if (targetId !== 'player') {
@@ -494,7 +530,7 @@ export class GameEngine {
           if (ai) ai.isActive = false;
         }
       }
-      
+
       this.state.lastAction = `${targetId === 'player' ? '玩家' : targetId}受到了Geass！${result.funnyAction}`;
     } else {
       targetStats.geassFailCount++;
@@ -514,12 +550,12 @@ export class GameEngine {
   useCharacterSkill(playerId: 'player' | 'ai' | 'ai2' | 'ai3'): boolean {
     const charState = this.state.characterStates.get(playerId);
     if (!charState) return false;
-    
+
     if (!canUseSkill(charState)) return false;
-    
+
     const newState = applySkill(charState);
     this.state.characterStates.set(playerId, newState);
-    
+
     // 鲁鲁修技能 - 强制改变骗子牌
     if (charState.characterId === 'lelouch' && this.state.liarCard) {
       const ranks: CardRank[] = ['Q', 'K', 'A'];
@@ -531,7 +567,7 @@ export class GameEngine {
       const name = playerId === 'player' ? '玩家' : playerId;
       this.state.lastAction = `${name}发动了${getCharacterName(charState.characterId)}的技能！`;
     }
-    
+
     return true;
   }
 
@@ -557,7 +593,7 @@ export class GameEngine {
     this.state.turnState.turnNumber++;
     this.state.turnState.playedCards = null;
     this.state.geassResult = null;
-    
+
     this.moveToNextPlayer();
     this.checkGameOver();
   }
@@ -571,16 +607,16 @@ export class GameEngine {
     this.cardSystem.reset();
     this.cardSystem.generateDeck();
     this.cardSystem.shuffle();
-    
+
     // 重新发牌
     const { playerCards, ai1Cards, ai2Cards, ai3Cards } = this.cardSystem.dealCards();
-    
+
     // 设定新的骗子牌
     const liarCard = this.cardSystem.setLiarCard();
-    
+
     // 随机选择起始玩家
     const startingPlayerIndex = Math.floor(Math.random() * 4);
-    
+
     // 更新状态
     this.state.playerHand = playerCards;
     this.state.aiPlayers[0].hand = ai1Cards;
@@ -599,12 +635,12 @@ export class GameEngine {
     };
     this.state.geassResult = null;
     this.state.lastAction = '牌局重置，重新发牌';
-    
+
     // 重置角色技能
     this.state.characterStates.forEach((charState, id) => {
       this.state.characterStates.set(id, resetSkill(charState));
     });
-    
+
     return this.state;
   }
 
@@ -615,24 +651,22 @@ export class GameEngine {
   checkGameOver(): boolean {
     // 检查玩家是否存活
     const playerAlive = this.state.playerStats.hp > 0;
-    
+
     // 检查AI是否全部淘汰
-    const aiAliveCount = this.state.aiPlayers.filter(
-      ai => ai.isActive && ai.stats.hp > 0
-    ).length;
-    
+    const aiAliveCount = this.state.aiPlayers.filter(ai => ai.isActive && ai.stats.hp > 0).length;
+
     if (!playerAlive) {
       this.state.winner = 'ai';
       this.state.phase = 'game_over';
       return true;
     }
-    
+
     if (aiAliveCount === 0) {
       this.state.winner = 'player';
       this.state.phase = 'game_over';
       return true;
     }
-    
+
     return false;
   }
 

@@ -9,10 +9,10 @@ export const theme = {
   // ============================================
   colors: {
     // 基础色
-    primary: '#0a0a0f',        // 深邃黑 - 主背景
-    secondary: '#1a1a24',      // 次级黑 - 卡片背景
-    surface: '#252532',        // 表面色 - 组件背景
-    
+    primary: '#0a0a0f', // 深邃黑 - 主背景
+    secondary: '#1a1a24', // 次级黑 - 卡片背景
+    surface: '#252532', // 表面色 - 组件背景
+
     // 金色系 - 布里塔尼亚皇室风格
     gold: {
       50: '#fffbeb',
@@ -20,39 +20,40 @@ export const theme = {
       200: '#fde68a',
       300: '#fcd34d',
       400: '#fbbf24',
-      500: '#d4af37',          // 经典金色
+      500: '#d4af37', // 经典金色
       600: '#b8941f',
       700: '#a17a18',
       800: '#856213',
       900: '#714f12',
-      metallic: 'linear-gradient(135deg, #d4af37 0%, #f4d03f 25%, #d4af37 50%, #b8941f 75%, #d4af37 100%)',
+      metallic:
+        'linear-gradient(135deg, #d4af37 0%, #f4d03f 25%, #d4af37 50%, #b8941f 75%, #d4af37 100%)',
       shimmer: 'linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.4), transparent)',
     },
-    
+
     // Geass红色系
     geass: {
-      red: '#dc2626',          // Geass红
-      dark: '#991b1b',         // 深红
-      light: '#ef4444',        // 亮红
-      glow: 'rgba(220, 38, 38, 0.6)',    // 发光效果
-      symbol: '#b91c1c',       // Geass符号色
+      red: '#dc2626', // Geass红
+      dark: '#991b1b', // 深红
+      light: '#ef4444', // 亮红
+      glow: 'rgba(220, 38, 38, 0.6)', // 发光效果
+      symbol: '#b91c1c', // Geass符号色
     },
-    
+
     // 文字色
     text: {
-      primary: '#f5f5f5',      // 主文字 - 白
-      secondary: '#a1a1aa',    // 次文字 - 灰
-      muted: '#71717a',        // 弱化文字
-      gold: '#d4af37',         // 金色文字
+      primary: '#f5f5f5', // 主文字 - 白
+      secondary: '#a1a1aa', // 次文字 - 灰
+      muted: '#71717a', // 弱化文字
+      gold: '#d4af37', // 金色文字
     },
-    
+
     // 边框与分隔
     border: {
       DEFAULT: '#3f3f46',
       gold: '#d4af37',
       geass: '#dc2626',
     },
-    
+
     // 状态色
     status: {
       success: '#22c55e',
@@ -80,13 +81,13 @@ export const theme = {
   // 间距系统
   // ============================================
   spacing: {
-    xs: '0.25rem',    // 4px
-    sm: '0.5rem',     // 8px
-    md: '1rem',       // 16px
-    lg: '1.5rem',     // 24px
-    xl: '2rem',       // 32px
-    '2xl': '3rem',    // 48px
-    '3xl': '4rem',    // 64px
+    xs: '0.25rem', // 4px
+    sm: '0.5rem', // 8px
+    md: '1rem', // 16px
+    lg: '1.5rem', // 24px
+    xl: '2rem', // 32px
+    '2xl': '3rem', // 48px
+    '3xl': '4rem', // 64px
   },
 
   // ============================================
@@ -187,7 +188,7 @@ export const theme = {
     popover: 500,
     tooltip: 600,
     overlay: 700,
-    geassEffect: 800,  // Geass特效层
+    geassEffect: 800, // Geass特效层
     toast: 900,
   },
 } as const;

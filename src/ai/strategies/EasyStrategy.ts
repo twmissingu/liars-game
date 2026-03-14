@@ -2,19 +2,19 @@
  * =============================================================================
  * Code Geass: Liar's Game - 简单难度AI策略
  * =============================================================================
- * 
+ *
  * 特点：随机出牌，随机质疑，无算牌能力
  * 适合新手玩家练习
- * 
+ *
  * @author Code Agent
  * @version 2.0.0
  */
 
 import { AIStrategy } from './StrategyInterface';
-import type { 
-  AIDecision, 
-  StrategyContext, 
-  AIConfig, 
+import type {
+  AIDecision,
+  StrategyContext,
+  AIConfig,
   PersonalityTraits,
   AIAnimationState,
   CardRank,
@@ -23,7 +23,7 @@ import type {
 export class EasyStrategy implements AIStrategy {
   readonly name = 'Easy';
   readonly description = '随机出牌，随机质疑，适合新手';
-  
+
   /** 记忆存储 */
   private memory: Map<string, unknown> = new Map();
 
@@ -31,14 +31,14 @@ export class EasyStrategy implements AIStrategy {
    * 做出决策
    */
   makeDecision(
-    context: StrategyContext, 
+    context: StrategyContext,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     config: AIConfig
   ): AIDecision {
     // 根据性格决定是否质疑
     const challengeProb = this.calculateChallengeProbability(context);
     const shouldChallenge = Math.random() < challengeProb;
-    
+
     if (shouldChallenge) {
       return {
         action: 'challenge',
@@ -47,10 +47,10 @@ export class EasyStrategy implements AIStrategy {
         animationState: 'challenging' as AIAnimationState,
       };
     }
-    
+
     // 选择出牌
     const cardSelection = this.selectCard(context);
-    
+
     if (cardSelection) {
       return {
         action: 'play',
@@ -62,7 +62,7 @@ export class EasyStrategy implements AIStrategy {
         isBluff: cardSelection.isBluff,
       };
     }
-    
+
     // 无牌可出，选择跳过
     return {
       action: 'pass',
@@ -71,17 +71,17 @@ export class EasyStrategy implements AIStrategy {
       animationState: 'playing' as AIAnimationState,
     };
   }
-  
+
   /**
    * 计算质疑概率
    * 简单策略：固定30%概率质疑
    */
   calculateChallengeProbability(context: StrategyContext): number {
     const traits = this.getPersonalityTraits('balanced');
-    
+
     // 基础概率
     let probability = 0.3;
-    
+
     // 根据出牌数量调整
     const playedCards = context.gameState.turnState.playedCards;
     if (playedCards) {
@@ -89,42 +89,42 @@ export class EasyStrategy implements AIStrategy {
       if (cardCount >= 3) probability += 0.2;
       else if (cardCount === 2) probability += 0.1;
     }
-    
+
     // 应用性格影响
-    probability *= (2 - traits.challengeThreshold);
-    
+    probability *= 2 - traits.challengeThreshold;
+
     return Math.max(0.1, Math.min(0.9, probability));
   }
-  
+
   /**
    * 选择要出的牌
    * 简单策略：随机选择1张牌
    */
-  selectCard(context: StrategyContext): { 
-    cardIds: string[]; 
+  selectCard(context: StrategyContext): {
+    cardIds: string[];
     claimedRank: string;
     isBluff: boolean;
   } | null {
     const hand = context.aiPlayer.hand;
     if (hand.length === 0) return null;
-    
+
     // 随机选择1张牌
     const card = hand[Math.floor(Math.random() * hand.length)];
-    
+
     // 50%概率撒谎
     const isBluff = Math.random() > 0.5;
     const liarCard = context.liarCard;
-    
+
     // 声称的点数
     const claimedRank = isBluff ? liarCard : card.rank;
-    
+
     return {
       cardIds: [card.id],
       claimedRank,
       isBluff: isBluff && card.rank !== liarCard,
     };
   }
-  
+
   /**
    * 更新记忆
    * 简单策略：不记牌
@@ -132,7 +132,7 @@ export class EasyStrategy implements AIStrategy {
   updateMemory(): void {
     // 简单策略不记牌
   }
-  
+
   /**
    * 获取性格特征
    */
@@ -160,7 +160,7 @@ export class EasyStrategy implements AIStrategy {
         adaptability: 0.4,
       },
     };
-    
+
     return traits[personality] || traits.balanced;
   }
 }

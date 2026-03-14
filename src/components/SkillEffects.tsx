@@ -18,14 +18,10 @@ export interface SkillEffectProps {
  * 技能发动特效组件
  * 根据角色显示不同的技能动画
  */
-export const SkillEffect: React.FC<SkillEffectProps> = ({
-  characterId,
-  isActive,
-  onComplete,
-}) => {
+export const SkillEffect: React.FC<SkillEffectProps> = ({ characterId, isActive, onComplete }) => {
   const [showEffect, setShowEffect] = useState(false);
   const character = getCharacter(characterId);
-  
+
   useEffect(() => {
     if (isActive) {
       setShowEffect(true);
@@ -33,13 +29,13 @@ export const SkillEffect: React.FC<SkillEffectProps> = ({
         setShowEffect(false);
         onComplete?.();
       }, 2000); // 2秒动画
-      
+
       return () => clearTimeout(timer);
     }
   }, [isActive, onComplete]);
-  
+
   if (!showEffect) return null;
-  
+
   const renderEffect = () => {
     switch (characterId) {
       case 'lelouch':
@@ -54,7 +50,7 @@ export const SkillEffect: React.FC<SkillEffectProps> = ({
         return null;
     }
   };
-  
+
   return (
     <div className="skill-effect-overlay">
       <div className="skill-effect-container">
@@ -77,21 +73,13 @@ const LelouchEffect: React.FC<{ color: string }> = ({ color }) => (
       <div className="geass-eye__symbol">👁️</div>
       <div className="geass-eye__rings">
         {[...Array(3)].map((_, i) => (
-          <div 
-            key={i} 
-            className="geass-eye__ring"
-            style={{ animationDelay: `${i * 0.2}s` }}
-          />
+          <div key={i} className="geass-eye__ring" style={{ animationDelay: `${i * 0.2}s` }} />
         ))}
       </div>
     </div>
     <div className="geass-command">
       {['絶', '対', '命', '令'].map((char, i) => (
-        <span 
-          key={i} 
-          className="geass-command__char"
-          style={{ animationDelay: `${i * 0.15}s` }}
-        >
+        <span key={i} className="geass-command__char" style={{ animationDelay: `${i * 0.15}s` }}>
           {char}
         </span>
       ))}
@@ -108,20 +96,18 @@ const CCEffect: React.FC<{ color: string }> = ({ color }) => (
       <div className="code-mark__geass">✨</div>
       <div className="code-mark__particles">
         {[...Array(8)].map((_, i) => (
-          <div 
+          <div
             key={i}
             className="code-mark__particle"
-            style={{ 
+            style={{
               animationDelay: `${i * 0.1}s`,
-              transform: `rotate(${i * 45}deg) translateY(-60px)`
+              transform: `rotate(${i * 45}deg) translateY(-60px)`,
             }}
           />
         ))}
       </div>
     </div>
-    <div className="cc-quote">
-      "我是...不老不死的..."
-    </div>
+    <div className="cc-quote">"我是...不老不死的..."</div>
   </div>
 );
 
@@ -132,22 +118,20 @@ const SuzakuEffect: React.FC<{ color: string }> = ({ color }) => (
       <div className="survival-shield__core" style={{ background: color }} />
       <div className="survival-shield__layers">
         {[...Array(4)].map((_, i) => (
-          <div 
+          <div
             key={i}
             className="survival-shield__layer"
-            style={{ 
+            style={{
               borderColor: color,
               animationDelay: `${i * 0.15}s`,
-              opacity: 1 - i * 0.2
+              opacity: 1 - i * 0.2,
             }}
           />
         ))}
       </div>
       <div className="survival-shield__symbol">🛡️</div>
     </div>
-    <div className="suzaku-quote">
-      "我要...从内部改变它！"
-    </div>
+    <div className="suzaku-quote">"我要...从内部改变它！"</div>
   </div>
 );
 
@@ -157,27 +141,25 @@ const KallenEffect: React.FC<{ color: string }> = ({ color }) => (
     <div className="guren-assault">
       <div className="guren-assault__flames">
         {[...Array(6)].map((_, i) => (
-          <div 
+          <div
             key={i}
             className="guren-assault__flame"
-            style={{ 
+            style={{
               animationDelay: `${i * 0.1}s`,
-              left: `${20 + i * 12}%`
+              left: `${20 + i * 12}%`,
             }}
           />
         ))}
       </div>
-      
+
       <div className="guren-assault__mech">🤖</div>
-      
+
       <div className="guren-assault__slash">
         <div className="guren-assault__slash-line" style={{ background: color }} />
         <div className="guren-assault__slash-spark">⚡</div>
       </div>
-    </div>    
-    <div className="kallen-quote">
-      "红莲贰式，突击！"
     </div>
+    <div className="kallen-quote">"红莲贰式，突击！"</div>
   </div>
 );
 
@@ -206,9 +188,9 @@ export const SkillButton: React.FC<SkillButtonProps> = ({
   const character = getCharacter(characterId);
   const skill = character.skill;
   const isPassive = skill.type === 'passive';
-  const isAvailable = !isPassive && !disabled && cooldown === 0 && 
-    (usesLeft === undefined || usesLeft > 0);
-  
+  const isAvailable =
+    !isPassive && !disabled && cooldown === 0 && (usesLeft === undefined || usesLeft > 0);
+
   return (
     <button
       className={`
@@ -224,23 +206,23 @@ export const SkillButton: React.FC<SkillButtonProps> = ({
       style={{ '--skill-color': character.color } as React.CSSProperties}
     >
       <span className="skill-button__icon">{skill.icon}</span>
-      
+
       <span className="skill-button__name">{skill.name}</span>
-      
+
       {!isPassive && (
         <span className="skill-button__status">
           {cooldown > 0 ? (
             <>冷却 {cooldown}</>
           ) : usesLeft !== undefined && skill.maxUses > 0 ? (
-            <>{usesLeft}/{skill.maxUses}</>
+            <>
+              {usesLeft}/{skill.maxUses}
+            </>
           ) : null}
         </span>
       )}
-      
-      {isPassive && (
-        <span className="skill-button__passive-badge">被动</span>
-      )}
-      
+
+      {isPassive && <span className="skill-button__passive-badge">被动</span>}
+
       {isActive && <div className="skill-button__glow" />}
     </button>
   );

@@ -2,9 +2,9 @@
  * =============================================================================
  * Code Geass: Liar's Game - 角色选择界面
  * =============================================================================
- * 
+ *
  * 展示4个Q版角色供玩家选择（使用懒加载优化）
- * 
+ *
  * @author Code Agent
  * @version 2.0.0
  */
@@ -34,7 +34,7 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
   });
 
   const selectedCharacter = characters.find(c => c.id === selectedId);
-  
+
   // 预加载选中角色的头像
   useEffect(() => {
     if (selectedId) {
@@ -66,17 +66,17 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
             </svg>
             <span>返回</span>
           </button>
-          
+
           <h2 className="cg-select-title">
             <span className="cg-title-gold">选择角色</span>
           </h2>
-          
+
           <div className="cg-select-placeholder" />
         </header>
 
         {/* 角色网格 */}
         <div className="cg-character-grid">
-          {characters.map((character) => {
+          {characters.map(character => {
             const isSelected = selectedId === character.id;
             const isHovered = hoveredId === character.id;
 
@@ -120,9 +120,9 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
                   </div>
                 )}
 
-                <div 
+                <div
                   className="cg-character-glow"
-                  style={{ 
+                  style={{
                     background: `radial-gradient(circle, ${character.color}40 0%, transparent 70%)`,
                   }}
                 />
@@ -144,10 +144,7 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
                 </div>
               </div>
 
-              <button 
-                className="cg-confirm-button cg-button-primary"
-                onClick={onConfirm}
-              >
+              <button className="cg-confirm-button cg-button-primary" onClick={onConfirm}>
                 <span>确认选择</span>
                 <svg viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z" />

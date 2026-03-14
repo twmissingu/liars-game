@@ -26,7 +26,7 @@ export interface CharacterSelectProps {
 
 /**
  * 角色选择界面组件
- * 
+ *
  * 使用示例：
  * ```tsx
  * <CharacterSelect
@@ -46,35 +46,35 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
 }) => {
   const [hoveredId, setHoveredId] = useState<CharacterId | null>(null);
   const [localSelected, setLocalSelected] = useState<CharacterId | null>(selectedId || null);
-  
+
   const currentId = selectedId ?? localSelected;
   const currentCharacter = currentId ? getCharacter(currentId) : null;
-  
+
   const handleSelect = (id: CharacterId) => {
     if (disabledIds.includes(id)) return;
-    
+
     setLocalSelected(id);
     onSelect?.(id);
   };
-  
+
   const handleConfirm = () => {
     if (currentId) {
       onConfirm?.(currentId);
     }
   };
-  
+
   return (
     <div className="character-select">
       <h2 className="character-select__title">{title}</h2>
-      
+
       <div className="character-select__container">
         {/* 角色列表 */}
         <div className="character-select__grid">
-          {characterList.map((char) => {
+          {characterList.map(char => {
             const isSelected = currentId === char.id;
             const isDisabled = disabledIds.includes(char.id);
             const isHovered = hoveredId === char.id;
-            
+
             return (
               <div
                 key={char.id}
@@ -95,54 +95,50 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
                   showFaction
                   animate={isSelected}
                 />
-                
+
                 {/* 禁用遮罩 */}
                 {isDisabled && (
                   <div className="character-select__disabled-overlay">
                     <span>已选择</span>
                   </div>
                 )}
-                
+
                 {/* 选中标记 */}
-                {isSelected && (
-                  <div className="character-select__selected-badge">✓</div>
-                )}
+                {isSelected && <div className="character-select__selected-badge">✓</div>}
               </div>
             );
           })}
         </div>
-        
+
         {/* 角色详情面板 */}
         <div className="character-select__detail">
           {currentCharacter ? (
             <>
               <div className="character-select__detail-header">
-                <CharacterAvatar
-                  characterId={currentCharacter.id}
-                  size="xlarge"
-                  animate
-                />
+                <CharacterAvatar characterId={currentCharacter.id} size="xlarge" animate />
                 <div className="character-select__detail-titles">
                   <h3>{currentCharacter.name}</h3>
                   <p className="character-select__detail-en">
                     {currentCharacter.nameEn} / {currentCharacter.nameJa}
                   </p>
-                  <div 
+                  <div
                     className="character-select__faction"
-                    style={{ 
-                      '--faction-color': currentCharacter.color 
-                    } as React.CSSProperties}
+                    style={
+                      {
+                        '--faction-color': currentCharacter.color,
+                      } as React.CSSProperties
+                    }
                   >
                     {getFactionName(currentCharacter.faction)}
                   </div>
                 </div>
               </div>
-              
+
               <div className="character-select__detail-section">
                 <h4>角色介绍</h4>
                 <p>{currentCharacter.description}</p>
               </div>
-              
+
               <div className="character-select__detail-section">
                 <h4>技能：{currentCharacter.skill.name}</h4>
                 <div className="character-select__skill-info">
@@ -155,7 +151,7 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
                 </div>
                 <p>{currentCharacter.skill.description}</p>
               </div>
-              
+
               <div className="character-select__detail-stats">
                 <div className="character-select__stat">
                   <span>生命值</span>
@@ -170,12 +166,9 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
                   </div>
                 </div>
               </div>
-              
+
               {showConfirm && (
-                <button
-                  className="character-select__confirm-btn"
-                  onClick={handleConfirm}
-                >
+                <button className="character-select__confirm-btn" onClick={handleConfirm}>
                   确认选择
                 </button>
               )}
@@ -195,8 +188,8 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
 function getFactionName(faction: string): string {
   const names: Record<string, string> = {
     'black-knights': '黑色骑士团',
-    'britannia': '布里塔尼亚',
-    'neutral': '中立',
+    britannia: '布里塔尼亚',
+    neutral: '中立',
   };
   return names[faction] || faction;
 }
@@ -204,9 +197,9 @@ function getFactionName(faction: string): string {
 /** 获取技能类型名称 */
 function getSkillTypeName(type: string): string {
   const names: Record<string, string> = {
-    'active': '主动技能',
-    'passive': '被动技能',
-    'trigger': '触发技能',
+    active: '主动技能',
+    passive: '被动技能',
+    trigger: '触发技能',
   };
   return names[type] || type;
 }
@@ -214,17 +207,16 @@ function getSkillTypeName(type: string): string {
 /** 渲染生命值条 */
 function renderHpBar(hp: number): React.ReactNode {
   return Array.from({ length: hp }, (_, i) => (
-    <span key={i} className="character-select__hp-heart">❤️</span>
+    <span key={i} className="character-select__hp-heart">
+      ❤️
+    </span>
   ));
 }
 
 /** 渲染难度星星 */
 function renderDifficulty(difficulty: number): React.ReactNode {
   return Array.from({ length: 5 }, (_, i) => (
-    <span 
-      key={i} 
-      className={`character-select__difficulty-star ${i < difficulty ? 'active' : ''}`}
-    >
+    <span key={i} className={`character-select__difficulty-star ${i < difficulty ? 'active' : ''}`}>
       ★
     </span>
   ));

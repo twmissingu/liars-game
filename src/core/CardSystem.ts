@@ -2,12 +2,12 @@
  * =============================================================================
  * Code Geass: Liar's Game - 卡牌系统
  * =============================================================================
- * 
+ *
  * Liar's Bar规则实现：
  * - 20张牌：Q/K/A各6张 + 2张小丑牌
  * - 小丑牌(JOKER)是万能牌，可当任意点数使用
  * - 每局随机指定一张"骗子牌"(Q/K/A)
- * 
+ *
  * @author Code Agent
  * @version 2.0.0
  */
@@ -21,13 +21,13 @@ import type { Card, CardSuit, CardRank } from '../types';
 export class CardSystem {
   /** 牌组中的所有牌 */
   private cards: Card[] = [];
-  
+
   /** 当前骗子牌 */
   private liarCard: CardRank | null = null;
 
   /**
    * 生成Liar's Bar牌组（20张：Q/K/A各6张 + 2张小丑牌）
-   * 
+   *
    * @returns 生成的牌组
    */
   generateDeck(): Card[] {
@@ -68,7 +68,7 @@ export class CardSystem {
   /**
    * Fisher-Yates洗牌算法 - 均匀随机打乱牌组
    * 时间复杂度: O(n)
-   * 
+   *
    * @returns 打乱后的牌组
    */
   shuffle(): Card[] {
@@ -82,13 +82,13 @@ export class CardSystem {
   /**
    * 发牌 - 玩家和3个AI各发5张牌
    * Liar's Bar共20张牌，4人游戏，每人5张
-   * 
+   *
    * @returns 分发后的各人手牌
    */
-  dealCards(): { 
-    playerCards: Card[]; 
-    ai1Cards: Card[]; 
-    ai2Cards: Card[]; 
+  dealCards(): {
+    playerCards: Card[];
+    ai1Cards: Card[];
+    ai2Cards: Card[];
     ai3Cards: Card[];
     remaining: Card[];
   } {
@@ -135,7 +135,7 @@ export class CardSystem {
   /**
    * 随机指定骗子牌 (Q/K/A)
    * 小丑牌不能作为骗子牌
-   * 
+   *
    * @returns 指定的骗子牌
    */
   setLiarCard(): CardRank {
@@ -146,7 +146,7 @@ export class CardSystem {
 
   /**
    * 获取当前骗子牌
-   * 
+   *
    * @returns 当前骗子牌，未设置则返回null
    */
   getLiarCard(): CardRank | null {
@@ -155,7 +155,7 @@ export class CardSystem {
 
   /**
    * 强制设置骗子牌（鲁鲁修技能用）
-   * 
+   *
    * @param rank - 要设置的骗子牌点数
    */
   forceSetLiarCard(rank: CardRank): void {
@@ -166,7 +166,7 @@ export class CardSystem {
 
   /**
    * 获取所有牌
-   * 
+   *
    * @returns 牌组中的所有牌
    */
   getCards(): Card[] {
@@ -175,7 +175,7 @@ export class CardSystem {
 
   /**
    * 获取玩家手牌
-   * 
+   *
    * @returns 属于玩家的牌
    */
   getPlayerCards(): Card[] {
@@ -184,7 +184,7 @@ export class CardSystem {
 
   /**
    * 获取指定AI的手牌
-   * 
+   *
    * @param aiId - AI的ID
    * @returns 属于该AI的牌
    */
@@ -194,7 +194,7 @@ export class CardSystem {
 
   /**
    * 出牌 - 将牌移到桌面
-   * 
+   *
    * @param cardIds - 要出的牌的ID列表
    * @returns 实际出的牌
    */
@@ -213,7 +213,7 @@ export class CardSystem {
   /**
    * 检查牌是否是骗子牌（包括小丑牌）
    * 小丑牌可以当作任意骗子牌使用
-   * 
+   *
    * @param card - 要检查的牌
    * @returns 是否是骗子牌
    */
@@ -224,7 +224,7 @@ export class CardSystem {
 
   /**
    * 验证出牌是否撒谎
-   * 
+   *
    * @param cards - 出的牌
    * @param claimedRank - 声称的点数
    * @returns 是否撒谎（true=撒谎，false=实话）
@@ -235,7 +235,7 @@ export class CardSystem {
 
   /**
    * 获取剩余牌数
-   * 
+   *
    * @returns 剩余牌数量
    */
   getRemainingCards(): number {
@@ -244,18 +244,18 @@ export class CardSystem {
 
   /**
    * 抽取指定数量的牌
-   * 
+   *
    * @param count - 要抽取的牌数
    * @returns 抽到的牌
    */
   drawCards(count: number): Card[] {
     const availableCards = this.cards.filter(c => c.owner === null);
     const drawnCards = availableCards.slice(0, count);
-    
+
     for (const card of drawnCards) {
       card.owner = 'player'; // 默认给玩家，调用者可以修改
     }
-    
+
     return drawnCards;
   }
 
@@ -269,7 +269,7 @@ export class CardSystem {
 
   /**
    * 重新发牌 - 用于手牌耗尽时的处理
-   * 
+   *
    * @returns 新的手牌分配
    */
   redealCards(): {
@@ -282,7 +282,7 @@ export class CardSystem {
     this.reset();
     this.generateDeck();
     this.shuffle();
-    
+
     // 重新发牌
     return this.dealCards();
   }
