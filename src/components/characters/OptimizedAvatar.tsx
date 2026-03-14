@@ -61,23 +61,23 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(priority);
   const [hasError, setHasError] = useState(false);
+  const [useWebP, setUseWebP] = useState(true);
   const imgRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   
   // 使用传入的头像编号，如果没有则随机
   const num = avatarNumber || Math.floor(Math.random() * 4) + 1;
-  
-  // 检测WebP支持（保留供将来使用）
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [webpSupported] = useState(() => supportsWebP());
+
+  // 获取最优尺寸名称
+  const sizeName = useMemo(() => getOptimalSizeName(size), [size]);
   
   // 构建图片URL（优先WebP，回退PNG）
-  const getImageSrc = useCallback(() => {
+  const getImageSrc = useCallback((useWebPFormat: boolean = true): string => {
     const basePath = `avatars/${characterId}/${num}`;
-    // 实际项目中应该有WebP版本，这里先使用PNG
-    // 如果有WebP文件，优先使用
-    return `${basePath}.png`;
-  }, [characterId, num]);
+    const ext = useWebPFormat ? 'webp' : 'png';
+    // 使用对应尺寸的图片
+    return `${basePath}-${sizeName}.${ext}`;
+  }, [characterId, num, sizeName]);
   
   // Intersection Observer实现懒加载
   useEffect(() => {
@@ -105,27 +105,46 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
     return () => observer.disconnect();
   }, [priority]);
   
-  // 预加载图片
+  // 预加载图片，支持WebP/PNG回退
   useEffect(() => {
     if (!isInView) return;
-    
-    const img = new Image();
-    img.src = getImageSrc();
-    
-    img.onload = () => {
-      setIsLoaded(true);
-      onLoad?.();
+
+    const tryLoadImage = async () => {
+      // 首先检查WebP支持
+      const webpSupported = checkWebPSupport();
+      
+      // 尝试加载WebP
+      if (webpSupported && useWebP) {
+        const webpImg = new Image();
+        webpImg.src = getImageSrc(true);
+        
+        webpImg.onload = () => {
+          setIsLoaded(true);
+          onLoad?.();
+        };
+        
+        webpImg.onerror = () => {
+          // WebP加载失败，回退到PNG
+          setUseWebP(false);
+        };
+      } else {
+        // 直接加载PNG
+        const pngImg = new Image();
+        pngImg.src = getImageSrc(false);
+        
+        pngImg.onload = () => {
+          setIsLoaded(true);
+          onLoad?.();
+        };
+        
+        pngImg.onerror = () => {
+          setHasError(true);
+        };
+      }
     };
     
-    img.onerror = () => {
-      setHasError(true);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isInView, getImageSrc, onLoad]);
-  
-  // 根据设备像素比获取合适的图片尺寸（保留供将来使用）
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const optimalSize = getOptimalSize(size);
+    tryLoadImage();
+  }, [isInView, getImageSrc, onLoad, useWebP]);
   
   return (
     <div
@@ -184,20 +203,32 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
       
       {/* 实际图片 */}
       {isInView && (
-        <img
-          ref={imgRef}
-          src={getImageSrc()}
-          alt={characterId}
-          loading={priority ? 'eager' : 'lazy'}
-          style={{
-            width: size,
-            height: size,
-            objectFit: 'cover',
-            opacity: isLoaded ? 1 : 0,
-            transition: 'opacity 0.3s ease',
-            borderRadius: '8px',
-          }}
-        />
+        <picture>
+          {/* WebP格式 - 优先加载 */}
+          {checkWebPSupport() && useWebP && (
+            <source
+              srcSet={getImageSrc(true)}
+              type="image/webp"
+            />
+          )}
+          {/* PNG回退 */}
+          <img
+            ref={imgRef}
+            src={getImageSrc(false)}
+            alt={characterId}
+            loading={priority ? 'eager' : 'lazy'}
+            width={size}
+            height={size}
+            style={{
+              width: size,
+              height: size,
+              objectFit: 'cover',
+              opacity: isLoaded ? 1 : 0,
+              transition: 'opacity 0.3s ease',
+              borderRadius: '8px',
+            }}
+          />
+        </picture>
       )}
       
       <style>{`
@@ -212,21 +243,37 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
 // 头像预加载管理器
 export class AvatarPreloader {
   private static preloadedAvatars = new Set<string>();
-  
+
   /**
-   * 预加载指定角色的所有头像
+   * 预加载指定角色的所有头像（所有分辨率）
    */
   static preloadCharacter(characterId: 'lelouch' | 'cc' | 'suzaku' | 'kallen'): void {
+    const sizes = ['small', 'medium', 'large'];
+    const webpSupported = checkWebPSupport();
+
     for (let i = 1; i <= 4; i++) {
-      const src = `avatars/${characterId}/${i}.png`;
-      if (this.preloadedAvatars.has(src)) continue;
-      
-      const img = new Image();
-      img.src = src;
-      this.preloadedAvatars.add(src);
+      // 预加载所有尺寸的WebP和PNG
+      sizes.forEach(size => {
+        const webpSrc = `avatars/${characterId}/${i}-${size}.webp`;
+        const pngSrc = `avatars/${characterId}/${i}-${size}.png`;
+
+        // 预加载WebP（如果支持）
+        if (webpSupported && !this.preloadedAvatars.has(webpSrc)) {
+          const webpImg = new Image();
+          webpImg.src = webpSrc;
+          this.preloadedAvatars.add(webpSrc);
+        }
+
+        // 预加载PNG（回退）
+        if (!this.preloadedAvatars.has(pngSrc)) {
+          const pngImg = new Image();
+          pngImg.src = pngSrc;
+          this.preloadedAvatars.add(pngSrc);
+        }
+      });
     }
   }
-  
+
   /**
    * 预加载所有角色头像
    */
@@ -234,17 +281,46 @@ export class AvatarPreloader {
     const characters: ('lelouch' | 'cc' | 'suzaku' | 'kallen')[] = ['lelouch', 'cc', 'suzaku', 'kallen'];
     characters.forEach(char => this.preloadCharacter(char));
   }
-  
+
   /**
-   * 预加载特定头像
+   * 预加载特定头像（指定分辨率）
    */
-  static preloadAvatar(characterId: string, avatarNumber: number): void {
-    const src = `avatars/${characterId}/${avatarNumber}.png`;
-    if (this.preloadedAvatars.has(src)) return;
-    
-    const img = new Image();
-    img.src = src;
-    this.preloadedAvatars.add(src);
+  static preloadAvatar(
+    characterId: string,
+    avatarNumber: number,
+    size: 'small' | 'medium' | 'large' = 'medium'
+  ): void {
+    const webpSupported = checkWebPSupport();
+
+    if (webpSupported) {
+      const webpSrc = `avatars/${characterId}/${avatarNumber}-${size}.webp`;
+      if (!this.preloadedAvatars.has(webpSrc)) {
+        const img = new Image();
+        img.src = webpSrc;
+        this.preloadedAvatars.add(webpSrc);
+      }
+    }
+
+    const pngSrc = `avatars/${characterId}/${avatarNumber}-${size}.png`;
+    if (!this.preloadedAvatars.has(pngSrc)) {
+      const img = new Image();
+      img.src = pngSrc;
+      this.preloadedAvatars.add(pngSrc);
+    }
+  }
+
+  /**
+   * 获取已预加载的头像数量
+   */
+  static getPreloadedCount(): number {
+    return this.preloadedAvatars.size;
+  }
+
+  /**
+   * 清除预加载缓存
+   */
+  static clearCache(): void {
+    this.preloadedAvatars.clear();
   }
 }
 
