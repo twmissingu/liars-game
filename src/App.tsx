@@ -228,6 +228,7 @@ const App: React.FC = () => {
 
   /**
    * 处理AI质疑决策
+   * 按照Liar's Bar规则：出牌者的下家开始依次选择质疑/不质疑
    */
   const processAIChallenge = useCallback(() => {
     if (!gameEngineRef.current) return;
@@ -240,16 +241,23 @@ const App: React.FC = () => {
     const playedBy = state.turnState.playedCards?.playerId;
     if (!playedBy) return;
     
-    // 按顺序让AI决定是否质疑
+    // 计算出牌者的索引
     const playedByIndex = playedBy === 'player' ? 0 : 
       state.aiPlayers.findIndex((ai: { id: string }) => ai.id === playedBy) + 1;
     
-    // 依次检查其他3个玩家
+    // 确定从哪个质疑者开始（如果currentChallengerIndex为null，则从出牌者的下家开始）
+    let startIndex = currentChallengerIndex !== null ? currentChallengerIndex : (playedByIndex + 1) % 4;
+    
+    // 依次检查其他玩家
     for (let i = 0; i < 3; i++) {
-      const challengerIndex = (playedByIndex + 1 + i) % 4;
+      const challengerIndex = (startIndex + i) % 4;
+      
+      // 跳过出牌者自己
+      if (challengerIndex === playedByIndex) continue;
       
       if (challengerIndex === 0) {
-        // 轮到玩家质疑，等待玩家操作
+        // 轮到玩家质疑，设置状态并等待玩家操作
+        setCurrentChallengerIndex(challengerIndex);
         addLog('等待玩家决策...');
         return;
       }
@@ -271,6 +279,7 @@ const App: React.FC = () => {
         addLog(`${challengerAI.name} 向 ${targetName} 发起质疑！`);
         
         const newState = engine.aiChallengeDecision(challengerAI.id);
+        setCurrentChallengerIndex(null); // 重置质疑者索引
         
         // 计算受罚者名称
         const playedCards = state.turnState.playedCards;
@@ -290,9 +299,10 @@ const App: React.FC = () => {
       }
     }
     
-    // 所有人都未质疑，继续下一回合
+    // 所有人都未质疑，重置状态并继续下一回合
+    setCurrentChallengerIndex(null);
     continueToNextTurn();
-  }, [addLog, selectedCharacter]);
+  }, [addLog, selectedCharacter, handleGeassResult, continueToNextTurn, currentChallengerIndex]);
 
   /**
    * 处理Geass结果
@@ -596,6 +606,7 @@ const App: React.FC = () => {
     addLog(`${playerName}向${targetName}发起质疑！`);
     
     const newState = engine.playerChallengeDecision(true);
+    setCurrentChallengerIndex(null); // 重置质疑者索引
     
     // 计算受罚者名称
     const wasLie = playedCards ? 
@@ -620,13 +631,33 @@ const App: React.FC = () => {
     addLog('你选择不质疑');
     
     const engine = gameEngineRef.current;
-    const newState = engine.playerChallengeDecision(false);
-    setGameState(newState);
+    const state = engine.getState();
+    const playedBy = state.turnState.playedCards?.playerId;
     
-    // 如果进入AI回合，自动执行
-    if (newState.phase !== 'player_turn' && newState.phase !== 'game_over') {
-      setTimeout(() => {
-        processAITurn();
+    // 计算出牌者的索引
+    const playedByIndex = playedBy === 'player' ? 0 : 
+      state.aiPlayers.findIndex((ai: { id: string }) => ai.id === playedBy) + 1;
+    
+    // 计算下一个质疑者索引（玩家的下家）
+    const nextChallengerIndex = (currentChallengerIndex! + 1) % 4;
+    
+    // 如果下一个质疑者就是出牌者，说明所有人都质疑过了
+    if (nextChallengerIndex === playedByIndex) {
+      setCurrentChallengerIndex(null);
+      const newState = engine.playerChallengeDecision(false);
+      setGameState(newState);
+      continueToNextTurn();
+      return;
+    }
+    
+    // 设置下一个质疑者并继续AI质疑流程
+    setCurrentChallengerIndex(nextChallengerIndex);
+    
+    // 延迟后继续AI质疑流程
+    setTimeout(() => {
+      processAIChallenge();
+    }, 1000);
+  }, [isProcessing, addLog, currentChallengerIndex, processAIChallenge, continueToNextTurn]);
       }, 1000);
     }
   }, [isProcessing, addLog, processAITurn]);
