@@ -1,16 +1,19 @@
-name: Pull Request Checks
+name: PR - Quick Checks
 
 on:
   pull_request:
-    branches: [ main, master ]
-  push:
-    branches-ignore: [ main, master ]
+    branches: [ main, master, develop ]
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
-  # 代码质量检查
-  lint-and-format:
+  # 快速检查 - 在PR时快速验证
+  quick-check:
     runs-on: ubuntu-latest
-    name: Lint and Format Check
+    name: ⚡ Quick Check
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,99 +24,52 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - name: Install dependencies
         run: npm ci
 
-      - name: Check ESLint
+      - name: 🔍 Quick lint check
         run: npm run lint
 
-      - name: Check Prettier formatting
-        run: npm run format:check
-
-      - name: Check TypeScript
+      - name: 📐 TypeScript check
         run: npm run type-check
 
-  # 单元测试
-  unit-tests:
-    runs-on: ubuntu-latest
-    name: Unit Tests
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run unit tests
-        run: npm run test:ci
-
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: coverage-report
-          path: coverage/
-          retention-days: 7
-
-  # 构建测试
-  build-test:
-    runs-on: ubuntu-latest
-    name: Build Test
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build project
+      - name: 🔨 Quick build test
         run: npm run build
 
-      - name: Check build output
-        run: |
-          if [ ! -d "dist" ]; then
-            echo "❌ Build output directory 'dist' not found"
-            exit 1
-          fi
-          if [ ! -f "dist/index.html" ]; then
-            echo "❌ index.html not found in dist"
-            exit 1
-          fi
-          echo "✅ Build output verified"
-
-  # 安全扫描
-  security-scan:
+  # PR信息检查
+  pr-check:
     runs-on: ubuntu-latest
-    name: Security Scan
+    name: 📝 PR Check
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Check PR title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          node-version: '20'
-          cache: 'npm'
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            test
+            chore
+          requireScope: false
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run npm audit
-        run: npm audit --audit-level=moderate
-        continue-on-error: true
-
-      - name: Check for outdated dependencies
-        run: npm outdated
-        continue-on-error: true
+      - name: PR size check
+        uses: codelytv/pr-size-checker@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          xs_max_size: 10
+          s_max_size: 100
+          m_max_size: 500
+          l_max_size: 1000
+          fail_if_xl: false

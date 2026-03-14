@@ -1,0 +1,74 @@
+name: Preview - Deploy PR
+
+on:
+  pull_request:
+    branches: [ main, master, develop ]
+    types: [opened, synchronize]
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  # 构建并部署预览
+  deploy-preview:
+    runs-on: ubuntu-latest
+    name: 🚀 Deploy Preview
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: 🔨 Build for preview
+        run: npm run build
+        env:
+          # 预览环境使用不同的base URL
+          VITE_BASE_URL: /liars-game/preview/pr-${{ github.event.pull_request.number }}/
+
+      - name: 🚀 Deploy to Preview
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          destination_dir: preview/pr-${{ github.event.pull_request.number }}
+          keep_files: true
+
+      - name: 💬 Comment PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.issue.number;
+            const previewUrl = `https://${context.repo.owner}.github.io/${context.repo.repo}/preview/pr-${prNumber}/`;
+            
+            github.rest.issues.createComment({
+              issue_number: prNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚀 **Preview deployed!**
+              
+              🔗 Preview URL: ${previewUrl}
+              
+              This preview will be updated automatically when you push new commits.`
+            });
