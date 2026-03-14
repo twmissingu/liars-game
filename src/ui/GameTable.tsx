@@ -1,10 +1,10 @@
 /**
  * Code Geass: Liar's Game - 游戏主界面（圆桌布局）
- * 统一角色格式 + 显示AI手牌数 + 优化布局
+ * 统一角色格式 + 显示AI手牌数 + 优化布局 + 头像预加载
  */
 
-import React, { useState } from 'react';
-import { ChibiAvatar } from '../components/characters';
+import React, { useState, useEffect } from 'react';
+import { ChibiAvatar, AvatarPreloader } from '../components/characters';
 import { characters, getCharacterName } from '../data/characters';
 import type { Card, CardRank, CharacterId, FunnyAction, GameState } from '../types';
 
@@ -51,6 +51,19 @@ export const GameTable: React.FC<GameTableProps> = ({
 }) => {
   const [showLelouchSkill, setShowLelouchSkill] = useState(false);
 
+  // 预加载所有游戏页面需要的头像
+  useEffect(() => {
+    if (selectedCharacter) {
+      // 预加载玩家选择的角色头像
+      AvatarPreloader.preloadAvatar(selectedCharacter, selectedAvatar);
+    }
+    // 预加载所有AI角色头像
+    aiCharacters.forEach((char, index) => {
+      const avatarNum = aiAvatars[char] || 1;
+      AvatarPreloader.preloadAvatar(char, avatarNum);
+    });
+  }, [selectedCharacter, selectedAvatar, aiCharacters, aiAvatars]);
+
   if (!gameState) return null;
 
   const { phase, liarCard, playerStats, aiPlayers, turnState } = gameState;
@@ -85,7 +98,7 @@ export const GameTable: React.FC<GameTableProps> = ({
   const renderCharacter = (name: string, characterId: CharacterId | null, hp: number, cardCount: number, color: string, avatarNum: number, isTop: boolean = false) => (
     <div className={`cg-character ${isTop ? 'cg-character-top' : ''}`}>
       <div className="cg-character-avatar">
-        {characterId && <ChibiAvatar characterId={characterId} size={160} avatarNumber={avatarNum} />}
+        {characterId && <ChibiAvatar characterId={characterId} size={160} avatarNumber={avatarNum} priority={true} />}
       </div>
       <div className="cg-character-info">
         <div className="cg-character-name" style={{ color }}>{name}</div>

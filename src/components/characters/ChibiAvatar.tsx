@@ -1,10 +1,12 @@
 import React from 'react';
+import { OptimizedAvatar, AvatarPreloader } from './OptimizedAvatar';
 
 interface ChibiAvatarProps {
   characterId: 'lelouch' | 'cc' | 'suzaku' | 'kallen';
   size?: number;
   avatarNumber?: number; // 固定头像编号 1-4
   animationState?: 'idle' | 'breathing' | 'playing-card' | 'win' | 'lose';
+  priority?: boolean; // 是否优先加载
 }
 
 export const ChibiAvatar: React.FC<ChibiAvatarProps> = ({ 
@@ -12,22 +14,20 @@ export const ChibiAvatar: React.FC<ChibiAvatarProps> = ({
   size = 160,
   avatarNumber,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  animationState = 'idle'
+  animationState = 'idle',
+  priority = false
 }) => {
-  // 使用传入的头像编号，如果没有则随机
-  const num = avatarNumber || Math.floor(Math.random() * 4) + 1;
-  const avatarSrc = `avatars/${characterId}/${num}.png`;
-  
   return (
-    <img 
-      src={avatarSrc}
-      alt={characterId}
-      style={{ 
-        width: size, 
-        height: size, 
-        borderRadius: '8px',
-        objectFit: 'cover'
-      }}
+    <OptimizedAvatar
+      characterId={characterId}
+      size={size}
+      avatarNumber={avatarNumber}
+      priority={priority}
     />
   );
 };
+
+// 导出预加载器
+export { AvatarPreloader };
+
+export default ChibiAvatar;

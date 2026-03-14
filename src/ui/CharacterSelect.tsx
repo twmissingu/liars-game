@@ -3,15 +3,15 @@
  * Code Geass: Liar's Game - 角色选择界面
  * =============================================================================
  * 
- * 展示4个Q版角色供玩家选择
+ * 展示4个Q版角色供玩家选择（使用懒加载优化）
  * 
  * @author Code Agent
  * @version 2.0.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { characters } from '../data/characters';
-import { ChibiAvatar } from '../components/characters';
+import { ChibiAvatar, AvatarPreloader } from '../components/characters';
 import type { CharacterSelectProps, CharacterId } from '../types';
 
 export const CharacterSelect: React.FC<CharacterSelectProps> = ({
@@ -23,6 +23,13 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
   const [hoveredId, setHoveredId] = useState<CharacterId | null>(null);
 
   const selectedCharacter = characters.find(c => c.id === selectedId);
+  
+  // 预加载选中角色的头像
+  useEffect(() => {
+    if (selectedId) {
+      AvatarPreloader.preloadCharacter(selectedId);
+    }
+  }, [selectedId]);
 
   return (
     <div className="cg-character-select">
@@ -75,6 +82,7 @@ export const CharacterSelect: React.FC<CharacterSelectProps> = ({
                   <ChibiAvatar
                     characterId={character.id}
                     size={300}
+                    priority={hoveredId === character.id || selectedId === character.id}
                   />
                 </div>
 
