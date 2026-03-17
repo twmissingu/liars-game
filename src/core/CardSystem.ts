@@ -45,6 +45,7 @@ export class CardSystem {
           rank: rank,
           value: rank === 'Q' ? 1 : rank === 'K' ? 2 : 3,
           isJoker: false,
+          isRevealed: false,
           owner: null,
         });
       }
@@ -58,6 +59,7 @@ export class CardSystem {
         rank: 'JOKER',
         value: 0,
         isJoker: true,
+        isRevealed: false,
         owner: null,
       });
     }

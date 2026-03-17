@@ -125,29 +125,18 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
         {/* 角色展示 */}
         <div className="cg-result-character">
           <div className="cg-character-showcase">
-            <ChibiAvatar characterId={resultCharacter} size={300} />
+            <ChibiAvatar characterId={resultCharacter} size={200} />
 
             {/* 角色光环效果 */}
             <div className={`cg-character-aura ${isWin ? 'cg-aura-win' : 'cg-aura-lose'}`} />
           </div>
         </div>
 
-        {/* 分数展示 */}
+        {/* 分数展示 - 简洁版本 */}
         <div className="cg-result-score">
-          <div className="cg-score-panel">
-            <div className="cg-score-item cg-score-player">
-              <span className="cg-score-label">玩家</span>
-              <span className="cg-score-value">{playerScore}</span>
-            </div>
-
-            <div className="cg-score-divider">
-              <span>VS</span>
-            </div>
-
-            <div className="cg-score-item cg-score-opponent">
-              <span className="cg-score-value">{opponentScore}</span>
-              <span className="cg-score-label">对手</span>
-            </div>
+          <div className="cg-score-simple">
+            <span className="cg-score-label">回合数</span>
+            <span className="cg-score-value">{playerScore + opponentScore}</span>
           </div>
         </div>
 
@@ -288,11 +277,13 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 2rem;
-          padding: 2rem;
+          gap: 1rem;
+          padding: 1.5rem;
           opacity: 0;
           transform: scale(0.9);
           transition: all 0.5s ease;
+          max-height: 100vh;
+          overflow-y: auto;
         }
 
         .cg-result-content.cg-animate-in {
@@ -305,9 +296,9 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
         }
 
         .cg-result-badge {
-          width: 100px;
-          height: 100px;
-          margin: 0 auto 1rem;
+          width: 80px;
+          height: 80px;
+          margin: 0 auto 0.5rem;
         }
 
         .cg-badge-icon {
@@ -317,10 +308,10 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 
         .cg-result-title {
           font-family: 'Cinzel Decorative', serif;
-          font-size: 3rem;
+          font-size: 2.5rem;
           font-weight: 700;
-          margin: 0 0 0.5rem;
-          letter-spacing: 0.2em;
+          margin: 0 0 0.25rem;
+          letter-spacing: 0.15em;
         }
 
         .cg-title-win {
@@ -350,7 +341,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 
         .cg-character-showcase {
           position: relative;
-          padding: 1rem;
+          padding: 0.5rem;
         }
 
         .cg-character-aura {
@@ -358,8 +349,8 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
-          width: 250px;
-          height: 250px;
+          width: 180px;
+          height: 180px;
           border-radius: 50%;
           pointer-events: none;
         }
@@ -380,45 +371,34 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 
         .cg-result-score {
           width: 100%;
-          max-width: 400px;
+          max-width: 300px;
         }
 
-        .cg-score-panel {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 1.5rem 2rem;
-          background: linear-gradient(135deg, rgba(26, 26, 36, 0.9) 0%, rgba(37, 37, 50, 0.9) 100%);
-          backdrop-filter: blur(10px);
-          border: 1px solid var(--result-color);
-          border-radius: 1rem;
-          box-shadow: 0 0 30px var(--result-glow);
-        }
-
-        .cg-score-item {
+        .cg-score-simple {
           display: flex;
           flex-direction: column;
           align-items: center;
           gap: 0.5rem;
+          padding: 1rem 2rem;
+          background: linear-gradient(135deg, rgba(26, 26, 36, 0.8) 0%, rgba(37, 37, 50, 0.8) 100%);
+          backdrop-filter: blur(10px);
+          border: 1px solid var(--result-color);
+          border-radius: 0.75rem;
+          box-shadow: 0 0 20px var(--result-glow);
         }
 
-        .cg-score-item .cg-score-label {
+        .cg-score-simple .cg-score-label {
           font-family: 'Noto Sans SC', sans-serif;
           font-size: 0.875rem;
-          color: #71717a;
+          color: #a1a1aa;
+          letter-spacing: 0.1em;
         }
 
-        .cg-score-item .cg-score-value {
+        .cg-score-simple .cg-score-value {
           font-family: 'Cinzel', serif;
-          font-size: 2.5rem;
+          font-size: 2rem;
           font-weight: 700;
           color: var(--result-color);
-        }
-
-        .cg-score-divider {
-          font-family: 'Cinzel', serif;
-          font-size: 1rem;
-          color: #3f3f46;
         }
 
         .cg-result-actions {

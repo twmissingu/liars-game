@@ -1,25 +1,23 @@
 /**
  * =============================================================================
- * Code Geass: Liar's Game - 游戏主界面（圆桌布局）
+ * Code Geass: Liar's Game - 游戏主界面（优化版）
  * =============================================================================
  *
- * 游戏主界面组件，采用圆桌布局展示：
- * - 顶部：AI玩家1
- * - 左侧：AI玩家2
- * - 右侧：AI玩家3
- * - 底部：玩家自己
+ * 游戏主界面组件，采用优化的紧凑布局：
+ * - 左侧：游戏记录栏（纵向延伸至底部，带滚动）
+ * - 中间：游戏区域（角色+圆桌）
+ * - 底部：功能栏（左侧返回、中间操作、右侧信息）
  *
- * 功能特性：
- * - 统一角色格式显示
- * - 显示AI手牌数
- * - 头像预加载优化
- * - 质疑阶段UI交互
+ * 优化特性：
+ * - 一屏显示，无需滚动
+ * - 布局紧凑，信息清晰
+ * - 响应式设计
  *
  * @author Code Agent
- * @version 2.0.0 - 重构版：简化质疑流程
+ * @version 3.0.0 - UI优化版
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ChibiAvatar, AvatarPreloader } from '../components/characters';
 import { characters, getCharacterName } from '../data/characters';
 import type { Card, CardRank, CharacterId, FunnyAction, GameState } from '../types';
@@ -65,10 +63,6 @@ interface GameTableProps {
 
 /**
  * 获取角色颜色
- * 根据角色ID返回对应的主题色
- *
- * @param characterId - 角色ID
- * @returns 颜色代码（十六进制）
  */
 const getCharacterColor = (characterId: CharacterId | null): string => {
   if (!characterId) return '#d4af37';
@@ -78,10 +72,6 @@ const getCharacterColor = (characterId: CharacterId | null): string => {
 
 /**
  * 游戏主界面组件
- * 采用圆桌布局，支持质疑阶段交互
- *
- * @param props - 组件属性
- * @returns 游戏主界面JSX元素
  */
 export const GameTable: React.FC<GameTableProps> = ({
   gameState,
@@ -100,105 +90,62 @@ export const GameTable: React.FC<GameTableProps> = ({
   isProcessing = false,
   canUseSkill = true,
 }) => {
-  /** 是否显示鲁鲁修技能弹窗 */
   const [showLelouchSkill, setShowLelouchSkill] = useState(false);
+  const logContentRef = useRef<HTMLDivElement>(null);
+  const prevLogLengthRef = useRef(gameLog.length);
 
-  /**
-   * 预加载所有游戏页面需要的头像
-   * 在组件挂载或角色变化时执行
-   */
+  // 自动滚动到最新日志
+  useEffect(() => {
+    if (logContentRef.current && gameLog.length > prevLogLengthRef.current) {
+      const logContainer = logContentRef.current;
+      // 使用平滑滚动
+      logContainer.scrollTo({
+        top: logContainer.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+    prevLogLengthRef.current = gameLog.length;
+  }, [gameLog]);
+
   useEffect(() => {
     if (selectedCharacter) {
-      // 预加载玩家选择的角色头像
       AvatarPreloader.preloadAvatar(selectedCharacter, selectedAvatar);
     }
-    // 预加载所有AI角色头像
     aiCharacters.forEach(char => {
       const avatarNum = aiAvatars[char] || 1;
       AvatarPreloader.preloadAvatar(char, avatarNum);
     });
   }, [selectedCharacter, selectedAvatar, aiCharacters, aiAvatars]);
 
-  // 如果没有游戏状态，不渲染
   if (!gameState) return null;
 
-  // 解构游戏状态
   const { phase, liarCard, playerStats, aiPlayers, turnState } = gameState;
-
-  // 判断当前阶段
   const isPlayerTurn = phase === 'player_turn';
   const isChallengePhase = phase === 'challenge';
-
-  // 获取玩家手牌
   const playerHand = gameState.playerHand || [];
-
-  // 获取当前回合数
   const currentRound = turnState?.turnNumber || 1;
-
-  /**
-   * 判断是否是玩家的质疑回合
-   * 在质疑阶段，且轮到玩家决策时返回true
-   */
   const isPlayerChallengeTurn = isChallengePhase;
 
-  /**
-   * 处理出牌按钮点击
-   */
   const handlePlayClick = () => {
     if (selectedCards.length > 0) onConfirmPlay();
   };
 
-  /**
-   * 处理鲁鲁修技能按钮点击
-   * 显示技能选择弹窗
-   */
   const handleLelouchSkillClick = () => setShowLelouchSkill(true);
 
-  /**
-   * 处理选择新的骗子牌
-   *
-   * @param rank - 新的骗子牌点数
-   */
   const handleLelouchRankSelect = (rank: CardRank) => {
     setShowLelouchSkill(false);
     onLelouchSkill?.(rank);
   };
 
-  /**
-   * 获取花色符号
-   *
-   * @param suit - 花色
-   * @returns 对应的符号
-   */
   const getSuitSymbol = (suit: string) =>
     ({ spades: '♠', hearts: '♥', clubs: '♣', diamonds: '♦', joker: '🃏' })[suit] || suit;
 
-  /**
-   * 获取花色颜色
-   *
-   * @param suit - 花色
-   * @returns 对应的颜色代码
-   */
   const getSuitColor = (suit: string) =>
     suit === 'joker' ? '#d4af37' : suit === 'hearts' || suit === 'diamonds' ? '#dc2626' : '#1a1a24';
 
-  // 获取玩家名称和颜色
   const playerName = getCharacterName(selectedCharacter);
   const playerColor = getCharacterColor(selectedCharacter);
 
-  /**
-   * 渲染角色组件
-   * 统一格式的角色信息显示
-   *
-   * @param name - 角色名称
-   * @param characterId - 角色ID
-   * @param hp - 当前生命值
-   * @param cardCount - 手牌数量
-   * @param color - 角色主题色
-   * @param avatarNum - 头像编号
-   * @param isTop - 是否在顶部位置
-   * @returns 角色信息JSX元素
-   */
   const renderCharacter = (
     name: string,
     characterId: CharacterId | null,
@@ -206,23 +153,22 @@ export const GameTable: React.FC<GameTableProps> = ({
     cardCount: number,
     color: string,
     avatarNum: number,
-    isTop: boolean = false
+    isTop: boolean = false,
+    isActive: boolean = true
   ) => (
-    <div className={`cg-character ${isTop ? 'cg-character-top' : ''}`}>
+    <div className={`cg-character ${isTop ? 'cg-character-top' : ''} ${!isActive ? 'cg-character-dead' : ''}`}>
       <div className="cg-character-avatar">
         {characterId && (
           <ChibiAvatar
             characterId={characterId}
-            size={160}
+            size={120}
             avatarNumber={avatarNum}
             priority={true}
           />
         )}
       </div>
       <div className="cg-character-info">
-        <div className="cg-character-name" style={{ color }}>
-          {name}
-        </div>
+        <div className="cg-character-name" style={{ color }}>{name}</div>
         <div className="cg-character-stats">
           <span>{Array(hp).fill('❤️').join('')}</span>
           <span className="cg-card-count">🃏{cardCount}</span>
@@ -233,23 +179,12 @@ export const GameTable: React.FC<GameTableProps> = ({
 
   return (
     <div className="cg-game-table">
-      {/* 顶部栏：返回按钮、回合信息、骗子牌 */}
-      <div className="cg-top-bar">
-        <button className="cg-back-button" onClick={onBackToMenu}>
-          ← 主页面
-        </button>
-        <div className="cg-round-info">回合 {currentRound}</div>
-        <div className="cg-liar-card">
-          骗子牌 <span>{liarCard}</span>
-        </div>
-        <div className="cg-placeholder"></div>
-      </div>
-
-      <div className="cg-main">
-        {/* 左侧日志面板 */}
-        <div className="cg-log">
-          <div className="cg-log-title">📜 游戏记录</div>
-          <div className="cg-log-content">
+      {/* 主布局：左侧日志 + 中间游戏区 */}
+      <div className="cg-main-layout">
+        {/* 左侧游戏记录栏 */}
+        <div className="cg-log-panel">
+          <div className="cg-log-header">📜 游戏记录</div>
+          <div ref={logContentRef} className="cg-log-content">
             {gameLog.map((log, i) => (
               <div
                 key={i}
@@ -261,172 +196,198 @@ export const GameTable: React.FC<GameTableProps> = ({
           </div>
         </div>
 
-        {/* 游戏区域 */}
-        <div className="cg-play-area">
-          {/* AI 1 - 顶部 (id='ai') */}
-          {renderCharacter(
-            getCharacterName(aiPlayers?.[0]?.character || aiCharacters[0]),
-            aiPlayers?.[0]?.character || aiCharacters[0],
-            aiPlayers?.[0]?.stats?.hp || 3,
-            aiPlayers?.[0]?.hand?.length || 0,
-            getCharacterColor(aiPlayers?.[0]?.character || aiCharacters[0]),
-            aiAvatars[aiPlayers?.[0]?.character || aiCharacters[0]] || 1,
-            true
-          )}
-
-          {/* 中间行：AI2 + 圆桌 + AI3 */}
-          <div className="cg-middle-row">
-            {/* AI 2 - 左侧 (id='ai2') */}
+        {/* 中间游戏区域 */}
+        <div className="cg-game-area">
+          {/* 顶部AI */}
+          <div className="cg-ai-top">
             {renderCharacter(
               getCharacterName(aiPlayers?.[1]?.character || aiCharacters[1]),
               aiPlayers?.[1]?.character || aiCharacters[1],
-              aiPlayers?.[1]?.stats?.hp || 3,
+              aiPlayers?.[1]?.stats?.hp || 0,
               aiPlayers?.[1]?.hand?.length || 0,
               getCharacterColor(aiPlayers?.[1]?.character || aiCharacters[1]),
-              aiAvatars[aiPlayers?.[1]?.character || aiCharacters[1]] || 1
+              aiAvatars[aiPlayers?.[1]?.character || aiCharacters[1]] || 1,
+              true,
+              aiPlayers?.[1]?.isActive !== false && (aiPlayers?.[1]?.stats?.hp || 0) > 0
             )}
+          </div>
+
+          {/* 中间行：左侧AI + 圆桌 + 右侧AI */}
+          <div className="cg-middle-section">
+            {/* 左侧AI */}
+            <div className="cg-ai-left">
+              {renderCharacter(
+                getCharacterName(aiPlayers?.[2]?.character || aiCharacters[2]),
+                aiPlayers?.[2]?.character || aiCharacters[2],
+                aiPlayers?.[2]?.stats?.hp || 0,
+                aiPlayers?.[2]?.hand?.length || 0,
+                getCharacterColor(aiPlayers?.[2]?.character || aiCharacters[2]),
+                aiAvatars[aiPlayers?.[2]?.character || aiCharacters[2]] || 1,
+                false,
+                aiPlayers?.[2]?.isActive !== false && (aiPlayers?.[2]?.stats?.hp || 0) > 0
+              )}
+            </div>
 
             {/* 圆桌区域 */}
-            <div className="cg-table">
-              <div className="cg-table-inner">
-                {turnState?.playedCards ? (
-                  <div className="cg-played">
-                    <div
-                      className="cg-player-name"
-                      style={{ color: '#d4af37', fontWeight: 'bold', marginBottom: '8px' }}
-                    >
-                      {turnState.playedCards.playerId === 'player'
-                        ? playerName
-                        : turnState.playedCards.playerId.startsWith('ai')
-                          ? getCharacterName(
-                              aiPlayers?.find(
-                                (ai: { id: string }) => ai.id === turnState.playedCards.playerId
-                              )?.character || 'cc'
-                            )
-                          : '未知玩家'}{' '}
-                      出牌
+            <div className="cg-table-area">
+              <div className="cg-table">
+                <div className="cg-table-inner">
+                  {turnState?.playedCards ? (
+                    <div className="cg-played">
+                      <div className="cg-played-name">
+                        {turnState.playedCards.playerId === 'player'
+                          ? playerName
+                          : turnState.playedCards.playerId.startsWith('ai')
+                            ? getCharacterName(
+                                aiPlayers?.find(
+                                  (ai: { id: string }) => ai.id === turnState.playedCards.playerId
+                                )?.character || 'cc'
+                              )
+                            : '未知玩家'}{' '}
+                        出牌
+                      </div>
+                      <div className="cg-cards">
+                        {turnState.playedCards.actualCards.map((c: Card) => (
+                          <div key={c.id} className="cg-card-small cg-card-back">
+                            <img src={cardBack} alt="牌背" />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="cg-card-count-display">
+                        {turnState.playedCards.cardIds.length} 张牌
+                      </div>
                     </div>
-                    <div className="cg-cards">
-                      {/* 出牌时显示背面，质疑后才显示实际牌 */}
-                      {turnState.playedCards.actualCards.map((c: Card) => (
-                        <div key={c.id} className="cg-card-small cg-card-back">
-                          <img src={cardBack} alt="牌背" />
-                        </div>
-                      ))}
-                    </div>
-                    <div className="cg-card-count-display">
-                      {turnState.playedCards.cardIds.length} 张牌
-                    </div>
-                  </div>
-                ) : (
-                  <div className="cg-placeholder-text">等待出牌...</div>
-                )}
+                  ) : (
+                    <div className="cg-placeholder-text">等待出牌...</div>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* AI 3 - 右侧 (id='ai3') */}
-            {renderCharacter(
-              getCharacterName(aiPlayers?.[2]?.character || aiCharacters[2]),
-              aiPlayers?.[2]?.character || aiCharacters[2],
-              aiPlayers?.[2]?.stats?.hp || 3,
-              aiPlayers?.[2]?.hand?.length || 0,
-              getCharacterColor(aiPlayers?.[2]?.character || aiCharacters[2]),
-              aiAvatars[aiPlayers?.[2]?.character || aiCharacters[2]] || 1
-            )}
+            {/* 右侧AI */}
+            <div className="cg-ai-right">
+              {renderCharacter(
+                getCharacterName(aiPlayers?.[0]?.character || aiCharacters[0]),
+                aiPlayers?.[0]?.character || aiCharacters[0],
+                aiPlayers?.[0]?.stats?.hp || 0,
+                aiPlayers?.[0]?.hand?.length || 0,
+                getCharacterColor(aiPlayers?.[0]?.character || aiCharacters[0]),
+                aiAvatars[aiPlayers?.[0]?.character || aiCharacters[0]] || 1,
+                false,
+                aiPlayers?.[0]?.isActive !== false && (aiPlayers?.[0]?.stats?.hp || 0) > 0
+              )}
+            </div>
           </div>
 
-          {/* 玩家区域 */}
-          <div className="cg-player-position">
-            {renderCharacter(
-              playerName,
-              selectedCharacter,
-              playerStats.hp,
-              playerHand.length,
-              playerColor,
-              selectedAvatar
-            )}
-            {/* 鲁鲁修技能按钮 */}
-            {selectedCharacter === 'lelouch' && isPlayerTurn && (
-              <button
-                className="cg-skill-btn"
-                onClick={handleLelouchSkillClick}
-                disabled={isProcessing || !canUseSkill}
-                title={canUseSkill ? '每局限用1次' : '已使用'}
-              >
-                {canUseSkill ? '绝对命令' : '绝对命令 (已用)'}
-              </button>
-            )}
+          {/* 底部玩家区域 - 角色左侧，手牌右侧 */}
+          <div className="cg-player-section">
+            {/* 左侧：玩家信息 */}
+            <div className="cg-player-info">
+              {renderCharacter(
+                playerName,
+                selectedCharacter,
+                playerStats.hp,
+                playerHand.length,
+                playerColor,
+                selectedAvatar
+              )}
+              {selectedCharacter === 'lelouch' && isPlayerTurn && (
+                <button
+                  className="cg-skill-btn"
+                  onClick={handleLelouchSkillClick}
+                  disabled={isProcessing || !canUseSkill}
+                >
+                  {canUseSkill ? '绝对命令' : '已使用'}
+                </button>
+              )}
+            </div>
+
+            {/* 右侧：手牌区域 - 层叠布局，右侧覆盖左侧 */}
+            <div className="cg-hand-section">
+              <div className="cg-hand" style={{ width: `${Math.max(60, playerHand.length * 26 + 22)}px` }}>
+                {playerHand.map((card: Card, i: number) => {
+                  const isSelected = selectedCards.includes(card.id);
+                  return (
+                    <button
+                      key={card.id}
+                      className={`cg-card ${isSelected ? 'selected' : ''} ${!isPlayerTurn || isProcessing ? 'disabled' : ''}`}
+                      onClick={() => onToggleCardSelection(card.id)}
+                      style={{
+                        left: `${i * 26}px`,
+                        transform: isSelected ? 'translateY(-8px)' : 'none',
+                        zIndex: isSelected ? playerHand.length + 10 : playerHand.length - i,
+                      }}
+                      disabled={!isPlayerTurn || isProcessing}
+                    >
+                      <div className="cg-card-face">
+                        <div style={{ color: getSuitColor(card.suit), fontSize: '13px' }}>{card.rank}</div>
+                        <div style={{ color: getSuitColor(card.suit), fontSize: '15px' }}>
+                          {getSuitSymbol(card.suit)}
+                        </div>
+                      </div>
+                      {isSelected && <div className="cg-check">✓</div>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 手牌区域 */}
-      <div className="cg-hand-area">
-        <div className="cg-hand">
-          {playerHand.map((card: Card, i: number) => {
-            const isSelected = selectedCards.includes(card.id);
-            return (
-              <button
-                key={card.id}
-                className={`cg-card ${isSelected ? 'selected' : ''} ${!isPlayerTurn || isProcessing ? 'disabled' : ''}`}
-                onClick={() => onToggleCardSelection(card.id)}
-                style={{
-                  transform: `translateX(${(i - playerHand.length / 2) * 45}px) ${isSelected ? 'translateY(-20px)' : ''}`,
-                }}
-                disabled={!isPlayerTurn || isProcessing}
-              >
-                <div className="cg-card-face">
-                  <div style={{ color: getSuitColor(card.suit) }}>{card.rank}</div>
-                  <div style={{ color: getSuitColor(card.suit), fontSize: '20px' }}>
-                    {getSuitSymbol(card.suit)}
-                  </div>
-                </div>
-                {isSelected && <div className="cg-check">✓</div>}
-              </button>
-            );
-          })}
+      {/* 底部功能栏 */}
+      <div className="cg-bottom-bar">
+        {/* 左侧：返回按钮 */}
+        <div className="cg-bottom-left">
+          <button className="cg-back-btn" onClick={onBackToMenu}>
+            ← 返回主页面
+          </button>
         </div>
-      </div>
 
-      {/* 操作栏 */}
-      <div className="cg-actions">
-        {/* 玩家回合：出牌按钮 */}
-        {isPlayerTurn && selectedCards.length > 0 && (
-          <button className="cg-btn cg-btn-play" onClick={handlePlayClick} disabled={isProcessing}>
-            出牌 ({selectedCards.length})
-          </button>
-        )}
+        {/* 中间：操作区 */}
+        <div className="cg-bottom-center">
+          {/* 过程提示文本 - 仅在非质疑阶段显示 */}
+          {!isPlayerChallengeTurn && (
+            <div className="cg-status-text">
+              {isPlayerTurn && selectedCards.length === 0 && '请选择要出的牌'}
+              {isPlayerTurn && selectedCards.length > 0 && `已选择 ${selectedCards.length} 张牌`}
+              {isChallengePhase && !isPlayerChallengeTurn && '等待其他玩家质疑...'}
+              {!isPlayerTurn && !isChallengePhase && 'AI回合中...'}
+            </div>
+          )}
 
-        {/* 玩家回合：跳过按钮（未选牌时） */}
-        {isPlayerTurn && selectedCards.length === 0 && (
-          <button className="cg-btn cg-btn-skip" onClick={onPass} disabled={isProcessing}>
-            跳过
-          </button>
-        )}
+          {/* 操作按钮 */}
+          <div className="cg-action-buttons">
+            {isPlayerTurn && selectedCards.length > 0 && (
+              <button className="cg-btn cg-btn-play" onClick={handlePlayClick} disabled={isProcessing}>
+                出牌 ({selectedCards.length})
+              </button>
+            )}
 
-        {/* 质疑阶段：质疑/不质疑按钮 */}
-        {isPlayerChallengeTurn && (
-          <>
-            <button
-              className="cg-btn cg-btn-challenge"
-              onClick={onChallenge}
-              disabled={isProcessing}
-            >
-              ⚔️ 质疑
-            </button>
-            <button className="cg-btn cg-btn-skip" onClick={onPass} disabled={isProcessing}>
-              不质疑
-            </button>
-          </>
-        )}
+            {isPlayerChallengeTurn && (
+              <>
+                <button className="cg-btn cg-btn-challenge" onClick={onChallenge} disabled={isProcessing}>
+                  ⚔️ 质疑
+                </button>
+                <button className="cg-btn cg-btn-skip" onClick={onPass} disabled={isProcessing}>
+                  不质疑
+                </button>
+              </>
+            )}
+          </div>
+        </div>
 
-        {/* 质疑阶段：等待其他玩家质疑 */}
-        {isChallengePhase && !isPlayerChallengeTurn && (
-          <span className="cg-wait">等待其他玩家质疑...</span>
-        )}
-
-        {/* AI回合 */}
-        {!isPlayerTurn && !isChallengePhase && <span className="cg-wait">AI回合...</span>}
+        {/* 右侧：回合信息 */}
+        <div className="cg-bottom-right">
+          <div className="cg-round-display">
+            <div className="cg-round-label">回合</div>
+            <div className="cg-round-number">{currentRound}</div>
+          </div>
+          <div className="cg-liar-display">
+            <div className="cg-liar-label">骗子牌</div>
+            <div className="cg-liar-value">{liarCard}</div>
+          </div>
+        </div>
       </div>
 
       {/* 鲁鲁修技能弹窗 */}
@@ -453,72 +414,464 @@ export const GameTable: React.FC<GameTableProps> = ({
       )}
 
       <style>{`
-        .cg-game-table { position: fixed; inset: 0; display: flex; flex-direction: column; background: linear-gradient(180deg, #0a0a0f, #1a1a24); font-family: 'Noto Sans SC', sans-serif; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
-        .cg-top-bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(212,175,55,0.2); }
-        .cg-back-button { padding: 6px 12px; background: transparent; border: 1px solid #d4af37; color: #d4af37; border-radius: 4px; cursor: pointer; }
-        .cg-round-info { font-size: 18px; color: #d4af37; font-weight: bold; }
-        .cg-liar-card { font-size: 16px; color: #fff; }
-        .cg-liar-card span { color: #dc2626; font-weight: bold; font-size: 20px; }
-        .cg-placeholder { width: 80px; }
-        
-        .cg-main { flex: 1; display: flex; overflow: auto; }
-        .cg-log { width: 260px; background: rgba(0,0,0,0.4); border-right: 1px solid rgba(212,175,55,0.2); padding: 15px; display: flex; flex-direction: column; }
-        .cg-log-title { font-size: 16px; color: #d4af37; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(212,175,55,0.3); }
-        .cg-log-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
-        .cg-log-item { padding: 6px 10px; background: rgba(255,255,255,0.05); border-radius: 6px; font-size: 13px; color: #e5e5e5; }
-        .cg-log-item.challenge { background: rgba(220,38,38,0.2); border-left: 3px solid #dc2626; }
-        .cg-log-item.geass { background: rgba(212,175,55,0.2); border-left: 3px solid #d4af37; }
-        
-        .cg-play-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 10px; }
-        .cg-character { display: flex; flex-direction: column; align-items: center; gap: 5px; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 10px; border: 1px solid rgba(212,175,55,0.2); }
-        .cg-character-top { margin-top: 5px; }
-        .cg-character-avatar { filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5)); }
-        .cg-character-info { text-align: center; }
-        .cg-character-name { font-size: 14px; font-weight: bold; }
-        .cg-character-stats { display: flex; gap: 10px; align-items: center; margin-top: 3px; font-size: 12px; }
-        .cg-card-count { color: #d4af37; }
-        
-        .cg-middle-row { display: flex; align-items: center; justify-content: center; gap: 30px; flex: 1; width: 100%; }
-        
-        .cg-table { width: 280px; height: 280px; border-radius: 50%; background: linear-gradient(145deg, #1a3a1a, #0d260d); border: 6px solid #2d5016; box-shadow: inset 0 0 50px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; }
-        .cg-table-inner { width: 250px; height: 250px; border-radius: 50%; background: radial-gradient(circle, #1e4a1e, #143614); display: flex; align-items: center; justify-content: center; }
+        /* 基础布局 */
+        .cg-game-table { 
+          position: fixed; 
+          inset: 0; 
+          display: flex; 
+          flex-direction: column; 
+          background: linear-gradient(180deg, #0a0a0f, #1a1a24); 
+          font-family: 'Noto Sans SC', sans-serif; 
+          overflow: hidden;
+        }
+
+        /* 主布局：日志 + 游戏区 */
+        .cg-main-layout { 
+          flex: 1; 
+          display: flex; 
+          overflow: hidden;
+          margin-bottom: 0;
+        }
+
+        /* 左侧游戏记录栏 */
+        .cg-log-panel { 
+          width: 240px; 
+          min-width: 240px;
+          background: rgba(0,0,0,0.5); 
+          border-right: 1px solid rgba(212,175,55,0.2); 
+          display: flex; 
+          flex-direction: column;
+          height: 100%;
+        }
+        .cg-log-header { 
+          padding: 12px 15px;
+          font-size: 14px; 
+          color: #d4af37; 
+          font-weight: bold;
+          border-bottom: 1px solid rgba(212,175,55,0.3); 
+          background: rgba(0,0,0,0.3);
+        }
+        .cg-log-content { 
+          flex: 1; 
+          overflow-y: auto; 
+          padding: 10px;
+          display: flex; 
+          flex-direction: column; 
+          gap: 5px; 
+          scroll-behavior: smooth;
+          -webkit-overflow-scrolling: touch;
+        }
+        .cg-log-content::-webkit-scrollbar {
+          width: 6px;
+        }
+        .cg-log-content::-webkit-scrollbar-track {
+          background: rgba(0,0,0,0.2);
+          border-radius: 3px;
+        }
+        .cg-log-content::-webkit-scrollbar-thumb {
+          background: rgba(212,175,55,0.4);
+          border-radius: 3px;
+          transition: background 0.2s;
+        }
+        .cg-log-content::-webkit-scrollbar-thumb:hover {
+          background: rgba(212,175,55,0.6);
+        }
+        .cg-log-content::-webkit-scrollbar-thumb:active {
+          background: rgba(212,175,55,0.8);
+        }
+        .cg-log-item { 
+          padding: 6px 10px; 
+          background: rgba(255,255,255,0.05); 
+          border-radius: 4px; 
+          font-size: 12px; 
+          color: #e5e5e5; 
+          line-height: 1.4;
+        }
+        .cg-log-item.challenge { 
+          background: rgba(220,38,38,0.2); 
+          border-left: 2px solid #dc2626; 
+        }
+        .cg-log-item.geass { 
+          background: rgba(212,175,55,0.2); 
+          border-left: 2px solid #d4af37; 
+        }
+
+        /* 中间游戏区域 */
+        .cg-game-area { 
+          flex: 1; 
+          display: flex; 
+          flex-direction: column;
+          padding: 5px 20px;
+          gap: 5px;
+          overflow: hidden;
+        }
+
+        /* 顶部AI - 更靠近圆桌 */
+        .cg-ai-top { 
+          display: flex; 
+          justify-content: center;
+          height: 160px;
+          margin-bottom: -10px;
+        }
+
+        /* 中间行 */
+        .cg-middle-section { 
+          flex: 1;
+          display: flex; 
+          align-items: center; 
+          justify-content: center; 
+          gap: 10px;
+          min-height: 0;
+        }
+        .cg-ai-left, .cg-ai-right {
+          width: 160px;
+          display: flex;
+          justify-content: center;
+        }
+        .cg-table-area {
+          flex: 1;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          max-width: 260px;
+        }
+
+        /* 圆桌 */
+        .cg-table { 
+          width: 200px; 
+          height: 200px; 
+          border-radius: 50%; 
+          background: linear-gradient(145deg, #1a3a1a, #0d260d); 
+          border: 4px solid #2d5016; 
+          box-shadow: inset 0 0 40px rgba(0,0,0,0.5); 
+          display: flex; 
+          align-items: center; 
+          justify-content: center; 
+        }
+        .cg-table-inner { 
+          width: 170px; 
+          height: 170px; 
+          border-radius: 50%; 
+          background: radial-gradient(circle, #1e4a1e, #143614); 
+          display: flex; 
+          align-items: center; 
+          justify-content: center; 
+        }
         .cg-played { text-align: center; }
-        .cg-played div:first-child { color: #d4af37; font-size: 14px; margin-bottom: 10px; }
-        .cg-cards { display: flex; justify-content: center; gap: 8px; }
-        .cg-card-small { width: 40px; height: 56px; border-radius: 4px; border: 2px solid #d4af37; overflow: hidden; }
+        .cg-played-name { color: #d4af37; font-size: 13px; margin-bottom: 8px; }
+        .cg-cards { display: flex; justify-content: center; gap: 6px; }
+        .cg-card-small { 
+          width: 32px; 
+          height: 44px; 
+          border-radius: 3px; 
+          border: 1px solid #d4af37; 
+          overflow: hidden; 
+        }
         .cg-card-small img { width: 100%; height: 100%; object-fit: cover; }
         .cg-card-back { background: linear-gradient(135deg, #4c1d95, #1e1b4b); }
-        .cg-card-count-display { color: #d4af37; font-size: 14px; margin-top: 10px; }
-        .cg-placeholder-text { color: rgba(255,255,255,0.3); font-size: 16px; }
-        
-        .cg-player-position { display: flex; flex-direction: column; align-items: center; gap: 5px; margin-bottom: 5px; }
-        .cg-skill-btn { padding: 5px 10px; background: linear-gradient(135deg, #4c1d95, #7c3aed); border: none; border-radius: 4px; color: white; font-size: 12px; cursor: pointer; }
-        
-        .cg-hand-area { height: 110px; display: flex; align-items: center; justify-content: center; }
-        .cg-hand { display: flex; justify-content: center; position: relative; height: 90px; }
-        .cg-card { width: 60px; height: 84px; border-radius: 6px; background: white; border: 2px solid #d4af37; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; position: relative; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-        .cg-card:active { transform: scale(0.95); }
-        .cg-card.selected { transform: translateY(-20px); box-shadow: 0 0 15px rgba(212,175,55,0.5); }
-        @media (max-width: 414px) { .cg-card.selected { transform: translateY(-10px); } }
-        .cg-card.disabled { opacity: 0.5; cursor: not-allowed; }
-        .cg-card.disabled:active { transform: none; }
-        .cg-card-face { display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        .cg-check { position: absolute; top: -5px; right: -5px; width: 20px; height: 20px; background: #22c55e; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; }
-        
-        .cg-actions { display: flex; align-items: center; justify-content: center; gap: 15px; padding: 15px; background: rgba(0,0,0,0.3); border-top: 1px solid rgba(212,175,55,0.2); }
-        .cg-btn { padding: 10px 25px; font-size: 15px; border: none; border-radius: 6px; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; min-height: 44px; }
-        .cg-btn:active { transform: scale(0.98); opacity: 0.9; }
-        .cg-btn-play { background: linear-gradient(135deg, #15803d, #22c55e); color: white; }
-        .cg-btn-challenge { background: linear-gradient(135deg, #dc2626, #ef4444); color: white; }
-        .cg-btn-skip { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
-        .cg-wait { color: rgba(255,255,255,0.5); font-size: 14px; }
-        
-        .cg-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        .cg-modal-content { background: linear-gradient(180deg, #1a1a24, #0a0a0f); padding: 25px; border-radius: 10px; border: 1px solid rgba(212,175,55,0.3); text-align: center; }
-        .cg-modal-content h3 { color: #d4af37; margin-bottom: 15px; }
-        .cg-rank-btns { display: flex; gap: 12px; margin-bottom: 15px; }
-        .cg-rank-btns button { width: 50px; height: 50px; font-size: 20px; border: 2px solid rgba(212,175,55,0.5); background: rgba(0,0,0,0.5); color: #fff; border-radius: 6px; cursor: pointer; }
-        .cg-rank-btns button.current { border-color: #d4af37; background: rgba(212,175,55,0.2); }
+        .cg-card-count-display { color: #d4af37; font-size: 12px; margin-top: 8px; }
+        .cg-placeholder-text { color: rgba(255,255,255,0.3); font-size: 14px; }
+
+        /* 角色卡片 - 统一尺寸 */
+        .cg-character { 
+          display: flex; 
+          flex-direction: column; 
+          align-items: center; 
+          gap: 6px; 
+          background: rgba(0,0,0,0.5); 
+          padding: 10px; 
+          border-radius: 10px; 
+          border: 1px solid rgba(212,175,55,0.3);
+          width: 130px;
+          min-width: 130px;
+          height: 170px;
+          min-height: 170px;
+          justify-content: flex-start;
+          transition: all 0.3s ease;
+        }
+        .cg-character-dead {
+          opacity: 0.4;
+          filter: grayscale(100%);
+          border-color: rgba(100,100,100,0.3);
+          background: rgba(0,0,0,0.8);
+        }
+        .cg-character-dead .cg-character-name {
+          color: #666 !important;
+          text-decoration: line-through;
+        }
+        .cg-character-avatar { 
+          filter: drop-shadow(0 3px 6px rgba(0,0,0,0.5)); 
+          height: 100px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .cg-character-dead .cg-character-avatar {
+          filter: grayscale(100%) brightness(0.5);
+        }
+        .cg-character-info { 
+          text-align: center; 
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .cg-character-name { font-size: 14px; font-weight: bold; }
+        .cg-character-stats { 
+          display: flex; 
+          gap: 10px; 
+          align-items: center; 
+          justify-content: center;
+          font-size: 12px; 
+        }
+        .cg-card-count { color: #d4af37; }
+
+        /* 底部玩家区域 - 水平布局：角色左侧，手牌右侧 */
+        .cg-player-section { 
+          display: flex; 
+          flex-direction: row;
+          align-items: center;
+          justify-content: center;
+          gap: 25px;
+          height: 190px;
+          margin-top: -5px;
+          padding: 0 20px;
+        }
+        .cg-player-info { 
+          display: flex; 
+          flex-direction: column; 
+          align-items: center; 
+          gap: 4px;
+          flex-shrink: 0;
+        }
+        .cg-skill-btn { 
+          padding: 4px 10px; 
+          background: linear-gradient(135deg, #4c1d95, #7c3aed); 
+          border: none; 
+          border-radius: 4px; 
+          color: white; 
+          font-size: 11px; 
+          cursor: pointer; 
+          margin-top: 4px;
+        }
+
+        /* 手牌区域 - 位于角色右侧，层叠布局 */
+        .cg-hand-section { 
+          flex: 1;
+          min-width: 150px;
+          max-width: 400px;
+          display: flex; 
+          align-items: center;
+          justify-content: center;
+          height: 85px;
+          padding: 0 10px;
+          overflow: visible;
+        }
+        .cg-hand { 
+          display: flex; 
+          justify-content: flex-start; 
+          position: relative; 
+          height: 80px;
+          min-width: 50px;
+        }
+        .cg-card { 
+          width: 48px; 
+          height: 70px; 
+          border-radius: 6px; 
+          background: linear-gradient(135deg, #f5f5f5, #ffffff); 
+          border: 1px solid #d4af37; 
+          display: flex; 
+          align-items: center; 
+          justify-content: center; 
+          cursor: pointer; 
+          transition: transform 0.2s ease, box-shadow 0.2s ease; 
+          position: absolute;
+          top: 5px;
+          box-shadow: 2px 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.8);
+        }
+        .cg-card:hover {
+          box-shadow: 3px 3px 12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.8);
+        }
+        .cg-card.selected { 
+          box-shadow: 0 0 20px rgba(212,175,55,0.8), 0 8px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.9);
+          border-color: #f0d78c;
+          border-width: 2px;
+        }
+        .cg-card.disabled { 
+          cursor: not-allowed;
+          filter: brightness(0.9);
+        }
+        .cg-card.disabled:hover { 
+          box-shadow: 2px 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.8);
+        }
+        .cg-card-face { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+        .cg-check { 
+          position: absolute; 
+          top: -5px; 
+          right: -5px; 
+          width: 18px; 
+          height: 18px; 
+          background: #22c55e; 
+          border-radius: 50%; 
+          display: flex; 
+          align-items: center; 
+          justify-content: center; 
+          color: white; 
+          font-size: 11px; 
+          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* 底部功能栏 */
+        .cg-bottom-bar { 
+          display: flex; 
+          align-items: center; 
+          height: 70px;
+          min-height: 70px;
+          padding: 0 20px;
+          background: rgba(0,0,0,0.7); 
+          border-top: 1px solid rgba(212,175,55,0.2); 
+          gap: 20px;
+          flex-shrink: 0;
+        }
+        .cg-bottom-left { 
+          width: 140px;
+          display: flex;
+          align-items: center;
+        }
+        .cg-back-btn { 
+          padding: 8px 16px; 
+          background: rgba(220,38,38,0.8); 
+          border: none;
+          border-radius: 6px; 
+          color: white;
+          font-size: 13px;
+          cursor: pointer;
+          font-weight: bold;
+        }
+        .cg-back-btn:hover {
+          background: rgba(220,38,38,1);
+        }
+        .cg-bottom-center { 
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          height: 100%;
+        }
+        .cg-status-text {
+          color: rgba(255,255,255,0.7);
+          font-size: 13px;
+          min-height: 18px;
+        }
+        .cg-action-buttons {
+          display: flex;
+          gap: 15px;
+          align-items: center;
+          justify-content: center;
+        }
+        .cg-btn { 
+          padding: 8px 20px; 
+          font-size: 14px; 
+          border: none; 
+          border-radius: 6px; 
+          cursor: pointer;
+          font-weight: bold;
+        }
+        .cg-btn-play { 
+          background: linear-gradient(135deg, #15803d, #22c55e); 
+          color: white; 
+        }
+        .cg-btn-challenge { 
+          background: linear-gradient(135deg, #dc2626, #ef4444); 
+          color: white; 
+        }
+        .cg-btn-skip { 
+          background: rgba(255,255,255,0.1); 
+          color: #fff; 
+          border: 1px solid rgba(255,255,255,0.3); 
+        }
+        .cg-bottom-right { 
+          width: 140px;
+          display: flex;
+          justify-content: flex-end;
+          gap: 20px;
+        }
+        .cg-round-display, .cg-liar-display {
+          text-align: center;
+        }
+        .cg-round-label, .cg-liar-label {
+          font-size: 11px;
+          color: rgba(255,255,255,0.5);
+          margin-bottom: 2px;
+        }
+        .cg-round-number {
+          font-size: 20px;
+          color: #d4af37;
+          font-weight: bold;
+        }
+        .cg-liar-value {
+          font-size: 20px;
+          color: #dc2626;
+          font-weight: bold;
+        }
+
+        /* 弹窗 */
+        .cg-modal { 
+          position: fixed; 
+          inset: 0; 
+          background: rgba(0,0,0,0.8); 
+          display: flex; 
+          align-items: center; 
+          justify-content: center; 
+          z-index: 1000; 
+        }
+        .cg-modal-content { 
+          background: linear-gradient(180deg, #1a1a24, #0a0a0f); 
+          padding: 20px; 
+          border-radius: 10px; 
+          border: 1px solid rgba(212,175,55,0.3); 
+          text-align: center; 
+        }
+        .cg-modal-content h3 { 
+          color: #d4af37; 
+          margin-bottom: 15px; 
+          font-size: 16px;
+        }
+        .cg-rank-btns { 
+          display: flex; 
+          gap: 10px; 
+          margin-bottom: 15px; 
+        }
+        .cg-rank-btns button { 
+          width: 45px; 
+          height: 45px; 
+          font-size: 18px; 
+          border: 2px solid rgba(212,175,55,0.5); 
+          background: rgba(0,0,0,0.5); 
+          color: #fff; 
+          border-radius: 6px; 
+          cursor: pointer; 
+        }
+        .cg-rank-btns button.current { 
+          border-color: #d4af37; 
+          background: rgba(212,175,55,0.2); 
+        }
+
+        /* 响应式适配 */
+        @media (max-width: 1024px) {
+          .cg-log-panel { width: 200px; min-width: 200px; }
+          .cg-table { width: 180px; height: 180px; }
+          .cg-table-inner { width: 155px; height: 155px; }
+        }
+        @media (max-width: 768px) {
+          .cg-log-panel { width: 160px; min-width: 160px; }
+          .cg-character-avatar { transform: scale(0.85); }
+          .cg-table { width: 160px; height: 160px; }
+          .cg-table-inner { width: 135px; height: 135px; }
+          .cg-bottom-bar { padding: 0 10px; height: 60px; }
+          .cg-bottom-left, .cg-bottom-right { width: 100px; }
+        }
       `}</style>
     </div>
   );

@@ -14,5 +14,12 @@ export type {
   SkillType,
   SkillTarget,
   SkillEffect,
-  CharacterSelection,
 } from '../types';
+
+// CharacterSelection类型 - 用于角色选择阶段
+export interface CharacterSelection {
+  playerId: string;
+  characterId: import('../types').CharacterId;
+  isReady: boolean;
+  timestamp?: number;
+}

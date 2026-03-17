@@ -1,78 +1,65 @@
-# Code Geass: Liar's Game - 文档索引
+# Code Geass: Liar's Game - 文档目录
 
-> 快速导航到项目所有文档
-
----
-
-## 📚 核心文档
-
-| 文档 | 说明 | 路径 |
-|------|------|------|
-| **README** | 项目介绍、快速开始、项目结构 | [`../README.md`](../README.md) |
-| **PRD** | 产品需求文档 - 游戏规则、角色技能、UI规范 | [`./PRD.md`](./PRD.md) |
-| **SRS** | 软件需求规格书 - 功能需求、非功能需求 | [`./SRS.md`](./SRS.md) |
-| **ARCHITECTURE** | 架构设计文档 - 系统架构、模块设计 | [`./ARCHITECTURE.md`](./ARCHITECTURE.md) |
-| **API** | API接口文档 - 类型定义、接口说明 | [`./API.md`](./API.md) |
-| **CONTRIBUTING** | 贡献指南 - 开发规范、提交流程 | [`./CONTRIBUTING.md`](./CONTRIBUTING.md) |
+本文档目录包含项目的核心文档，涵盖产品需求、技术架构、开发指南等方面。
 
 ---
 
-## 📖 其他文档
+## 📚 文档列表
 
-| 文档 | 说明 | 路径 |
-|------|------|------|
-| USER_GUIDE | 用户手册 - 游戏玩法说明 | [`./USER_GUIDE.md`](./USER_GUIDE.md) |
-| DEV_GUIDE | 开发维护手册 - 开发细节 | [`./DEV_GUIDE.md`](./DEV_GUIDE.md) |
-| TECH_STACK | 技术栈文档 - 技术选型说明 | [`./TECH_STACK.md`](./TECH_STACK.md) |
+### 核心文档
+
+| 文档 | 说明 | 目标读者 |
+|------|------|----------|
+| [PRD.md](./PRD.md) | 产品需求文档 - 游戏规则、角色技能、功能规格 | 产品经理、设计师 |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | 架构设计文档 - 系统架构、模块设计、数据流 | 开发人员、架构师 |
+| [API.md](./API.md) | API接口文档 - 类型定义、接口说明、使用示例 | 开发人员 |
+| [USER_GUIDE.md](./USER_GUIDE.md) | 用户操作手册 - 游戏玩法、操作说明 | 玩家、测试人员 |
+| [DEV_GUIDE.md](./DEV_GUIDE.md) | 开发维护手册 - 环境搭建、开发规范、调试技巧 | 开发人员 |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | 贡献指南 - 提交规范、代码审查流程 | 贡献者 |
+
+### 项目根目录文档
+
+| 文档 | 说明 |
+|------|------|
+| [../README.md](../README.md) | 项目主文档 - 项目介绍、快速开始、技术栈 |
+| [../CHANGELOG.md](../CHANGELOG.md) | 更新日志 - 版本历史、功能变更记录 |
+| [../LICENSE](../LICENSE) | 许可证 - MIT License |
+
+### 资源文档
+
+| 文档 | 说明 |
+|------|------|
+| [../src/assets/ui/README.md](../src/assets/ui/README.md) | UI素材规范 - 颜色系统、字体、设计规范 |
+| [../src/assets/characters/README.md](../src/assets/characters/README.md) | 角色素材规范 - 角色设计说明、动画规范 |
 
 ---
 
-## 🗂️ 文档阅读指南
+## 📖 阅读指南
 
-### 新开发人员
+### 新用户
+1. 先阅读 [项目主文档](../README.md) 了解项目概况
+2. 查看 [用户操作手册](./USER_GUIDE.md) 学习游戏玩法
+3. 访问 [在线游戏](https://twmissingu.github.io/liars-game/) 开始体验
 
-建议按以下顺序阅读：
-
-1. **README.md** - 了解项目概况
-2. **ARCHITECTURE.md** - 理解系统架构
-3. **API.md** - 了解核心API
-4. **CONTRIBUTING.md** - 了解开发规范
-5. **PRD.md** - 了解产品需求（可选，深入了解游戏机制）
+### 开发人员
+1. 阅读 [开发维护手册](./DEV_GUIDE.md) 搭建开发环境
+2. 查看 [架构设计文档](./ARCHITECTURE.md) 理解系统结构
+3. 参考 [API接口文档](./API.md) 进行开发
+4. 遵循 [贡献指南](./CONTRIBUTING.md) 提交代码
 
 ### 产品经理/设计师
-
-1. **PRD.md** - 产品需求文档
-2. **SRS.md** - 软件需求规格书
-3. **USER_GUIDE.md** - 用户手册
-
-### 测试人员
-
-1. **PRD.md** - 了解功能需求
-2. **SRS.md** - 了解详细需求
-3. **API.md** - 了解接口定义
-4. **CONTRIBUTING.md** - 了解测试要求
+1. 查看 [产品需求文档](./PRD.md) 了解功能规格
+2. 参考 [UI素材规范](../src/assets/ui/README.md) 和 [角色素材规范](../src/assets/characters/README.md)
 
 ---
 
-## 🔍 快速查找
+## 🔄 文档维护
 
-### 游戏机制
-- 游戏规则：[`PRD.md#游戏核心玩法`](./PRD.md#2-游戏核心玩法详细说明)
-- 角色技能：[`PRD.md#角色技能`](./PRD.md#3-角色技能详细设计)
-- 卡牌系统：[`PRD.md#卡牌系统`](./PRD.md#22-卡牌系统)
-- Geass判定：[`PRD.md#Geass系统`](./PRD.md#26-geass判定系统)
-
-### 技术实现
-- 系统架构：[`ARCHITECTURE.md#系统架构`](./ARCHITECTURE.md#系统架构图)
-- 数据流：[`ARCHITECTURE.md#数据流`](./ARCHITECTURE.md#数据流)
-- 状态管理：[`ARCHITECTURE.md#状态管理`](./ARCHITECTURE.md#状态管理)
-- API参考：[`API.md`](./API.md)
-
-### 开发规范
-- 代码风格：[`CONTRIBUTING.md#代码风格`](./CONTRIBUTING.md#代码风格)
-- 提交规范：[`CONTRIBUTING.md#提交规范`](./CONTRIBUTING.md#提交规范)
-- 测试要求：[`CONTRIBUTING.md#测试要求`](./CONTRIBUTING.md#测试要求)
+- 所有文档使用 Markdown 格式编写
+- 文档应与代码同步更新
+- 重大变更需更新 [CHANGELOG.md](../CHANGELOG.md)
+- 新功能开发需同步更新相关文档
 
 ---
 
-**文档结束**
+*Last updated: 2026-03-16*

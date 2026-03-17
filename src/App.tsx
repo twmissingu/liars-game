@@ -1,6 +1,6 @@
 /**
  * =============================================================================
- * Code Geass: Liar's Game - 主应用组件
+ * Code Geass: Liar's Game - 主应用组件 (重构版 v3.0.0)
  * =============================================================================
  *
  * 应用入口组件，整合所有UI组件、状态管理和音效系统
@@ -16,7 +16,7 @@
  * 1. 主菜单 → 2. 角色选择 → 3. 游戏桌 → 4. 结算
  *
  * @author Code Agent
- * @version 3.0.0 - 重构版：简化质疑流程
+ * @version 3.0.0 - 重构版：移除难度/性格设置，简化系统架构
  */
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
@@ -30,8 +30,8 @@ import { ResultScreen } from './ui/ResultScreen';
 // 数据和工具导入
 import { characters, getCharacterName } from './data/characters';
 import { soundManager, playSound, playBGM, stopBGM } from './audio';
-import type { SoundType } from './audio';
-import { GameEngine } from './core/GameEngine';
+import type { SFXType } from './audio';
+import { GameEngine } from './core/GameEngineV2';
 import { storage } from './utils';
 
 // 类型导入
@@ -41,8 +41,6 @@ import type {
   FunnyAction,
   GameSettings,
   GameState,
-  Difficulty,
-  Personality,
 } from './types';
 import { FUNNY_ACTIONS } from './types';
 
@@ -75,12 +73,6 @@ const App: React.FC = () => {
 
   /** AI头像映射 */
   const [aiAvatars, setAiAvatars] = useState<Record<string, number>>({});
-
-  /** 游戏难度 */
-  const [difficulty, setDifficulty] = useState<Difficulty>('normal');
-
-  /** AI性格 */
-  const [personality, setPersonality] = useState<Personality>('balanced');
 
   /** 游戏引擎引用 */
   const gameEngineRef = useRef<GameEngine | null>(null);
@@ -123,16 +115,14 @@ const App: React.FC = () => {
         console.log('音效预加载完成');
 
         // 加载保存的设置
-        const savedSettings = storage.load<GameSettings>();
+        const savedSettings = storage.load<GameSettings>('gameSettings');
         if (savedSettings) {
-          setDifficulty(savedSettings.difficulty);
-          setPersonality(savedSettings.personality || 'balanced');
-          soundManager.setBGMVolume(savedSettings.bgmVolume);
-          soundManager.setSFXVolume(savedSettings.sfxVolume);
+          soundManager.setBGMVolume(savedSettings.musicVolume ?? 0.5);
+          soundManager.setSFXVolume(savedSettings.soundVolume ?? 0.7);
         }
 
         // 播放主菜单背景音乐
-        playBGM('bgm-menu');
+        playBGM('main-menu');
       } catch (e) {
         console.warn('初始化失败:', e);
       }
@@ -148,17 +138,18 @@ const App: React.FC = () => {
 
   /**
    * 保存设置到本地存储
-   * 当难度或性格变化时自动保存
+   * 当音量设置变化时自动保存
    */
   useEffect(() => {
+    const status = soundManager.getStatus();
     const settings: GameSettings = {
-      difficulty,
-      bgmVolume: soundManager.getStatus().bgmVolume,
-      sfxVolume: soundManager.getStatus().sfxVolume,
-      personality,
+      soundEnabled: status.enabled,
+      musicEnabled: true,
+      soundVolume: status.sfxVolume,
+      musicVolume: status.bgmVolume,
     };
-    storage.save(settings);
-  }, [difficulty, personality]);
+    storage.save('gameSettings', settings);
+  }, []);
 
   // ============================================
   // 工具函数
@@ -166,12 +157,12 @@ const App: React.FC = () => {
 
   /**
    * 添加游戏日志
-   * 最多保留最近20条日志
+   * 保留所有日志，不限制数量
    *
    * @param message - 日志消息
    */
   const addLog = useCallback((message: string) => {
-    setGameLog(prev => [...prev.slice(-19), message]);
+    setGameLog(prev => [...prev, message]);
   }, []);
 
   /**
@@ -193,10 +184,10 @@ const App: React.FC = () => {
 
         if (newState.geassResult.hit) {
           // Geass命中
-          playSound('sfx-geass-hit');
+          playSound('geass-hit');
           const funnyAction = FUNNY_ACTIONS[Math.floor(Math.random() * FUNNY_ACTIONS.length)];
           setCurrentFunnyAction(funnyAction);
-          playSound(funnyAction.soundType as SoundType);
+          playSound(funnyAction.soundType as SFXType);
 
           // 详细记录Geass结果
           addLog(`${loser}受到Geass！`);
@@ -204,7 +195,7 @@ const App: React.FC = () => {
           addLog(`Geass命中！${loser}HP-1`);
         } else {
           // Geass未命中
-          playSound('sfx-geass-miss');
+          playSound('geass-miss');
 
           // 记录闪避结果
           if (newState.geassResult.isRevived) {
@@ -213,6 +204,7 @@ const App: React.FC = () => {
           } else if (newState.geassResult.isCounter) {
             addLog(`${loser}闪避了Geass！`);
             addLog(`⚔️ ${newState.geassResult.message}`);
+            addLog(`💥 反击生效！质疑者受到反弹伤害！`);
           } else {
             addLog(`${loser}闪避了Geass！`);
           }
@@ -223,9 +215,9 @@ const App: React.FC = () => {
       if (newState.phase === 'game_over') {
         setTimeout(() => {
           if (newState.winner === 'player') {
-            playBGM('bgm-victory');
+            playBGM('victory');
           } else {
-            playBGM('bgm-defeat');
+            playBGM('defeat');
           }
           setCurrentScreen('result');
         }, 2000);
@@ -236,24 +228,125 @@ const App: React.FC = () => {
       setTimeout(() => {
         setCurrentFunnyAction(null);
         if (gameEngineRef.current) {
-          const resetState = gameEngineRef.current.resetRound();
+          // 根据Liar's Bar规则：下一回合由受罚者的下家（顺时针方向）开始
+          // UI顺序: 玩家(0) -> AI3(1) -> AI2(2) -> AI1(3) -> 玩家(0)
+          // 需要根据loserName确定受罚者ID
+          const state = gameEngineRef.current.getState();
+          let loserId: 'player' | 'ai' | 'ai2' | 'ai3';
+
+          // 如果没有提供loserName，尝试从turnState中获取出牌者作为默认
+          // 注意：这里假设如果没有明确指定loser，则使用当前出牌者
+          const playedBy = state.turnState.playedCards?.playerId;
+          let actualLoserName = loserName;
+          
+          if (!actualLoserName && playedBy) {
+            // 根据playedBy获取角色名称
+            if (playedBy === 'player') {
+              actualLoserName = getCharacterName(selectedCharacter!);
+            } else {
+              const ai = state.aiPlayers.find((a: { id: string }) => a.id === playedBy);
+              actualLoserName = ai?.name;
+            }
+          }
+          
+          if (!actualLoserName) {
+            console.error('[handleGeassResult] 无法确定受罚者');
+            setIsProcessing(false);
+            return;
+          }
+
+          if (actualLoserName === getCharacterName(selectedCharacter!)) {
+            loserId = 'player';
+          } else {
+            // 在aiPlayers中查找对应的ID
+            const ai = state.aiPlayers.find((a: { name: string }) => a.name === actualLoserName);
+            if (ai) {
+              loserId = ai.id as 'ai' | 'ai2' | 'ai3';
+              console.log(`[handleGeassResult] 找到AI: ${actualLoserName}, ID: ${ai.id}`);
+            } else {
+              console.error(`[handleGeassResult] 找不到AI: ${actualLoserName}`);
+              console.log('[handleGeassResult] 当前AI列表:', state.aiPlayers.map((a: any) => ({ name: a.name, id: a.id })));
+              setIsProcessing(false);
+              return;
+            }
+          }
+
+          // 计算受罚者的索引
+          // UI顺序: 玩家(0) -> AI3(卡莲)(1) -> AI2(朱雀)(2) -> AI1(C.C.)(3) -> 玩家(0)
+          const getLoserIndex = (id: string): number => {
+            if (id === 'player') return 0;
+            if (id === 'ai3') return 1;  // AI3(卡莲)
+            if (id === 'ai2') return 2;  // AI2(朱雀)
+            if (id === 'ai') return 3;   // AI1(C.C.)
+            return 0;
+          };
+
+          const loserIndex = getLoserIndex(loserId!);
+          // 下家索引（顺时针）
+          let nextStarterIndex = (loserIndex + 1) % 4;
+          
+          // 检查下家是否死亡，如果死亡则继续找下一个存活的玩家
+          const currentState = gameEngineRef.current.getState();
+          const getPlayerIdFromIndex = (idx: number): string => {
+            if (idx === 0) return 'player';
+            if (idx === 1) return 'ai3';
+            if (idx === 2) return 'ai2';
+            if (idx === 3) return 'ai';
+            return 'player';
+          };
+          
+          // 顺时针查找下一个存活的玩家
+          for (let i = 0; i < 4; i++) {
+            const checkIndex = (nextStarterIndex + i) % 4;
+            const checkId = getPlayerIdFromIndex(checkIndex);
+            
+            if (checkId === 'player') {
+              if (currentState.playerStats.hp > 0) {
+                nextStarterIndex = checkIndex;
+                break;
+              }
+            } else {
+              const ai = currentState.aiPlayers.find((a: { id: string }) => a.id === checkId);
+              if (ai && ai.isActive && ai.stats.hp > 0) {
+                nextStarterIndex = checkIndex;
+                break;
+              }
+            }
+          }
+
+          console.log(`[handleGeassResult] 受罚者: ${actualLoserName}(索引${loserIndex}), 下一回合起始: 索引${nextStarterIndex}`);
+
+          const resetState = gameEngineRef.current.resetRound(nextStarterIndex);
           setGameState(resetState);
           setSelectedCards([]);
 
           const isPlayerFirst = resetState.currentPlayerIndex === 0;
+          // 索引映射: 1 (AI3/卡莲) -> 2, 2 (AI2/朱雀) -> 1, 3 (AI1/C.C.) -> 0
+          const aiArrayIndexMap: Record<number, number> = { 1: 2, 2: 1, 3: 0 };
           const firstPlayerName = isPlayerFirst
             ? getCharacterName(selectedCharacter!)
-            : resetState.aiPlayers[resetState.currentPlayerIndex - 1]?.name;
+            : resetState.aiPlayers[aiArrayIndexMap[resetState.currentPlayerIndex]]?.name;
 
           addLog(`【第${resetState.turnState.turnNumber}回合】骗子牌是${resetState.liarCard}`);
           addLog(`${firstPlayerName}先手！`);
 
+          // 重置处理状态，允许玩家操作
+          setIsProcessing(false);
+          console.log('[handleGeassResult] 重置isProcessing为false');
+
           // 如果AI先手，自动执行AI回合
           if (!isPlayerFirst) {
+            console.log('[handleGeassResult] AI先手，自动执行AI回合');
             setTimeout(() => {
-              // 使用ref避免循环依赖
-              aiTurnRef.current?.();
+              if (aiTurnRef.current) {
+                console.log('[handleGeassResult] 调用aiTurnRef');
+                aiTurnRef.current();
+              } else {
+                console.error('[handleGeassResult] aiTurnRef为空');
+              }
             }, 1500);
+          } else {
+            console.log('[handleGeassResult] 玩家先手，等待玩家操作');
           }
         }
       }, 2500);
@@ -282,13 +375,21 @@ const App: React.FC = () => {
       return;
     }
 
-    // 计算出牌者的索引 (0=玩家, 1=AI1, 2=AI2, 3=AI3)
-    const playedByIndex =
-      playedBy === 'player'
-        ? 0
-        : state.aiPlayers.findIndex((ai: { id: string }) => ai.id === playedBy) + 1;
+    // UI布局顺序: 顶部=AI2, 左侧=AI3, 右侧=AI1, 底部=玩家
+    // 顺时针顺序: 玩家(底部) -> AI3(左侧) -> AI2(顶部) -> AI1(右侧) -> 玩家(底部)
+    // 索引映射: 0=玩家, 1=AI3(ai3), 2=AI2(ai2), 3=AI1(ai)
+    const getPlayerIndex = (id: string): number => {
+      if (id === 'player') return 0;
+      if (id === 'ai') return 3; // AI1 (C.C.)
+      if (id === 'ai2') return 2; // AI2 (朱雀)
+      if (id === 'ai3') return 1; // AI3 (卡莲)
+      return 0;
+    };
 
-    // 从出牌者的下家开始质疑
+    const playedByIndex = getPlayerIndex(playedBy);
+
+    // 从出牌者的下家开始质疑（顺时针）
+    // 注意：质疑顺序应该是顺时针，即索引递增
     let currentIndex = (playedByIndex + 1) % 4;
     let checkedCount = 0;
 
@@ -303,13 +404,20 @@ const App: React.FC = () => {
       if (currentIndex === 0) {
         // 轮到玩家质疑，设置状态并等待玩家操作
         console.log('[enterChallengePhase] 轮到玩家质疑，等待玩家决策');
+
+        // 更新游戏状态为质疑阶段
+        const challengeState = engine.enterChallengePhase();
+        setGameState(challengeState);
+
         setIsProcessing(false);
         addLog('等待玩家决策...');
         return;
       }
 
-      // AI质疑
-      const challengerAI = state.aiPlayers[currentIndex - 1];
+      // AI质疑 - 根据索引映射到aiPlayers数组
+      // aiPlayers[0]=AI1(ai), aiPlayers[1]=AI2(ai2), aiPlayers[2]=AI3(ai3)
+      const aiArrayIndex = currentIndex === 1 ? 2 : currentIndex === 2 ? 1 : 0;
+      const challengerAI = state.aiPlayers[aiArrayIndex];
       if (!challengerAI || !challengerAI.isActive || challengerAI.stats.hp <= 0) {
         // 该AI已淘汰，跳过
         console.log('[enterChallengePhase] AI已淘汰，跳过:', challengerAI?.name);
@@ -323,7 +431,7 @@ const App: React.FC = () => {
       console.log('[enterChallengePhase] AI决策:', { aiName: challengerAI.name, shouldChallenge });
 
       if (shouldChallenge) {
-        playSound('sfx-challenge');
+        playSound('challenge');
         const targetName =
           playedBy === 'player'
             ? getCharacterName(selectedCharacter!)
@@ -355,11 +463,13 @@ const App: React.FC = () => {
         const loserName =
           loser === 'player'
             ? getCharacterName(selectedCharacter!)
-            : state.aiPlayers.find((ai: { id: string }) => ai.id === loser)?.name || loser;
+            : newState.aiPlayers.find((ai: { id: string }) => ai.id === loser)?.name || loser;
 
         // 更新状态并处理Geass结果
         setGameState(newState);
         handleGeassResult(newState, challengerAI.name, targetName, loserName);
+
+        // 无论质疑成功还是失败，都会有人受罚，结束质疑流程，开始新回合
         return;
       } else {
         // 记录AI选择不质疑
@@ -375,50 +485,27 @@ const App: React.FC = () => {
     console.log('[enterChallengePhase] 所有人都未质疑，继续下一回合');
     addLog('无人质疑，回合继续');
 
-    // 将牌放到桌面
-    if (state.turnState.playedCards) {
-      state.turnState.tableCards = [
-        ...state.turnState.tableCards,
-        ...state.turnState.playedCards.actualCards,
-      ];
-    }
+    // 使用引擎方法结束质疑阶段
+    const nextState = engine.endChallengePhase();
+    setGameState(nextState);
 
-    // 计算下一个玩家（从出牌者的下家开始）
-    let nextIndex = (playedByIndex + 1) % 4;
+    // 索引映射: 1 (AI3/卡莲) -> 2, 2 (AI2/朱雀) -> 1, 3 (AI1/C.C.) -> 0
+    const aiArrayIndexMap: Record<number, number> = { 1: 2, 2: 1, 3: 0 };
+    const firstPlayerName = nextState.currentPlayerIndex === 0
+      ? getCharacterName(selectedCharacter!)
+      : nextState.aiPlayers[aiArrayIndexMap[nextState.currentPlayerIndex]]?.name;
 
-    // 跳过已淘汰的玩家
-    let attempts = 0;
-    while (attempts < 4) {
-      if (nextIndex === 0) {
-        // 玩家
-        if (state.playerStats.hp > 0) break;
-      } else {
-        // AI
-        const ai = state.aiPlayers[nextIndex - 1];
-        if (ai && ai.isActive && ai.stats.hp > 0) break;
-      }
-      nextIndex = (nextIndex + 1) % 4;
-      attempts++;
-    }
+    addLog(`【第${nextState.turnState.turnNumber}回合】骗子牌是${nextState.liarCard}`);
+    addLog(`${firstPlayerName}先手！`);
 
-    state.currentPlayerIndex = nextIndex;
-
-    if (nextIndex === 0) {
-      state.phase = 'player_turn';
-      state.turnState.turnNumber++;
-      addLog(`第 ${state.turnState.turnNumber} 回合开始`);
+    if (nextState.currentPlayerIndex === 0) {
       setIsProcessing(false);
     } else {
-      state.phase = 'ai_turn';
       // 延迟执行AI回合
       setTimeout(() => {
-        // 使用ref避免循环依赖
         aiTurnRef.current?.();
       }, 500);
     }
-
-    state.turnState.playedCards = null;
-    setGameState({ ...state });
   }, [addLog, selectedCharacter, handleGeassResult]);
 
   /**
@@ -453,10 +540,15 @@ const App: React.FC = () => {
     }
 
     // 根据currentPlayerIndex确定当前应该行动的AI
-    // currentPlayerIndex: 0=玩家, 1=AI1(cc), 2=AI2(suzaku), 3=AI3(kallen)
-    const currentAIIndex = state.currentPlayerIndex - 1;
-    if (currentAIIndex < 0 || currentAIIndex >= state.aiPlayers.length) {
-      console.log('[handleAITurn] AI索引无效:', currentAIIndex);
+    // 索引映射: currentPlayerIndex -> aiPlayers数组索引
+    // 1 (AI3/卡莲) -> 2
+    // 2 (AI2/朱雀) -> 1
+    // 3 (AI1/C.C.) -> 0
+    const aiArrayIndexMap: Record<number, number> = { 1: 2, 2: 1, 3: 0 };
+    const currentAIIndex = aiArrayIndexMap[state.currentPlayerIndex];
+    
+    if (currentAIIndex === undefined || currentAIIndex < 0 || currentAIIndex >= state.aiPlayers.length) {
+      console.log('[handleAITurn] AI索引无效:', state.currentPlayerIndex, '->', currentAIIndex);
       return;
     }
 
@@ -471,20 +563,35 @@ const App: React.FC = () => {
     // 跳过已淘汰的AI
     if (!ai.isActive || ai.stats.hp <= 0) {
       console.log('[handleAITurn] AI已淘汰，跳过:', ai.name);
-      // 自动进入下一个玩家
+      
+      // 检查是否只剩玩家存活
+      const activeAIs = state.aiPlayers.filter((a: any) => a.isActive && a.stats.hp > 0);
+      if (activeAIs.length === 0 && state.playerStats.hp > 0) {
+        // 只剩玩家存活，玩家获胜
+        console.log('[handleAITurn] 只剩玩家存活，玩家获胜');
+        state.winner = 'player';
+        state.phase = 'game_over';
+        setGameState({ ...state });
+        addLog('游戏结束！玩家获胜！');
+        setIsProcessing(false);
+        return;
+      }
+      
       const nextIndex = (state.currentPlayerIndex + 1) % 4;
       state.currentPlayerIndex = nextIndex;
       setGameState({ ...state });
 
-      // 如果下一个是AI，递归处理
       if (nextIndex !== 0) {
+        setTimeout(() => aiTurnRef.current?.(), 500);
+      } else if (state.playerStats.hp <= 0) {
+        // 下一个玩家但玩家已死亡，继续跳过
         setTimeout(() => aiTurnRef.current?.(), 500);
       }
       return;
     }
 
     setIsProcessing(true);
-    playSound('sfx-turn-start');
+    playSound('turn-start');
     addLog(`${ai.name} 的回合...`);
 
     // AI思考延迟
@@ -509,7 +616,7 @@ const App: React.FC = () => {
           addLog(`${ai.name}出了${cardCount}张牌，声称是${claimedRank}`);
         }
 
-        // 延迟后进入质疑阶段 - 直接同步调用质疑流程
+        // 延迟后进入质疑阶段
         setTimeout(() => {
           console.log('[handleAITurn] 进入质疑阶段');
           enterChallengePhase(engine, newState);
@@ -521,7 +628,7 @@ const App: React.FC = () => {
     }, 1000);
   }, [addLog, enterChallengePhase]);
 
-  // 更新ref - 必须在函数定义之后
+  // 更新ref
   useEffect(() => {
     aiTurnRef.current = handleAITurn;
   }, [handleAITurn]);
@@ -532,27 +639,26 @@ const App: React.FC = () => {
 
   /** 开始游戏 */
   const handleStart = useCallback(() => {
-    playSound('sfx-button-click');
+    playSound('button-click');
     setCurrentScreen('character-select');
   }, []);
 
   /** 打开设置 */
   const handleSettings = useCallback(() => {
-    playSound('sfx-button-click');
+    playSound('button-click');
     setCurrentScreen('settings');
   }, []);
 
   /** 打开帮助 */
   const handleHelp = useCallback(() => {
-    playSound('sfx-button-click');
+    playSound('button-click');
     setCurrentScreen('help');
   }, []);
 
   /** 选择角色 */
   const handleSelectCharacter = useCallback((id: CharacterId, avatarNum?: number) => {
-    playSound('sfx-character-select');
+    playSound('character-select');
     setSelectedCharacter(id);
-    // 如果传入了头像编号则使用，否则随机生成
     setSelectedAvatar(avatarNum || Math.floor(Math.random() * 4) + 1);
   }, []);
 
@@ -560,7 +666,7 @@ const App: React.FC = () => {
   const handleConfirmCharacter = useCallback(() => {
     if (!selectedCharacter) return;
 
-    playSound('sfx-button-click');
+    playSound('button-click');
 
     // 随机分配AI角色
     const allCharacters: CharacterId[] = ['lelouch', 'cc', 'suzaku', 'kallen'];
@@ -577,20 +683,18 @@ const App: React.FC = () => {
 
     // 初始化游戏引擎
     gameEngineRef.current = new GameEngine();
-    const initialState = gameEngineRef.current.initializeGame(
-      selectedCharacter,
-      difficulty,
-      shuffled
-    );
+    const initialState = gameEngineRef.current.initializeGame(selectedCharacter, shuffled);
 
     setGameState(initialState);
     setSelectedCards([]);
 
     // 判断谁先手
     const isPlayerFirst = initialState.currentPlayerIndex === 0;
+    // 索引映射: 1 (AI3/卡莲) -> 2, 2 (AI2/朱雀) -> 1, 3 (AI1/C.C.) -> 0
+    const aiArrayIndexMap: Record<number, number> = { 1: 2, 2: 1, 3: 0 };
     const firstPlayerName = isPlayerFirst
       ? getCharacterName(selectedCharacter)
-      : initialState.aiPlayers[initialState.currentPlayerIndex - 1]?.name;
+      : initialState.aiPlayers[aiArrayIndexMap[initialState.currentPlayerIndex]]?.name;
 
     setGameLog([
       '游戏开始！',
@@ -599,7 +703,7 @@ const App: React.FC = () => {
     ]);
 
     setCurrentScreen('game-table');
-    playBGM('bgm-game');
+    playBGM('game-normal');
 
     // 如果AI先手，自动执行AI回合
     if (!isPlayerFirst) {
@@ -607,25 +711,25 @@ const App: React.FC = () => {
         handleAITurn();
       }, 1500);
     }
-  }, [selectedCharacter, difficulty, handleAITurn]);
+  }, [selectedCharacter, handleAITurn]);
 
   /** 返回主菜单 */
   const handleBack = useCallback(() => {
-    playSound('sfx-button-click');
+    playSound('button-click');
     setCurrentScreen('main-menu');
     setSelectedCharacter(null);
   }, []);
 
   /** 返回主菜单并重置游戏 */
   const handleBackToMenu = useCallback(() => {
-    playSound('sfx-button-click');
+    playSound('button-click');
     setCurrentScreen('main-menu');
     setSelectedCharacter(null);
     setGameState(null);
     setGameLog([]);
     setSelectedCards([]);
     setCurrentFunnyAction(null);
-    playBGM('bgm-menu');
+    playBGM('main-menu');
   }, []);
 
   /** 玩家选择/取消选择牌 */
@@ -636,16 +740,22 @@ const App: React.FC = () => {
       const engine = gameEngineRef.current;
       const state = engine.getState();
 
-      if (state.phase !== 'player_turn') return;
+      console.log('[handleToggleCardSelection] 当前阶段:', state.phase, '是否是玩家回合:', state.phase === 'player_turn');
+
+      if (state.phase !== 'player_turn') {
+        console.log('[handleToggleCardSelection] 不是玩家回合，无法选择牌');
+        return;
+      }
 
       // 更新引擎中的选中状态
       engine.toggleCardSelection(cardId);
 
       // 从引擎获取最新的选中状态来更新UI
       const newState = engine.getState();
+      console.log('[handleToggleCardSelection] 选中状态更新:', newState.playerSelectedCards);
       setSelectedCards(newState.playerSelectedCards);
 
-      playSound('sfx-button-click');
+      playSound('button-click');
     },
     [isProcessing]
   );
@@ -655,7 +765,7 @@ const App: React.FC = () => {
     if (!gameEngineRef.current || selectedCards.length === 0 || isProcessing) return;
 
     setIsProcessing(true);
-    playSound('sfx-play-card');
+    playSound('card-play');
 
     const engine = gameEngineRef.current;
 
@@ -672,7 +782,7 @@ const App: React.FC = () => {
         addLog(`${playerName}出了${cardCount}张牌，声称是${claimedRank}`);
       }
 
-      // 延迟后进入质疑阶段 - 直接同步调用
+      // 延迟后进入质疑阶段
       setTimeout(() => {
         enterChallengePhase(engine, newState);
       }, 1500);
@@ -682,15 +792,12 @@ const App: React.FC = () => {
     }
   }, [selectedCards, isProcessing, addLog, selectedCharacter, enterChallengePhase]);
 
-  /**
-   * 玩家质疑
-   * 重构后：直接处理质疑逻辑，无需等待useEffect
-   */
+  /** 玩家质疑 */
   const handleChallenge = useCallback(() => {
     if (!gameEngineRef.current || isProcessing) return;
 
     setIsProcessing(true);
-    playSound('sfx-challenge');
+    playSound('challenge');
 
     const engine = gameEngineRef.current;
     const state = engine.getState();
@@ -703,12 +810,10 @@ const App: React.FC = () => {
         ? playerName
         : state.aiPlayers.find((ai: { id: string }) => ai.id === playedBy)?.name || playedBy;
 
-    // 记录玩家发起质疑
     addLog(`${playerName}向${targetName}发起质疑！`);
 
     const newState = engine.playerChallengeDecision(true);
 
-    // 计算质疑结果
     const wasLie = playedCards
       ? playedCards.actualCards.some(
           (c: { rank: string; isJoker: boolean }) =>
@@ -716,7 +821,6 @@ const App: React.FC = () => {
         )
       : false;
 
-    // 记录质疑结果
     if (wasLie) {
       addLog(`质疑成功！${targetName}在撒谎！`);
     } else {
@@ -729,57 +833,64 @@ const App: React.FC = () => {
         ? playerName
         : state.aiPlayers.find((ai: { id: string }) => ai.id === loser)?.name || loser;
 
-    // 更新状态并处理Geass结果
     setGameState(newState);
     handleGeassResult(newState, playerName, targetName, loserName);
   }, [isProcessing, addLog, selectedCharacter, handleGeassResult]);
 
-  /**
-   * 玩家不质疑（跳过）
-   * 重构后：继续询问下一个AI，或无人质疑时进入下一回合
-   */
+  /** 玩家不质疑（跳过） */
   const handlePass = useCallback(() => {
     if (!gameEngineRef.current || isProcessing) return;
 
-    playSound('sfx-button-click');
+    playSound('button-click');
 
     const engine = gameEngineRef.current;
     const state = engine.getState();
     const playedBy = state.turnState.playedCards?.playerId;
     const playerName = getCharacterName(selectedCharacter!);
 
-    // 记录玩家选择不质疑
     addLog(`${playerName}选择不质疑`);
 
-    // 计算出牌者的索引 (0=玩家, 1=AI1, 2=AI2, 3=AI3)
-    const playedByIndex =
-      playedBy === 'player'
-        ? 0
-        : state.aiPlayers.findIndex((ai: { id: string }) => ai.id === playedBy) + 1;
+    // UI顺序: 玩家(0) -> AI3(1) -> AI2(2) -> AI1(3) -> 玩家(0)
+    const getPlayerIndex = (id: string): number => {
+      if (id === 'player') return 0;
+      if (id === 'ai') return 3; // AI1 (C.C.)
+      if (id === 'ai2') return 2; // AI2 (朱雀)
+      if (id === 'ai3') return 1; // AI3 (卡莲)
+      return 0;
+    };
 
-    // 玩家是索引0，下家是索引1（AI1）
-    let nextIndex = 1;
+    const playedByIndex = getPlayerIndex(playedBy || 'player');
 
-    // 继续询问剩余的AI
-    while (nextIndex < 4) {
-      // 跳过出牌者
-      if (nextIndex === playedByIndex) {
-        nextIndex++;
-        continue;
+    // 玩家不质疑后，继续检查玩家之后的AI（顺时针方向）
+    // 玩家索引是0，下家是AI3(1)，然后是AI2(2)，然后是AI1(3)
+    let currentIndex = 1; // 从AI3开始
+    let checkedCount = 0;
+
+    // 依次询问剩余的AI
+    while (checkedCount < 3) {
+      // 如果回到出牌者，说明所有人都已询问完毕
+      if (currentIndex === playedByIndex) {
+        break;
       }
 
-      const challengerAI = state.aiPlayers[nextIndex - 1];
+      // 根据索引映射到aiPlayers数组
+      // aiPlayers[0]=AI1(ai), aiPlayers[1]=AI2(ai2), aiPlayers[2]=AI3(ai3)
+      const aiArrayIndex = currentIndex === 1 ? 2 : currentIndex === 2 ? 1 : 0;
+      const challengerAI = state.aiPlayers[aiArrayIndex];
+
       if (!challengerAI || !challengerAI.isActive || challengerAI.stats.hp <= 0) {
         // 该AI已淘汰，跳过
-        nextIndex++;
+        console.log('[handlePass] AI已淘汰，跳过:', challengerAI?.name);
+        currentIndex = (currentIndex + 1) % 4;
+        checkedCount++;
         continue;
       }
 
-      // AI决策
+      // AI决策（30%概率质疑）
       const shouldChallenge = Math.random() < 0.3;
 
       if (shouldChallenge) {
-        playSound('sfx-challenge');
+        playSound('challenge');
         const targetName =
           playedBy === 'player'
             ? playerName
@@ -789,7 +900,6 @@ const App: React.FC = () => {
 
         const newState = engine.aiChallengeDecision(challengerAI.id);
 
-        // 计算质疑结果
         const playedCards = state.turnState.playedCards;
         const wasLie = playedCards
           ? playedCards.actualCards.some(
@@ -808,7 +918,7 @@ const App: React.FC = () => {
         const loserName =
           loser === 'player'
             ? playerName
-            : state.aiPlayers.find((ai: { id: string }) => ai.id === loser)?.name || loser;
+            : newState.aiPlayers.find((ai: { id: string }) => ai.id === loser)?.name || loser;
 
         setGameState(newState);
         handleGeassResult(newState, challengerAI.name, targetName, loserName);
@@ -817,53 +927,28 @@ const App: React.FC = () => {
         addLog(`${challengerAI.name}选择不质疑`);
       }
 
-      nextIndex++;
+      currentIndex = (currentIndex + 1) % 4;
+      checkedCount++;
     }
 
-    // 所有人都未质疑，继续下一回合
-    console.log('[handlePass] 所有人都未质疑，继续下一回合');
     addLog('无人质疑，回合继续');
 
-    // 将牌放到桌面
-    if (state.turnState.playedCards) {
-      state.turnState.tableCards = [
-        ...state.turnState.tableCards,
-        ...state.turnState.playedCards.actualCards,
-      ];
-    }
+    // 使用引擎方法结束质疑阶段
+    const nextState = engine.endChallengePhase();
+    setGameState(nextState);
 
-    // 计算下一个玩家（从出牌者的下家开始）
-    let nextPlayerIndex = (playedByIndex + 1) % 4;
-
-    // 跳过已淘汰的玩家
-    let attempts = 0;
-    while (attempts < 4) {
-      if (nextPlayerIndex === 0) {
-        if (state.playerStats.hp > 0) break;
-      } else {
-        const ai = state.aiPlayers[nextPlayerIndex - 1];
-        if (ai && ai.isActive && ai.stats.hp > 0) break;
-      }
-      nextPlayerIndex = (nextPlayerIndex + 1) % 4;
-      attempts++;
-    }
-
-    state.currentPlayerIndex = nextPlayerIndex;
+    const nextPlayerIndex = nextState.currentPlayerIndex;
 
     if (nextPlayerIndex === 0) {
-      state.phase = 'player_turn';
-      state.turnState.turnNumber++;
-      addLog(`第 ${state.turnState.turnNumber} 回合开始`);
+      addLog(`【第${nextState.turnState.turnNumber}回合】骗子牌是${nextState.liarCard}`);
+      const firstPlayerName = nextPlayerIndex === 0 ? playerName : state.aiPlayers[nextPlayerIndex - 1]?.name;
+      addLog(`${firstPlayerName}先手！`);
       setIsProcessing(false);
     } else {
-      state.phase = 'ai_turn';
       setTimeout(() => {
         handleAITurn();
       }, 500);
     }
-
-    state.turnState.playedCards = null;
-    setGameState({ ...state });
   }, [isProcessing, addLog, selectedCharacter, handleGeassResult, handleAITurn]);
 
   /** 鲁鲁修技能：改变骗子牌 */
@@ -873,13 +958,12 @@ const App: React.FC = () => {
 
       const engine = gameEngineRef.current;
 
-      // 检查技能是否可用
       if (!engine.canPlayerUseSkill('player')) {
         addLog('❌ 绝对命令使用次数已耗尽（每局限1次）');
         return;
       }
 
-      playSound('sfx-geass-activate');
+      playSound('geass-activate');
       const newState = engine.lelouchChangeLiarCard(newRank);
       setGameState(newState);
       addLog(`鲁鲁修发动绝对命令！骗子牌变为 ${newRank}`);
@@ -890,36 +974,32 @@ const App: React.FC = () => {
 
   /** 重新开始游戏 */
   const handleRestart = useCallback(() => {
-    playSound('sfx-button-click');
+    playSound('button-click');
     setCurrentScreen('character-select');
     setSelectedCharacter(null);
     setGameState(null);
     setGameLog([]);
     setSelectedCards([]);
     setCurrentFunnyAction(null);
-    playBGM('bgm-menu');
+    playBGM('main-menu');
   }, []);
 
   /** 返回主菜单 */
   const handleMainMenu = useCallback(() => {
-    playSound('sfx-button-click');
+    playSound('button-click');
     setCurrentScreen('main-menu');
     setSelectedCharacter(null);
     setGameState(null);
     setGameLog([]);
     setSelectedCards([]);
     setCurrentFunnyAction(null);
-    playBGM('bgm-menu');
+    playBGM('main-menu');
   }, []);
 
   // ============================================
   // 屏幕渲染
   // ============================================
 
-  /**
-   * 渲染当前屏幕
-   * @returns 当前屏幕对应的JSX元素
-   */
   const renderScreen = () => {
     switch (currentScreen) {
       case 'main-menu':
@@ -992,40 +1072,18 @@ const App: React.FC = () => {
   };
 
   /**
-   * 渲染设置屏幕
-   * @returns 设置屏幕JSX元素
+   * 渲染设置屏幕 - 简化版，移除难度/性格设置
    */
   const renderSettingsScreen = () => (
     <div className="cg-placeholder-screen">
       <h2>设置</h2>
       <div className="cg-settings-content">
-        <div className="cg-setting-item">
-          <label>难度:</label>
-          <select
-            className="cg-setting-select"
-            value={difficulty}
-            onChange={e => setDifficulty(e.target.value as Difficulty)}
-          >
-            <option value="easy">简单</option>
-            <option value="normal">普通</option>
-            <option value="hard">困难</option>
-          </select>
-        </div>
-
-        <div className="cg-setting-item">
-          <label>AI性格:</label>
-          <select
-            className="cg-setting-select"
-            value={personality}
-            onChange={e => setPersonality(e.target.value as Personality)}
-          >
-            <option value="aggressive">激进</option>
-            <option value="balanced">平衡</option>
-            <option value="conservative">保守</option>
-          </select>
-        </div>
-
-        <p style={{ color: '#a1a1aa', textAlign: 'center', marginTop: '1rem' }}>设置已自动保存</p>
+        <p style={{ color: '#a1a1aa', textAlign: 'center' }}>
+          游戏采用智能动态AI系统，无需手动设置难度
+        </p>
+        <p style={{ color: '#666', textAlign: 'center', fontSize: '0.9rem', marginTop: '0.5rem' }}>
+          AI将根据局势自动调整策略
+        </p>
 
         <button onClick={() => setCurrentScreen('main-menu')} className="cg-menu-button">
           返回
@@ -1036,7 +1094,6 @@ const App: React.FC = () => {
 
   /**
    * 渲染帮助屏幕
-   * @returns 帮助屏幕JSX元素
    */
   const renderHelpScreen = () => (
     <div className="cg-placeholder-screen">
@@ -1178,28 +1235,6 @@ const App: React.FC = () => {
           flex-direction: column;
           gap: 1rem;
           min-width: 300px;
-        }
-
-        .cg-setting-item {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 1rem;
-        }
-
-        .cg-setting-item label {
-          color: #d4af37;
-          font-family: 'Noto Sans SC', sans-serif;
-        }
-
-        .cg-setting-select {
-          padding: 0.5rem 1rem;
-          background: #1a1a24;
-          border: 1px solid #3f3f46;
-          border-radius: 0.375rem;
-          color: #f5f5f5;
-          font-family: 'Noto Sans SC', sans-serif;
-          cursor: pointer;
         }
 
         .cg-help-content {

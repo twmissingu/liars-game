@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import type { AnimationState } from '../../types/game.types';
+import type { AIAnimationState } from '../../types';
 
 // ============================================
 // 呼吸动画包装器
@@ -369,11 +369,11 @@ export const FadeTransition: React.FC<FadeTransitionProps> = ({
 // 动画控制器 Hook
 // ============================================
 
-export const useAnimation = (initialState: AnimationState = 'idle') => {
-  const [state, setState] = useState<AnimationState>(initialState);
+export const useAnimation = (initialState: AIAnimationState = 'idle') => {
+  const [state, setState] = useState<AIAnimationState>(initialState);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  const playAnimation = (newState: AnimationState, duration: number = 1000) => {
+  const playAnimation = (newState: AIAnimationState, duration: number = 1000) => {
     setState(newState);
     setIsAnimating(true);
 

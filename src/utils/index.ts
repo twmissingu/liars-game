@@ -50,6 +50,7 @@ export const createDeck = (): Card[] => {
         rank: rank,
         value: rank === 'Q' ? 1 : rank === 'K' ? 2 : 3,
         isJoker: false,
+        isRevealed: false,
         owner: null,
       });
     }
@@ -63,6 +64,7 @@ export const createDeck = (): Card[] => {
       rank: 'JOKER',
       value: 0,
       isJoker: true,
+      isRevealed: false,
       owner: null,
     });
   }
@@ -297,11 +299,12 @@ export const storage = {
   /**
    * 保存数据
    *
+   * @param key - 存储键名
    * @param data - 要保存的数据
    */
-  save: (data: unknown): void => {
+  save: (key: string, data: unknown): void => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      localStorage.setItem(key, JSON.stringify(data));
     } catch (e) {
       console.error('Failed to save to localStorage:', e);
     }
@@ -310,11 +313,12 @@ export const storage = {
   /**
    * 加载数据
    *
+   * @param key - 存储键名
    * @returns 保存的数据
    */
-  load: <T>(): T | null => {
+  load: <T>(key: string): T | null => {
     try {
-      const data = localStorage.getItem(STORAGE_KEY);
+      const data = localStorage.getItem(key);
       return data ? (JSON.parse(data) as T) : null;
     } catch (e) {
       console.error('Failed to load from localStorage:', e);
@@ -324,10 +328,16 @@ export const storage = {
 
   /**
    * 清除数据
+   *
+   * @param key - 存储键名（可选，不提供则清除所有）
    */
-  clear: (): void => {
+  clear: (key?: string): void => {
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      if (key) {
+        localStorage.removeItem(key);
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+      }
     } catch (e) {
       console.error('Failed to clear localStorage:', e);
     }

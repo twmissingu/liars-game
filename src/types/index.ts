@@ -7,7 +7,7 @@
  * 统一使用Liar's Bar规则：Q/K/A + JOKER牌组系统
  *
  * @author Code Agent
- * @version 2.0.0
+ * @version 3.0.0
  */
 
 // ============================================
@@ -30,24 +30,18 @@ export type SkillTarget = 'self' | 'enemy' | 'card' | 'none';
 export interface SkillEffect {
   type: 'force-liar' | 'geass-immunity' | 'geass-resistance' | 'multi-play';
   value: number | boolean;
-  duration?: number; // 持续回合数，undefined表示永久/即时
+  duration?: number;
 }
-
-/** 游戏难度等级 */
-export type Difficulty = 'easy' | 'normal' | 'hard';
-
-/** AI性格类型 - 影响AI决策行为 */
-export type Personality = 'aggressive' | 'conservative' | 'balanced';
 
 /** 游戏阶段枚举 */
 export type GamePhase =
-  | 'setup' // 游戏初始化阶段
-  | 'player_turn' // 玩家回合
-  | 'ai_turn' // AI回合
-  | 'challenge' // 质疑阶段
-  | 'resolve' // 结算阶段
-  | 'geass' // Geass判定阶段
-  | 'game_over'; // 游戏结束
+  | 'setup'
+  | 'player_turn'
+  | 'ai_turn'
+  | 'challenge'
+  | 'resolve'
+  | 'geass'
+  | 'game_over';
 
 /** 屏幕/界面类型 */
 export type ScreenType =
@@ -62,21 +56,17 @@ export type ScreenType =
 // 卡牌类型定义 - Liar's Bar规则
 // ============================================
 
-/** 卡牌花色 - 仅用于视觉效果，不影响游戏逻辑 */
+/** 卡牌花色 - 包含小丑 */
 export type CardSuit = 'spades' | 'hearts' | 'clubs' | 'diamonds' | 'joker';
 
 /** 卡牌点数 - Liar's Bar核心：Q/K/A + JOKER */
 export type CardRank = 'Q' | 'K' | 'A' | 'JOKER';
 
+/** 骗子牌类型 - 每回合指定的目标牌 */
+export type LiarCard = 'Q' | 'K' | 'A';
+
 /**
  * 卡牌接口 - 游戏中的基本单位
- *
- * @property id - 唯一标识符
- * @property suit - 花色（仅视觉效果）
- * @property rank - 点数（Q/K/A/JOKER）
- * @property value - 数值（Q=1, K=2, A=3, JOKER=0）
- * @property isJoker - 是否为小丑牌（万能牌）
- * @property owner - 当前持有者
  */
 export interface Card {
   id: string;
@@ -84,6 +74,7 @@ export interface Card {
   rank: CardRank;
   value: number;
   isJoker: boolean;
+  isRevealed: boolean;
   owner: 'player' | 'ai' | 'ai2' | 'ai3' | 'table' | null;
 }
 
@@ -91,24 +82,15 @@ export interface Card {
  * 已出牌记录 - 用于质疑阶段验证
  */
 export interface PlayedCards {
-  cardIds: string[]; // 出的牌的ID列表
-  claimedRank: CardRank; // 声称的点数
-  actualCards: Card[]; // 实际出的牌
-  playerId: 'player' | 'ai' | 'ai2' | 'ai3'; // 出牌者
+  cardIds: string[];
+  claimedRank: CardRank;
+  actualCards: Card[];
+  playerId: 'player' | 'ai' | 'ai2' | 'ai3';
 }
 
 // ============================================
 // 角色类型定义
 // ============================================
-
-/**
- * 角色技能效果类型
- */
-export type SkillEffectType =
-  | 'force-liar' // 强制指定骗子牌（鲁鲁修）
-  | 'geass-immunity' // Geass免疫（C.C.）
-  | 'geass-resistance' // Geass抗性（朱雀）
-  | 'multi-play'; // 多张出牌（卡莲）
 
 /**
  * 角色技能接口
@@ -120,8 +102,8 @@ export interface CharacterSkill {
   description: string;
   type: SkillType;
   target: SkillTarget;
-  maxUses: number; // -1表示无限使用
-  cooldown: number; // 冷却回合数
+  maxUses: number;
+  cooldown: number;
   effect: SkillEffect;
   icon: string;
 }
@@ -143,7 +125,7 @@ export interface Character {
   skill: CharacterSkill;
   stats: {
     hp: number;
-    difficulty: number; // 难度等级1-5
+    difficulty: number;
   };
 }
 
@@ -152,14 +134,13 @@ export interface Character {
  */
 export interface CharacterState {
   characterId: CharacterId;
-  skillUsesRemaining: number; // 剩余技能使用次数
-  cooldownRemaining: number; // 冷却剩余回合
-  isSkillActive: boolean; // 技能是否激活
-  // 角色特定状态
-  ccReviveUsed?: boolean; // C.C.是否已使用复活
-  suzakuCounterActive?: boolean; // 朱雀反击是否激活
-  kallenBoostActive?: boolean; // 卡莲爆发是否激活
-  kallenCardCount?: number; // 卡莲出牌张数
+  skillUsesRemaining: number;
+  cooldownRemaining: number;
+  isSkillActive: boolean;
+  ccReviveUsed?: boolean;
+  suzakuCounterActive?: boolean;
+  kallenBoostActive?: boolean;
+  kallenCardCount?: number;
 }
 
 // ============================================
@@ -172,22 +153,12 @@ export interface CharacterState {
 export interface PlayerStats {
   hp: number;
   maxHp: number;
-  geassSuccessCount: number; // Geass成功次数
-  geassFailCount: number; // Geass失败次数
-  // 角色技能相关状态
+  geassSuccessCount: number;
+  geassFailCount: number;
   ccReviveUsed?: boolean;
   suzakuCounterActive?: boolean;
   kallenBoostActive?: boolean;
   kallenCardCount?: number;
-}
-
-/**
- * 角色选择信息
- */
-export interface CharacterSelection {
-  playerId: string;
-  characterId: CharacterId;
-  isReady: boolean;
 }
 
 /**
@@ -214,52 +185,41 @@ export interface TurnState {
   playedCards: PlayedCards | null;
   tableCards: Card[];
   lastPlayerId: 'player' | 'ai' | 'ai2' | 'ai3' | null;
-  challengeRound?: number; // 质疑轮次
+  /** Geass连续闪避次数（有玩家扣血后重置） */
+  geassConsecutiveMisses: number;
 }
 
 /**
  * Geass判定结果
  */
 export interface GeassResult {
-  activated: boolean; // 是否激活
-  hit: boolean; // 是否命中
-  damage: number; // 伤害值
-  newStats?: PlayerStats; // 更新后的状态
-  funnyAction?: string; // 搞笑动作描述
-  message: string; // 结果消息
-  isImmune?: boolean; // 是否免疫
-  isRevived?: boolean; // 是否复活（C.C.）
-  isCounter?: boolean; // 是否反击（朱雀）
+  activated: boolean;
+  hit: boolean;
+  damage: number;
+  newStats?: PlayerStats;
+  funnyAction?: string;
+  message: string;
+  isImmune?: boolean;
+  isRevived?: boolean;
+  isCounter?: boolean;
 }
 
 /**
  * 游戏状态 - 完整的游戏状态对象
  */
 export interface GameState {
-  // 基础状态
   phase: GamePhase;
   liarCard: CardRank | null;
-  currentPlayerIndex: number; // 0=player, 1=ai1, 2=ai2, 3=ai3
-
-  // 玩家状态
+  currentPlayerIndex: number;
   playerStats: PlayerStats;
   playerHand: Card[];
   playerCharacter: CharacterId | null;
   playerSelectedCards: string[];
-
-  // AI状态
   aiPlayers: AIPlayer[];
-
-  // 回合状态
   turnState: TurnState;
-
-  // 游戏结果
   lastAction: string;
   winner: 'player' | 'ai' | null;
   geassResult: GeassResult | null;
-
-  // 设置
-  difficulty: Difficulty;
 }
 
 // ============================================
@@ -283,12 +243,12 @@ export type AIActionType = 'play' | 'challenge' | 'pass';
  */
 export interface AIDecision {
   action: AIActionType;
-  cardIds?: string[]; // 出的牌的ID列表
-  claimedRank?: CardRank; // 声称的点数
-  confidence: number; // 信心度 0-1
-  reasoning: string; // 决策理由
+  cardIds?: string[];
+  claimedRank?: CardRank;
+  confidence: number;
+  reasoning: string;
   animationState: AIAnimationState;
-  isBluff?: boolean; // 是否虚张声势
+  isBluff?: boolean;
 }
 
 /**
@@ -296,30 +256,9 @@ export interface AIDecision {
  */
 export interface AIThought {
   state: AIAnimationState;
-  progress: number; // 0-100
+  progress: number;
   message?: string;
   emotion?: 'confident' | 'uncertain' | 'surprised' | 'calm';
-}
-
-/**
- * AI配置
- */
-export interface AIConfig {
-  difficulty: Difficulty;
-  personality: Personality;
-  reactionDelay: number; // 思考时间(ms)
-  enableAnimation: boolean;
-}
-
-/**
- * AI性格特征 - 影响AI行为参数
- */
-export interface PersonalityTraits {
-  bluffFrequency: number; // 撒谎频率 0-1
-  challengeThreshold: number; // 质疑阈值 0-1 (越低越爱质疑)
-  riskTolerance: number; // 风险承受 0-1
-  patience: number; // 耐心程度 0-1
-  adaptability: number; // 适应能力 0-1
 }
 
 /**
@@ -345,8 +284,8 @@ export interface MainMenuProps {
 export interface CharacterSelectProps {
   characters: Character[];
   selectedId: CharacterId | null;
-  selectedAvatar?: number; // 当前选中的头像编号
-  onSelect: (id: CharacterId, avatarNum?: number) => void; // 选择角色时同时确定头像
+  selectedAvatar?: number;
+  onSelect: (id: CharacterId, avatarNum?: number) => void;
   onConfirm: () => void;
   onBack: () => void;
 }
@@ -355,9 +294,6 @@ export interface GameTableProps {
   gameState: GameState | null;
   selectedCards: string[];
   selectedCharacter: CharacterId | null;
-  selectedAvatar: number;
-  aiCharacters: CharacterId[];
-  aiAvatars: Record<string, number>;
   onToggleCardSelection: (cardId: string) => void;
   onConfirmPlay: () => void;
   onPass: () => void;
@@ -365,7 +301,6 @@ export interface GameTableProps {
   onBackToMenu: () => void;
   onLelouchSkill: (newRank: CardRank) => void;
   gameLog: string[];
-  funnyAction: FunnyAction | null;
   isProcessing: boolean;
 }
 
@@ -408,10 +343,10 @@ export const FUNNY_ACTIONS: FunnyAction[] = [
  * 游戏设置 - 可持久化的设置项
  */
 export interface GameSettings {
-  difficulty: Difficulty;
-  bgmVolume: number;
-  sfxVolume: number;
-  personality: Personality;
+  soundEnabled: boolean;
+  musicEnabled: boolean;
+  soundVolume: number;
+  musicVolume: number;
 }
 
 /**
@@ -431,17 +366,8 @@ export interface GameLogEntry {
 // 工具类型
 // ============================================
 
-/**
- * 延迟函数类型
- */
-export type DelayFn = (ms: number) => Promise<void>;
+/** 可空类型 */
+export type Nullable<T> = T | null;
 
-/**
- * 可选类型
- */
-export type Optional<T> = T | undefined | null;
-
-/**
- * 部分必填类型
- */
-export type PartialRequired<T, K extends keyof T> = Partial<T> & Pick<T, K>;
+/** 可选类型 */
+export type Optional<T> = T | undefined;

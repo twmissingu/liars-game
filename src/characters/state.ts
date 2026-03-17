@@ -149,12 +149,13 @@ export function getGeassResistance(state: CharacterState, currentHp: number): nu
 
 /** 卡莲 - 获取最大出牌数 */
 export function getMaxPlayCount(state: CharacterState): number {
-  if (state.characterId !== 'kallen') return 1;
+  // 所有角色默认可以出1-3张牌
+  // 卡莲特殊：可以出1-4张牌（当技能可用时）
+  if (state.characterId === 'kallen' && canUseSkill(state)) {
+    return 4;
+  }
 
-  // 检查技能是否可用
-  if (!canUseSkill(state)) return 1;
-
-  return 4;
+  return 3;
 }
 
 /** 鲁鲁修 - 检查是否可发动绝对命令 */

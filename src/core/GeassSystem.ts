@@ -37,10 +37,25 @@ export const FUNNY_ACTIONS: FunnyAction[] = [
 /**
  * Geass系统类
  * 处理所有Geass判定和角色技能效果
+ * 
+ * 新的命中率机制：
+ * - 第一次命中率：1/3 (33.3%)
+ * - 如果闪避成功且其他玩家扣血前，下次命中率：1/2 (50%)
+ * - 如果继续闪避成功且其他玩家扣血前，下次命中率：100%
+ * - 有玩家扣血后，重置命中率为1/3
  */
 export class GeassSystem {
-  /** 基础命中率：1/3 ≈ 33.3% */
-  private readonly BASE_HIT_CHANCE = 1 / 3;
+  /**
+   * 获取基础命中率
+   * 根据连续闪避次数动态调整
+   * @param consecutiveMisses - 连续闪避次数
+   * @returns 基础命中率
+   */
+  private getBaseHitChance(consecutiveMisses: number): number {
+    if (consecutiveMisses === 0) return 1 / 3;      // 第一次：33.3%
+    if (consecutiveMisses === 1) return 1 / 2;      // 第二次：50%
+    return 1.0;                                      // 第三次及以上：100%
+  }
 
   /**
    * 执行Geass判定
@@ -49,15 +64,18 @@ export class GeassSystem {
    * @param targetStats - 目标玩家当前状态
    * @param character - 目标角色ID
    * @param hitChanceBoost - 命中率加成（如卡莲技能）
+   * @param consecutiveMisses - 连续闪避次数
    * @returns Geass判定结果
    */
   performGeass(
     target: 'player' | 'ai' | 'ai2' | 'ai3',
     targetStats: PlayerStats,
     character: CharacterId | null = null,
-    hitChanceBoost: number = 0
+    hitChanceBoost: number = 0,
+    consecutiveMisses: number = 0
   ): GeassResult {
-    let hitChance = this.BASE_HIT_CHANCE;
+    // 根据连续闪避次数获取基础命中率
+    let hitChance = this.getBaseHitChance(consecutiveMisses);
 
     // 应用命中率加成
     hitChance += hitChanceBoost;

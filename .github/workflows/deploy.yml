@@ -2,21 +2,12 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
     paths-ignore:
       - '**.md'
       - 'docs/**'
-      - '.github/ISSUE_TEMPLATE/**'
+
   workflow_dispatch:
-    inputs:
-      environment:
-        description: '部署环境'
-        required: true
-        default: 'production'
-        type: choice
-        options:
-          - production
-          - staging
 
 permissions:
   contents: read
@@ -24,49 +15,18 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages-${{ github.ref }}"
+  group: 'pages'
   cancel-in-progress: false
 
 jobs:
-  # 预检任务
-  preflight:
+  # 构建与部署任务
+  build-and-deploy:
     runs-on: ubuntu-latest
-    name: 🔍 部署预检
-    outputs:
-      should_deploy: ${{ steps.check.outputs.should_deploy }}
-      version: ${{ steps.version.outputs.version }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    name: Build and Deploy
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
-      - name: 检查是否应该部署
-        id: check
-        run: |
-          # 检查是否有代码变更（排除文档）
-          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD | grep -v '\.md$' | grep -v '^docs/' | grep -v '^\.github/ISSUE_TEMPLATE/' || true)
-          if [ -n "$CHANGED_FILES" ]; then
-            echo "should_deploy=true" >> $GITHUB_OUTPUT
-            echo "✅ 检测到代码变更，需要部署"
-          else
-            echo "should_deploy=false" >> $GITHUB_OUTPUT
-            echo "ℹ️ 仅文档变更，跳过部署"
-          fi
-
-      - name: 获取版本号
-        id: version
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "📦 版本: $VERSION"
-
-  # 构建任务
-  build:
-    runs-on: ubuntu-latest
-    name: 🔨 构建项目
-    needs: preflight
-    if: needs.preflight.outputs.should_deploy == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -77,166 +37,44 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Cache npm dependencies
-        uses: actions/cache@v4
-        id: npm-cache
-        with:
-          path: |
-            ~/.npm
-            node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      - name: Cache TypeScript 编译结果
-        uses: actions/cache@v4
-        with:
-          path: |
-            **/*.tsbuildinfo
-            .ts-cache
-          key: ${{ runner.os }}-ts-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-ts-
-
       - name: Install dependencies
         run: npm ci
-        if: steps.npm-cache.outputs.cache-hit != 'true'
 
-      - name: 🔍 运行 ESLint
-        run: npm run lint
-        continue-on-error: true
-
-      - name: 📐 TypeScript 类型检查
-        run: npm run type-check
-
-      - name: 🧪 运行测试
+      - name: Run tests
         run: npm run test:ci
         timeout-minutes: 10
 
-      - name: 📊 上传测试覆盖率
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: coverage-report-${{ github.run_id }}
-          path: coverage/
-          retention-days: 7
-
-      - name: 🔨 构建项目
+      - name: Build project
         run: npm run build
         env:
           NODE_ENV: production
-          VITE_APP_VERSION: ${{ needs.preflight.outputs.version }}
-          VITE_BUILD_TIME: ${{ github.event.repository.updated_at }}
-          VITE_GIT_SHA: ${{ github.sha }}
 
-      - name: ✅ 验证构建输出
+      - name: Verify build output
         run: |
           if [ ! -d "dist" ]; then
-            echo "❌ 构建输出目录 'dist' 不存在"
+            echo "❌ Build output directory 'dist' not found"
             exit 1
           fi
           if [ ! -f "dist/index.html" ]; then
-            echo "❌ dist/index.html 不存在"
+            echo "❌ dist/index.html not found"
             exit 1
           fi
-          if [ ! -f "dist/assets" ] && [ ! -d "dist/assets" ]; then
-            echo "❌ dist/assets 不存在"
-            exit 1
-          fi
-          
-          echo "✅ 构建输出验证通过"
-          echo "📊 构建统计:"
-          du -sh dist/
-          find dist -type f | wc -l | xargs echo "文件数量:"
-
-      - name: 📦 上传构建产物
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-output-${{ github.run_id }}
-          path: dist/
-          retention-days: 1
-
-  # 部署任务
-  deploy:
-    runs-on: ubuntu-latest
-    name: 🚀 部署到 GitHub Pages
-    needs: [preflight, build]
-    if: needs.preflight.outputs.should_deploy == 'true'
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: 📥 下载构建产物
-        uses: actions/download-artifact@v4
-        with:
-          name: build-output-${{ github.run_id }}
-          path: dist
+          echo "✅ Build verification passed"
+          echo "📊 Build size: $(du -sh dist/ | cut -f1)"
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      - name: 📤 上传到 GitHub Pages
+      - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: './dist'
 
-      - name: 🚀 部署到 GitHub Pages
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: 📝 记录部署信息
+      - name: Deployment summary
         run: |
-          echo "🎉 部署成功!"
-          echo "🔗 访问地址: ${{ steps.deployment.outputs.page_url }}"
-          echo "📦 版本: ${{ needs.preflight.outputs.version }}"
-          echo "🔨 提交: ${{ github.sha }}"
-          echo "⏰ 时间: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-
-  # 部署失败通知
-  notify-failure:
-    runs-on: ubuntu-latest
-    name: 🚨 失败通知
-    needs: [build, deploy]
-    if: failure()
-    steps:
-      - name: 输出失败信息
-        run: |
-          echo "❌ 部署失败!"
-          echo "🔍 请检查工作流日志: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          echo "📋 常见故障排查:"
-          echo "   1. 检查 package.json 中的依赖是否正确安装"
-          echo "   2. 检查 TypeScript 类型错误"
-          echo "   3. 检查测试是否通过"
-          echo "   4. 检查 GitHub Pages 设置是否正确"
-
-  # 回滚记录
-  record-deployment:
-    runs-on: ubuntu-latest
-    name: 📝 记录部署历史
-    needs: deploy
-    if: success()
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 配置Git身份
-        run: |
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config user.name "github-actions[bot]"
-
-      - name: 创建部署标签
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          TAG="deploy-$(date +%Y%m%d-%H%M%S)-v${VERSION}"
-          git tag -a "$TAG" -m "部署版本 v${VERSION} - ${{ github.sha }}"
-          git push origin "$TAG"
-          echo "🏷️ 创建部署标签: $TAG"
+          echo "🎉 Deployment successful!"
+          echo "🔗 URL: ${{ steps.deployment.outputs.page_url }}"

@@ -158,7 +158,7 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
         height: size,
         borderRadius: '8px',
         overflow: 'hidden',
-        backgroundColor: '#1a1a24',
+        backgroundColor: 'transparent',
         position: 'relative',
       }}
     >
@@ -171,7 +171,7 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#1a1a24',
+            backgroundColor: 'transparent',
           }}
         >
           <div
@@ -196,7 +196,7 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#1a1a24',
+            backgroundColor: 'transparent',
             color: '#dc2626',
             fontSize: size * 0.2,
           }}
