@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🤔 提问和讨论
+    url: https://github.com/twmissingu/liars-game/discussions
+    about: 有问题或想法？请在 Discussions 中交流
+  - name: 📖 查看文档
+    url: https://github.com/twmissingu/liars-game/tree/main/docs
+    about: 查看项目文档和开发指南
+  - name: 🚀 部署文档
+    url: https://github.com/twmissingu/liars-game/blob/main/docs/DEPLOYMENT.md
+    about: 查看部署和故障排查指南
