@@ -106,7 +106,11 @@ export class GeassSystem {
             activated: true,
             hit: false,
             damage: 0,
-            newStats: { ...targetStats, ccReviveUsed: true },
+            newStats: {
+              ...targetStats,
+              hp: 1,  // 显式设置HP为1
+              ccReviveUsed: true,
+            },
             message: 'C.C.发动Code之力！从死亡边缘复活并免疫本次Geass！',
             isRevived: true,
           };
@@ -114,26 +118,41 @@ export class GeassSystem {
       }
     }
 
-    // ========== 朱雀技能：枢木剑术（反击） ==========
-    // 受到Geass时有25%概率反击，让攻击者承受伤害
+    // ========== 朱雀技能：枢木剑术（闪避+反击） ==========
+    // 受到Geass时有15%概率完全闪避，闪避成功后25%概率反击
     if (character === 'suzaku') {
-      const counterRoll = Math.random();
-      if (counterRoll < SUZAKU_COUNTER_CHANCE) {
+      // 独立闪避判定（15%）
+      const dodgeRoll = Math.random();
+      if (dodgeRoll < SUZAKU_DODGE_CHANCE) {
+        // 闪避成功后进行反击判定（25%）
+        const counterRoll = Math.random();
+        if (counterRoll < SUZAKU_COUNTER_CHANCE) {
+          return {
+            activated: true,
+            hit: false,
+            damage: 0,
+            newStats: targetStats,
+            message: '朱雀发动枢木剑术！完美闪避并准备反击！',
+            isCounter: true,
+            isDodge: true,
+          };
+        }
+        // 闪避成功但反击失败
         return {
           activated: true,
           hit: false,
           damage: 0,
           newStats: targetStats,
-          message: '朱雀发动枢木剑术！完美闪避并准备反击！',
-          isCounter: true,
+          message: '朱雀发动枢木剑术！完美闪避！',
+          isDodge: true,
         };
       }
-      // 朱雀有15%基础闪避率
-      hitChance -= SUZAKU_DODGE_CHANCE;
     }
 
-    // 确保概率在合理范围
-    hitChance = Math.max(GEASS_HIT_CHANCE_MIN, Math.min(GEASS_HIT_CHANCE_MAX, hitChance));
+    // 确保概率在合理范围（但允许连续闪避后的100%命中率）
+    if (consecutiveMisses < 2) {
+      hitChance = Math.max(GEASS_HIT_CHANCE_MIN, Math.min(GEASS_HIT_CHANCE_MAX, hitChance));
+    }
 
     // 计算是否命中
     const roll = Math.random();
@@ -176,14 +195,18 @@ export class GeassSystem {
 
   /**
    * 计算卡莲技能加成
-   * 出2张+被质疑且质疑失败，Geass命中率 = 20% × 出牌张数（最高80%）
+   * 出2张+被质疑且质疑失败，Geass命中率加成：
+   * - 2张牌: +20%
+   * - 3张牌: +40%
+   * - 4张牌: +60%
    *
    * @param cardCount - 出牌张数
    * @returns 命中率加成
    */
   calculateKallenBoost(cardCount: number): number {
     if (cardCount < 2) return 0;
-    return Math.min(KALLEN_BOOST_MAX, KALLEN_BOOST_PER_CARD * cardCount);
+    // 从第2张牌开始计算加成，每张牌+20%
+    return Math.min(KALLEN_BOOST_MAX, KALLEN_BOOST_PER_CARD * (cardCount - 1));
   }
 
   /**

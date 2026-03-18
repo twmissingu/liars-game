@@ -202,6 +202,7 @@ export interface GeassResult {
   isImmune?: boolean;
   isRevived?: boolean;
   isCounter?: boolean;
+  isDodge?: boolean;
 }
 
 /**

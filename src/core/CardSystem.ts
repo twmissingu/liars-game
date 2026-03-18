@@ -176,6 +176,15 @@ export class CardSystem {
   }
 
   /**
+   * 获取牌组（getCards的别名）
+   *
+   * @returns 牌组中的所有牌
+   */
+  getDeck(): Card[] {
+    return this.cards;
+  }
+
+  /**
    * 获取玩家手牌
    *
    * @returns 属于玩家的牌

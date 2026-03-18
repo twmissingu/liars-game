@@ -131,11 +131,10 @@ describe('GameEngineV2 - 笛卡尔积测试', () => {
     test('1.5 AI1出牌，玩家不质疑，下一玩家继续', () => {
       setupPlayCards('ai', true);
 
-      // 玩家不质疑
-      const newState = engine.playerChallengeDecision(false);
+      // 玩家不质疑 - 这会直接结束质疑阶段并进入下一回合
+      const nextState = engine.playerChallengeDecision(false);
 
       // 验证：游戏继续，进入下一回合
-      const nextState = engine.endChallengePhase();
       expect(nextState.turnState.turnNumber).toBeGreaterThan(1);
       // AI1(3)的下家是玩家(0)
       expect(nextState.currentPlayerIndex).toBe(0);

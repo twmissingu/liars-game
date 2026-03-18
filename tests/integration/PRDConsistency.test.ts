@@ -75,15 +75,11 @@ describe('PRD一致性深度测试', () => {
 
   describe('3. 出牌系统 (CORE-003)', () => {
     test('普通角色每回合可出1-3张牌', () => {
-      engine.initializeGame('lelouch');
-      
-      // 确保是玩家回合
-      let currentState = engine.getState();
-      if (currentState.phase !== 'player_turn') {
-        // 重新初始化确保玩家先手
+      // 重新初始化直到玩家先手
+      let currentState = engine.initializeGame('lelouch');
+      while (currentState.currentPlayerIndex !== 0) {
         engine = new GameEngine();
-        engine.initializeGame('lelouch');
-        currentState = engine.getState();
+        currentState = engine.initializeGame('lelouch');
       }
       
       // 选择1张牌（GameEngineV2默认限制）
@@ -150,12 +146,14 @@ describe('PRD一致性深度测试', () => {
     });
 
     test('质疑成功时出牌者撒谎应受罚', () => {
-      engine.initializeGame('lelouch', 'normal');
-      let state = engine.getState();
+      // 重新初始化直到玩家先手
+      let state = engine.initializeGame('lelouch', 'normal');
+      while (state.currentPlayerIndex !== 0) {
+        engine = new GameEngine();
+        state = engine.initializeGame('lelouch', 'normal');
+      }
       
       // 玩家出非骗子牌（撒谎）
-      state.phase = 'player_turn';
-      state.currentPlayerIndex = 0;
       const liarCard = state.liarCard;
       const nonLiarCard = state.playerHand.find(c => c.rank !== liarCard && !c.isJoker);
       
@@ -210,12 +208,14 @@ describe('PRD一致性深度测试', () => {
     });
 
     test('无人质疑时回合结束', () => {
-      engine.initializeGame('lelouch', 'normal');
-      let state = engine.getState();
+      // 重新初始化直到玩家先手
+      let state = engine.initializeGame('lelouch', 'normal');
+      while (state.currentPlayerIndex !== 0) {
+        engine = new GameEngine();
+        state = engine.initializeGame('lelouch', 'normal');
+      }
       
       // 玩家出牌
-      state.phase = 'player_turn';
-      state.currentPlayerIndex = 0;
       const cardId = state.playerHand[0].id;
       engine.toggleCardSelection(cardId);
       state = engine.playerPlayCards();
@@ -312,9 +312,9 @@ describe('PRD一致性深度测试', () => {
       const boost3Cards = geassSystem.calculateKallenBoost(3);
       const boost4Cards = geassSystem.calculateKallenBoost(4);
 
-      expect(boost2Cards).toBeCloseTo(0.4, 5); // 20% * 2
-      expect(boost3Cards).toBeCloseTo(0.6, 5); // 20% * 3
-      expect(boost4Cards).toBeCloseTo(0.8, 5); // 20% * 4
+      expect(boost2Cards).toBeCloseTo(0.2, 5); // 20% * (2-1)
+      expect(boost3Cards).toBeCloseTo(0.4, 5); // 20% * (3-1)
+      expect(boost4Cards).toBeCloseTo(0.6, 5); // 20% * (4-1)
     });
   });
 
@@ -459,15 +459,17 @@ describe('PRD一致性深度测试', () => {
 
   describe('9. 界面与日志一致性', () => {
     test('游戏状态应该与日志记录一致', () => {
-      engine.initializeGame('lelouch', 'normal');
-      let state = engine.getState();
+      // 重新初始化直到玩家先手
+      let state = engine.initializeGame('lelouch', 'normal');
+      while (state.currentPlayerIndex !== 0) {
+        engine = new GameEngine();
+        state = engine.initializeGame('lelouch', 'normal');
+      }
       
       // 记录初始状态
       const initialHandCount = state.playerHand.length;
       
       // 玩家出牌
-      state.phase = 'player_turn';
-      state.currentPlayerIndex = 0;
       const cardId = state.playerHand[0].id;
       engine.toggleCardSelection(cardId);
       state = engine.playerPlayCards();

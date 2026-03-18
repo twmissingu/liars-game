@@ -125,11 +125,12 @@ describe('GameEngine', () => {
     });
 
     test('AI可以出牌', () => {
-      // 确保AI回合
+      // 重新初始化直到AI回合
       let state = gameEngine.getState();
-      if (state.currentPlayerIndex === 0) {
-        // 跳过这个测试，如果是玩家回合
-        return;
+      while (state.currentPlayerIndex === 0) {
+        gameEngine = new GameEngine();
+        gameEngine.initializeGame('lelouch');
+        state = gameEngine.getState();
       }
 
       const currentId = gameEngine.getCurrentPlayerId();

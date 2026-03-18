@@ -359,6 +359,9 @@ export class GameEngine {
     // 检查手牌是否耗尽
     if (this.state.playerHand.length === 0) {
       this.handleEmptyHand('player');
+    } else {
+      // 进入质疑阶段
+      this.state.phase = 'challenge';
     }
 
     return true;
@@ -649,6 +652,15 @@ export class GameEngine {
   }
 
   /**
+   * 重置游戏到初始状态
+   * @returns 重置后的状态
+   */
+  reset(): GameState {
+    this.state = this.createInitialState();
+    return this.state;
+  }
+
+  /**
    * 检查游戏是否结束
    * @returns 是否结束
    */
@@ -791,12 +803,41 @@ export class GameEngine {
    * @param cardId - 卡牌ID
    */
   toggleCardSelection(cardId: string): void {
+    // 检查牌是否存在于玩家手牌中
+    const cardExists = this.state.playerHand.some(c => c.id === cardId);
+    if (!cardExists) return;
+
     const index = this.state.playerSelectedCards.indexOf(cardId);
     if (index > -1) {
       this.state.playerSelectedCards.splice(index, 1);
     } else {
-      this.state.playerSelectedCards.push(cardId);
+      // 检查出牌数量限制
+      const charState = this.state.characterStates.get('player');
+      const maxCards = charState ? this.getMaxPlayCount(charState) : 1;
+      if (this.state.playerSelectedCards.length < maxCards) {
+        this.state.playerSelectedCards.push(cardId);
+      }
     }
+  }
+
+  /**
+   * 清除所有选中的牌
+   */
+  clearCardSelection(): void {
+    this.state.playerSelectedCards = [];
+  }
+
+  /**
+   * 获取最大出牌数
+   * @param state - 角色状态
+   * @returns 最大出牌数
+   */
+  private getMaxPlayCount(state: { characterId: string }): number {
+    // 卡莲可以出1-4张牌，其他角色可以出1-3张牌
+    if (state.characterId === 'kallen') {
+      return 4;
+    }
+    return 3;
   }
 
   /**
@@ -832,6 +873,11 @@ export class GameEngine {
    * @returns 新的游戏状态
    */
   aiPlayCards(aiId: 'ai' | 'ai2' | 'ai3'): GameState {
+    // 检查是否是AI回合
+    if (this.state.phase !== 'ai_turn') {
+      return this.getState();
+    }
+
     const ai = this.state.aiPlayers.find(a => a.id === aiId);
     if (!ai || ai.hand.length === 0) return this.getState();
 
@@ -891,6 +937,9 @@ export class GameEngine {
     // 检查手牌是否耗尽
     if (ai.hand.length === 0) {
       this.handleEmptyHand(aiId);
+    } else {
+      // 进入质疑阶段
+      this.state.phase = 'challenge';
     }
 
     return true;
@@ -902,7 +951,10 @@ export class GameEngine {
    * @returns 新的游戏状态
    */
   playerChallengeDecision(shouldChallenge: boolean): GameState {
-    if (!shouldChallenge) return this.getState();
+    if (!shouldChallenge) {
+      // 不质疑，结束质疑阶段
+      return this.endChallengePhase();
+    }
 
     // challenge方法内部已经执行了executeGeass，这里不需要重复调用
     this.challenge('player');

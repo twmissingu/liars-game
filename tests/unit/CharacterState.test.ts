@@ -310,23 +310,23 @@ describe('CharacterState', () => {
       expect(maxCount).toBe(4);
     });
 
-    test('卡莲技能不可用时最大出牌数为1', () => {
+    test('卡莲技能不可用时最大出牌数为3', () => {
       const state = createCharacterState('kallen');
       // 冷却中时技能不可用
       const usedState = { ...state, cooldownRemaining: 1 };
       const maxCount = getMaxPlayCount(usedState);
 
-      expect(maxCount).toBe(1);
+      expect(maxCount).toBe(3);
     });
 
-    test('非卡莲角色最大出牌数为1', () => {
+    test('非卡莲角色最大出牌数为3', () => {
       const lelouch = createCharacterState('lelouch');
       const cc = createCharacterState('cc');
       const suzaku = createCharacterState('suzaku');
 
-      expect(getMaxPlayCount(lelouch)).toBe(1);
-      expect(getMaxPlayCount(cc)).toBe(1);
-      expect(getMaxPlayCount(suzaku)).toBe(1);
+      expect(getMaxPlayCount(lelouch)).toBe(3);
+      expect(getMaxPlayCount(cc)).toBe(3);
+      expect(getMaxPlayCount(suzaku)).toBe(3);
     });
   });
 

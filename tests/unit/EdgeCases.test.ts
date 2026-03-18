@@ -90,10 +90,12 @@ describe('边界情况测试', () => {
     });
 
     test('出最后一张牌后手牌为空', () => {
-      gameEngine.initializeGame('lelouch');
-      
-      const state = gameEngine.getState();
-      state.phase = 'player_turn';
+      // 重新初始化直到玩家先手
+      let state = gameEngine.initializeGame('lelouch');
+      while (state.currentPlayerIndex !== 0) {
+        gameEngine = new GameEngine();
+        state = gameEngine.initializeGame('lelouch');
+      }
       
       // 只剩一张牌
       const lastCard = state.playerHand[0];

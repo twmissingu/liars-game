@@ -320,10 +320,12 @@ describe('深度测试 - 10轮游戏模拟', () => {
     });
 
     test('质疑顺序应该从出牌者下家开始', () => {
-      // 设置到玩家回合
-      let state = engine.getState();
-      state.phase = 'player_turn';
-      state.currentPlayerIndex = 0;
+      // 重新初始化直到玩家先手
+      let state = engine.initializeGame('lelouch');
+      while (state.currentPlayerIndex !== 0) {
+        engine = new GameEngine();
+        state = engine.initializeGame('lelouch');
+      }
       
       // 玩家出牌
       const cardId = state.playerHand[0].id;
@@ -355,10 +357,12 @@ describe('深度测试 - 10轮游戏模拟', () => {
     });
 
     test('每个玩家在质疑阶段只被询问一次', () => {
-      // 设置到玩家回合
-      let state = engine.getState();
-      state.phase = 'player_turn';
-      state.currentPlayerIndex = 0;
+      // 重新初始化直到玩家先手
+      let state = engine.initializeGame('lelouch');
+      while (state.currentPlayerIndex !== 0) {
+        engine = new GameEngine();
+        state = engine.initializeGame('lelouch');
+      }
       
       // 玩家出牌
       const cardId = state.playerHand[0].id;
@@ -393,10 +397,12 @@ describe('深度测试 - 10轮游戏模拟', () => {
     });
 
     test('质疑结果判定应该正确', () => {
-      // 设置到玩家回合
-      let state = engine.getState();
-      state.phase = 'player_turn';
-      state.currentPlayerIndex = 0;
+      // 重新初始化直到玩家先手
+      let state = engine.initializeGame('lelouch');
+      while (state.currentPlayerIndex !== 0) {
+        engine = new GameEngine();
+        state = engine.initializeGame('lelouch');
+      }
       
       // 玩家出一张非骗子牌（撒谎）
       const liarCard = state.liarCard;
@@ -448,9 +454,12 @@ describe('深度测试 - 10轮游戏模拟', () => {
     });
 
     test('游戏日志和状态应该一致', () => {
-      let state = engine.getState();
-      state.phase = 'player_turn';
-      state.currentPlayerIndex = 0;
+      // 重新初始化直到玩家先手
+      let state = engine.initializeGame('lelouch');
+      while (state.currentPlayerIndex !== 0) {
+        engine = new GameEngine();
+        state = engine.initializeGame('lelouch');
+      }
       
       // 玩家出牌
       const cardId = state.playerHand[0].id;
@@ -494,17 +503,18 @@ describe('深度测试 - 10轮游戏模拟', () => {
     });
 
     test('AI应该自动执行后续回合', () => {
-      engine.initializeGame('lelouch', 'normal');
-      let state = engine.getState();
+      // 重新初始化直到AI先手
+      let state = engine.initializeGame('lelouch', 'normal');
+      while (state.currentPlayerIndex === 0) {
+        engine = new GameEngine();
+        state = engine.initializeGame('lelouch', 'normal');
+      }
       
-      // 设置AI先手
-      state.currentPlayerIndex = 1;
-      state.phase = 'ai_turn';
-      
-      // AI应该能自动出牌
-      const ai = state.aiPlayers[0];
-      if (ai.hand.length > 0) {
-        state = engine.aiPlayCards('ai');
+      // 获取当前AI玩家ID
+      const currentId = engine.getCurrentPlayerId();
+      if (currentId !== 'player') {
+        // AI应该能自动出牌
+        state = engine.aiPlayCards(currentId);
         expect(state.phase).toBe('challenge');
       }
     });

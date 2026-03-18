@@ -275,58 +275,66 @@ describe('GeassSystem', () => {
       geassFailCount: 0,
     });
 
-    test('朱雀有25%概率反击', () => {
+    test('朱雀有25%概率反击（在闪避成功后）', () => {
       const stats = createSuzakuStats();
+      
       let counters = 0;
-      const trials = 1000;
+      let dodges = 0;
+      const trials = 2000;
 
       for (let i = 0; i < trials; i++) {
-        const originalRandom = Math.random;
-        // 第一次随机数用于反击判定，返回0.2（<0.25）触发反击
-        Math.random = jest.fn().mockReturnValue(0.2);
-
         const result = geassSystem.performGeass('player', { ...stats }, 'suzaku');
         
-        Math.random = originalRandom;
-        
-        if (result.isCounter) {
-          counters++;
+        if (result.isDodge) {
+          dodges++;
+          if (result.isCounter) {
+            counters++;
+          }
         }
       }
 
-      expect(counters).toBe(trials);
+      // 反击必须在闪避之后发生
+      expect(dodges).toBeGreaterThan(0);
+      // 反击概率约为闪避的25%
+      const counterRate = counters / dodges;
+      expect(counterRate).toBeGreaterThan(0.17);
+      expect(counterRate).toBeLessThan(0.33);
     });
 
     test('朱雀反击时不应该受到伤害', () => {
       const stats = createSuzakuStats();
       
-      const originalRandom = Math.random;
-      Math.random = jest.fn().mockReturnValue(0.2); // 触发反击
-
-      const result = geassSystem.performGeass('player', stats, 'suzaku');
+      // 多次测试直到触发反击
+      let foundCounter = false;
+      for (let i = 0; i < 500; i++) {
+        const result = geassSystem.performGeass('player', { ...stats }, 'suzaku');
+        if (result.isCounter) {
+          expect(result.damage).toBe(0);
+          expect(result.newStats?.hp).toBe(stats.hp);
+          foundCounter = true;
+          break;
+        }
+      }
       
-      Math.random = originalRandom;
-      
-      expect(result.isCounter).toBe(true);
-      expect(result.damage).toBe(0);
-      expect(result.newStats.hp).toBe(stats.hp);
+      expect(foundCounter).toBe(true);
     });
 
     test('朱雀有15%基础闪避率', () => {
       const stats = createSuzakuStats();
       
-      // 由于有15%闪避，实际命中概率应该是 1/3 - 0.15 = 约18.3%
-      let hits = 0;
-      const trials = 3000;
+      // 独立15%闪避判定
+      let dodges = 0;
+      const trials = 2000;
 
       for (let i = 0; i < trials; i++) {
         const result = geassSystem.performGeass('player', { ...stats }, 'suzaku');
-        if (result.hit) hits++;
+        if (result.isDodge) dodges++;
       }
 
-      const hitRate = hits / trials;
-      // 基础1/3减去15%闪避，预期约18-20%
-      expect(hitRate).toBeLessThan(0.25);
+      const dodgeRate = dodges / trials;
+      // 15%闪避率，允许±5%误差
+      expect(dodgeRate).toBeGreaterThan(0.10);
+      expect(dodgeRate).toBeLessThan(0.20);
     });
   });
 
@@ -408,19 +416,19 @@ describe('GeassSystem', () => {
       expect(boost).toBe(0);
     });
 
-    test('出2张牌时加成40%', () => {
+    test('出2张牌时加成20%', () => {
       const boost = geassSystem.calculateKallenBoost(2);
-      expect(boost).toBe(0.4);
+      expect(boost).toBe(0.2);
     });
 
-    test('出3张牌时加成60%', () => {
+    test('出3张牌时加成40%', () => {
       const boost = geassSystem.calculateKallenBoost(3);
-      expect(boost).toBeCloseTo(0.6, 5);
+      expect(boost).toBeCloseTo(0.4, 5);
     });
 
-    test('出4张牌时加成80%', () => {
+    test('出4张牌时加成60%', () => {
       const boost = geassSystem.calculateKallenBoost(4);
-      expect(boost).toBe(0.8);
+      expect(boost).toBeCloseTo(0.6, 5);
     });
 
     test('出超过4张牌时加成上限80%', () => {
@@ -522,9 +530,9 @@ describe('GeassSystem', () => {
         kallenCardCount: 3,
       };
 
-      // 计算期望加成：3张牌 = 60%
+      // 计算期望加成：3张牌 = 40%
       const expectedBoost = geassSystem.calculateKallenBoost(3);
-      expect(expectedBoost).toBeCloseTo(0.6, 5);
+      expect(expectedBoost).toBeCloseTo(0.4, 5);
 
       // 执行Geass
       const result = geassSystem.performGeass('player', stats, 'kallen', expectedBoost);

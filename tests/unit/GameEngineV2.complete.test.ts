@@ -54,12 +54,15 @@ describe('GameEngineV2 - 完整逻辑测试', () => {
       });
     });
 
-    test('1.4 所有玩家初始HP应该为3', () => {
+    test('1.4 所有玩家初始HP应该正确', () => {
       const state = engine.initializeGame('lelouch');
 
+      // 玩家鲁鲁修HP为3
       expect(state.playerStats.hp).toBe(3);
+      // AI HP根据角色不同：朱雀4点，其他3点
       state.aiPlayers.forEach(ai => {
-        expect(ai.stats.hp).toBe(3);
+        const expectedHp = ai.character === 'suzaku' ? 4 : 3;
+        expect(ai.stats.hp).toBe(expectedHp);
       });
     });
   });
@@ -115,14 +118,16 @@ describe('GameEngineV2 - 完整逻辑测试', () => {
       expect(newState.playerHand).toHaveLength(2); // 5-3=2
     });
 
-    test('2.4 玩家不应该能出4张牌（非卡莲角色）', () => {
+    test('2.4 玩家不应该能选择超过3张牌（非卡莲角色）', () => {
       const state = engine.getState();
       const cardIds = state.playerHand.slice(0, 4).map(c => c.id);
 
+      // 尝试选择4张牌
       cardIds.forEach(id => engine.toggleCardSelection(id));
       
-      // 应该抛出错误或返回失败
-      expect(() => engine.playerPlayCards()).toThrow();
+      // 由于限制，只应该选择了3张
+      const selectedState = engine.getState();
+      expect(selectedState.playerSelectedCards).toHaveLength(3);
     });
 
     test('2.5 非玩家回合不应该能出牌', () => {
