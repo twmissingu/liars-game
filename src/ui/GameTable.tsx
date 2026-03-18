@@ -143,7 +143,7 @@ export const GameTable: React.FC<GameTableProps> = ({
   const getSuitColor = (suit: string) =>
     suit === 'joker' ? '#d4af37' : suit === 'hearts' || suit === 'diamonds' ? '#dc2626' : '#1a1a24';
 
-  const playerName = getCharacterName(selectedCharacter);
+  const playerName = getCharacterName(selectedCharacter ?? undefined);
   const playerColor = getCharacterColor(selectedCharacter);
 
   const renderCharacter = (
@@ -240,7 +240,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                           : turnState.playedCards.playerId.startsWith('ai')
                             ? getCharacterName(
                                 aiPlayers?.find(
-                                  (ai: { id: string }) => ai.id === turnState.playedCards.playerId
+                                  (ai: { id: string }) => ai.id === turnState.playedCards?.playerId
                                 )?.character || 'cc'
                               )
                             : '未知玩家'}{' '}

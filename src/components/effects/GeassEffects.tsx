@@ -154,6 +154,7 @@ export const GeassFullscreenEffect: React.FC<GeassFullscreenEffectProps> = ({
         clearTimeout(endTimer);
       };
     }
+    return undefined;
   }, [isActive, phase, onComplete]);
 
   if (!isActive || phase === 'idle') return null;

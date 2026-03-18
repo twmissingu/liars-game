@@ -127,10 +127,10 @@ class SoundManager {
           loop: config.loop,
           html5: true,
           preload: true, // 预加载所有音效
-          onloaderror: (id, err) => {
+          onloaderror: (_id, err) => {
             console.warn(`Failed to load sound: ${soundType}`, err);
           },
-          onplayerror: (id, err) => {
+          onplayerror: (_id, err) => {
             console.warn(`Failed to play sound: ${soundType}`, err);
             // 尝试恢复
             this.sounds.get(soundType)?.once('unlock', () => {

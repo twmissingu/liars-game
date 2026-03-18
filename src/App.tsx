@@ -30,9 +30,11 @@ import { ResultScreen } from './ui/ResultScreen';
 // 数据和工具导入
 import { characters, getCharacterName } from './data/characters';
 import { soundManager, playSound, playBGM, stopBGM } from './audio';
-import type { SFXType } from './audio';
 import { GameEngine } from './core/GameEngineV2';
 import { storage } from './utils';
+
+// Hooks导入
+import { useGeassResult } from './hooks/useGeassResult';
 
 // 类型导入
 import type {
@@ -42,7 +44,6 @@ import type {
   GameSettings,
   GameState,
 } from './types';
-import { FUNNY_ACTIONS } from './types';
 
 // 样式导入
 import './styles/global.css';
@@ -165,194 +166,18 @@ const App: React.FC = () => {
     setGameLog(prev => [...prev, message]);
   }, []);
 
-  /**
-   * 处理Geass结果
-   * 显示动画效果并检查游戏是否结束
-   *
-   * @param newState - 新的游戏状态
-   * @param challengerName - 质疑者名称
-   * @param targetName - 目标名称（被质疑者）
-   * @param loserName - 受罚者名称
-   */
-  const handleGeassResult = useCallback(
-    (newState: GameState, challengerName?: string, targetName?: string, loserName?: string) => {
-      setGameState(newState);
-
-      if (newState.geassResult) {
-        const target = targetName || '对手';
-        const loser = loserName || target;
-
-        if (newState.geassResult.hit) {
-          // Geass命中
-          playSound('geass-hit');
-          const funnyAction = FUNNY_ACTIONS[Math.floor(Math.random() * FUNNY_ACTIONS.length)];
-          setCurrentFunnyAction(funnyAction);
-          playSound(funnyAction.soundType as SFXType);
-
-          // 详细记录Geass结果
-          addLog(`${loser}受到Geass！`);
-          addLog(`突然${funnyAction.description}`);
-          addLog(`Geass命中！${loser}HP-1`);
-        } else {
-          // Geass未命中
-          playSound('geass-miss');
-
-          // 记录闪避结果
-          if (newState.geassResult.isRevived) {
-            addLog(`${loser}闪避了Geass！`);
-            addLog(`🔄 ${newState.geassResult.message}`);
-          } else if (newState.geassResult.isCounter) {
-            addLog(`${loser}闪避了Geass！`);
-            addLog(`⚔️ ${newState.geassResult.message}`);
-            addLog(`💥 反击生效！质疑者受到反弹伤害！`);
-          } else {
-            addLog(`${loser}闪避了Geass！`);
-          }
-        }
-      }
-
-      // 检查游戏结束
-      if (newState.phase === 'game_over') {
-        setTimeout(() => {
-          if (newState.winner === 'player') {
-            playBGM('victory');
-          } else {
-            playBGM('defeat');
-          }
-          setCurrentScreen('result');
-        }, 2000);
-        return;
-      }
-
-      // 惩罚后重置牌局
-      setTimeout(() => {
-        setCurrentFunnyAction(null);
-        if (gameEngineRef.current) {
-          // 根据Liar's Bar规则：下一回合由受罚者的下家（顺时针方向）开始
-          // UI顺序: 玩家(0) -> AI3(1) -> AI2(2) -> AI1(3) -> 玩家(0)
-          // 需要根据loserName确定受罚者ID
-          const state = gameEngineRef.current.getState();
-          let loserId: 'player' | 'ai' | 'ai2' | 'ai3';
-
-          // 如果没有提供loserName，尝试从turnState中获取出牌者作为默认
-          // 注意：这里假设如果没有明确指定loser，则使用当前出牌者
-          const playedBy = state.turnState.playedCards?.playerId;
-          let actualLoserName = loserName;
-          
-          if (!actualLoserName && playedBy) {
-            // 根据playedBy获取角色名称
-            if (playedBy === 'player') {
-              actualLoserName = getCharacterName(selectedCharacter!);
-            } else {
-              const ai = state.aiPlayers.find((a: { id: string }) => a.id === playedBy);
-              actualLoserName = ai?.name;
-            }
-          }
-          
-          if (!actualLoserName) {
-            console.error('[handleGeassResult] 无法确定受罚者');
-            setIsProcessing(false);
-            return;
-          }
-
-          if (actualLoserName === getCharacterName(selectedCharacter!)) {
-            loserId = 'player';
-          } else {
-            // 在aiPlayers中查找对应的ID
-            const ai = state.aiPlayers.find((a: { name: string }) => a.name === actualLoserName);
-            if (ai) {
-              loserId = ai.id as 'ai' | 'ai2' | 'ai3';
-              console.log(`[handleGeassResult] 找到AI: ${actualLoserName}, ID: ${ai.id}`);
-            } else {
-              console.error(`[handleGeassResult] 找不到AI: ${actualLoserName}`);
-              console.log('[handleGeassResult] 当前AI列表:', state.aiPlayers.map((a: any) => ({ name: a.name, id: a.id })));
-              setIsProcessing(false);
-              return;
-            }
-          }
-
-          // 计算受罚者的索引
-          // UI顺序: 玩家(0) -> AI3(卡莲)(1) -> AI2(朱雀)(2) -> AI1(C.C.)(3) -> 玩家(0)
-          const getLoserIndex = (id: string): number => {
-            if (id === 'player') return 0;
-            if (id === 'ai3') return 1;  // AI3(卡莲)
-            if (id === 'ai2') return 2;  // AI2(朱雀)
-            if (id === 'ai') return 3;   // AI1(C.C.)
-            return 0;
-          };
-
-          const loserIndex = getLoserIndex(loserId!);
-          // 下家索引（顺时针）
-          let nextStarterIndex = (loserIndex + 1) % 4;
-          
-          // 检查下家是否死亡，如果死亡则继续找下一个存活的玩家
-          const currentState = gameEngineRef.current.getState();
-          const getPlayerIdFromIndex = (idx: number): string => {
-            if (idx === 0) return 'player';
-            if (idx === 1) return 'ai3';
-            if (idx === 2) return 'ai2';
-            if (idx === 3) return 'ai';
-            return 'player';
-          };
-          
-          // 顺时针查找下一个存活的玩家
-          for (let i = 0; i < 4; i++) {
-            const checkIndex = (nextStarterIndex + i) % 4;
-            const checkId = getPlayerIdFromIndex(checkIndex);
-            
-            if (checkId === 'player') {
-              if (currentState.playerStats.hp > 0) {
-                nextStarterIndex = checkIndex;
-                break;
-              }
-            } else {
-              const ai = currentState.aiPlayers.find((a: { id: string }) => a.id === checkId);
-              if (ai && ai.isActive && ai.stats.hp > 0) {
-                nextStarterIndex = checkIndex;
-                break;
-              }
-            }
-          }
-
-          console.log(`[handleGeassResult] 受罚者: ${actualLoserName}(索引${loserIndex}), 下一回合起始: 索引${nextStarterIndex}`);
-
-          const resetState = gameEngineRef.current.resetRound(nextStarterIndex);
-          setGameState(resetState);
-          setSelectedCards([]);
-
-          const isPlayerFirst = resetState.currentPlayerIndex === 0;
-          // 索引映射: 1 (AI3/卡莲) -> 2, 2 (AI2/朱雀) -> 1, 3 (AI1/C.C.) -> 0
-          const aiArrayIndexMap: Record<number, number> = { 1: 2, 2: 1, 3: 0 };
-          const firstPlayerName = isPlayerFirst
-            ? getCharacterName(selectedCharacter!)
-            : resetState.aiPlayers[aiArrayIndexMap[resetState.currentPlayerIndex]]?.name;
-
-          addLog(`【第${resetState.turnState.turnNumber}回合】骗子牌是${resetState.liarCard}`);
-          addLog(`${firstPlayerName}先手！`);
-
-          // 重置处理状态，允许玩家操作
-          setIsProcessing(false);
-          console.log('[handleGeassResult] 重置isProcessing为false');
-
-          // 如果AI先手，自动执行AI回合
-          if (!isPlayerFirst) {
-            console.log('[handleGeassResult] AI先手，自动执行AI回合');
-            setTimeout(() => {
-              if (aiTurnRef.current) {
-                console.log('[handleGeassResult] 调用aiTurnRef');
-                aiTurnRef.current();
-              } else {
-                console.error('[handleGeassResult] aiTurnRef为空');
-              }
-            }, 1500);
-          } else {
-            console.log('[handleGeassResult] 玩家先手，等待玩家操作');
-          }
-        }
-      }, 2500);
-    },
-    [addLog, selectedCharacter]
-  );
+  // 使用抽取的Geass结果处理Hook
+  const handleGeassResult = useGeassResult({
+    gameEngineRef,
+    selectedCharacter,
+    addLog,
+    setGameState,
+    setCurrentFunnyAction,
+    setSelectedCards,
+    setIsProcessing,
+    setCurrentScreen: (screen: 'result') => setCurrentScreen(screen as ScreenType),
+    aiTurnRef,
+  });
 
   // ============================================
   // AI回合处理 - 同步化重构核心

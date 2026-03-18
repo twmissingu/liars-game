@@ -13,15 +13,13 @@ export const ChibiAvatar: React.FC<ChibiAvatarProps> = ({
   characterId,
   size = 160,
   avatarNumber,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  animationState = 'idle',
   priority = false,
 }) => {
   return (
     <OptimizedAvatar
       characterId={characterId}
       size={size}
-      avatarNumber={avatarNumber}
+      avatarNumber={avatarNumber ?? 1}
       priority={priority}
     />
   );

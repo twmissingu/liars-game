@@ -179,6 +179,7 @@ export const PlayCardAnimation: React.FC<PlayCardAnimationProps> = ({
       }, 400);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [isPlaying, onComplete]);
 
   return (

@@ -62,7 +62,7 @@ export interface CharacterStoreActions {
   resetCharacterRound: () => void;
 
   // 角色特定技能
-  useAbsoluteOrder: (targetCardId: string) => { success: boolean; forcedLiarCardId?: string };
+  useAbsoluteOrder: (targetCardId: string) => { success: boolean; forcedLiarCardId: string | undefined };
   checkGeassImmunity: () => boolean;
   getGeassChance: (baseChance: number, currentHp: number) => number;
   getMaxPlayCount: () => number;
@@ -220,7 +220,7 @@ export function createCharacterStore(
     useAbsoluteOrder: (targetCardId: string) => {
       const state = get();
       const playerId = state.currentPlayerId;
-      if (!playerId) return { success: false };
+      if (!playerId) return { success: false, forcedLiarCardId: undefined };
 
       const result = activateAbsoluteOrder(state.characterGameState, playerId, targetCardId);
 

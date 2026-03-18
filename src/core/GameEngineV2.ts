@@ -16,7 +16,6 @@
 
 import { CardSystem, Card, CardRank } from './CardSystem';
 import { GeassSystem, GeassResult, PlayerStats } from './GeassSystem';
-import { FUNNY_ACTIONS } from '../types';
 import { getCharacterName } from '../data/characters';
 import type { CharacterId } from '../types';
 import type { CharacterState as CharacterStateInternal } from '../characters/types';
@@ -26,8 +25,6 @@ import {
   applySkill,
   onTurnEnd,
   resetSkill,
-  checkGeassImmunity,
-  getGeassResistance,
   getMaxPlayCount,
 } from '../characters/state';
 
@@ -95,7 +92,6 @@ export class GameEngine {
   private cardSystem: CardSystem;
   private geassSystem: GeassSystem;
   private state: GameState;
-  private playerCharacter: CharacterId | null = null;
 
   constructor() {
     this.cardSystem = new CardSystem();
@@ -166,7 +162,6 @@ export class GameEngine {
    * @returns 初始化后的游戏状态
    */
   initializeGame(playerCharacter: CharacterId, aiCharacters?: CharacterId[]): GameState {
-    this.playerCharacter = playerCharacter;
 
     // 生成并洗牌
     this.cardSystem.generateDeck();
@@ -350,8 +345,8 @@ export class GameEngine {
     };
     this.state.turnState.lastPlayerId = 'player';
 
-    // 将牌添加到桌面
-    this.state.turnState.tableCards.push(...cards);
+    // 将牌添加到桌面（使用不可变更新）
+    this.state.turnState.tableCards = [...this.state.turnState.tableCards, ...cards];
 
     this.state.lastAction = `玩家出了${cardIds.length}张牌，声称是${claimedRank}`;
 
@@ -882,8 +877,8 @@ export class GameEngine {
     };
     this.state.turnState.lastPlayerId = aiId;
 
-    // 将牌添加到桌面
-    this.state.turnState.tableCards.push(...cards);
+    // 将牌添加到桌面（使用不可变更新）
+    this.state.turnState.tableCards = [...this.state.turnState.tableCards, ...cards];
 
     this.state.lastAction = `${ai.name}出了${cardIds.length}张牌，声称是${claimedRank}`;
 

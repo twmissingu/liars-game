@@ -18,6 +18,18 @@
  */
 
 import type { CardRank, PlayerStats, GeassResult, CharacterId, FunnyAction } from '../types';
+import {
+  GEASS_BASE_HIT_CHANCE_FIRST,
+  GEASS_BASE_HIT_CHANCE_SECOND,
+  GEASS_BASE_HIT_CHANCE_THIRD,
+  GEASS_HIT_CHANCE_MIN,
+  GEASS_HIT_CHANCE_MAX,
+  CC_REVIVE_CHANCE,
+  SUZAKU_COUNTER_CHANCE,
+  SUZAKU_DODGE_CHANCE,
+  KALLEN_BOOST_PER_CARD,
+  KALLEN_BOOST_MAX,
+} from '../constants';
 
 /**
  * 预定义的搞笑动作列表
@@ -52,9 +64,9 @@ export class GeassSystem {
    * @returns 基础命中率
    */
   private getBaseHitChance(consecutiveMisses: number): number {
-    if (consecutiveMisses === 0) return 1 / 3;      // 第一次：33.3%
-    if (consecutiveMisses === 1) return 1 / 2;      // 第二次：50%
-    return 1.0;                                      // 第三次及以上：100%
+    if (consecutiveMisses === 0) return GEASS_BASE_HIT_CHANCE_FIRST;
+    if (consecutiveMisses === 1) return GEASS_BASE_HIT_CHANCE_SECOND;
+    return GEASS_BASE_HIT_CHANCE_THIRD;
   }
 
   /**
@@ -68,7 +80,7 @@ export class GeassSystem {
    * @returns Geass判定结果
    */
   performGeass(
-    target: 'player' | 'ai' | 'ai2' | 'ai3',
+    _target: 'player' | 'ai' | 'ai2' | 'ai3',
     targetStats: PlayerStats,
     character: CharacterId | null = null,
     hitChanceBoost: number = 0,
@@ -89,7 +101,7 @@ export class GeassSystem {
       // 如果会命中且会导致HP归零，触发复活
       if (willHit && targetStats.hp <= 1) {
         const reviveRoll = Math.random();
-        if (reviveRoll < 0.5) {
+        if (reviveRoll < CC_REVIVE_CHANCE) {
           return {
             activated: true,
             hit: false,
@@ -106,7 +118,7 @@ export class GeassSystem {
     // 受到Geass时有25%概率反击，让攻击者承受伤害
     if (character === 'suzaku') {
       const counterRoll = Math.random();
-      if (counterRoll < 0.25) {
+      if (counterRoll < SUZAKU_COUNTER_CHANCE) {
         return {
           activated: true,
           hit: false,
@@ -117,11 +129,11 @@ export class GeassSystem {
         };
       }
       // 朱雀有15%基础闪避率
-      hitChance -= 0.15;
+      hitChance -= SUZAKU_DODGE_CHANCE;
     }
 
-    // 确保概率在合理范围 [0.1, 0.9]
-    hitChance = Math.max(0.1, Math.min(0.9, hitChance));
+    // 确保概率在合理范围
+    hitChance = Math.max(GEASS_HIT_CHANCE_MIN, Math.min(GEASS_HIT_CHANCE_MAX, hitChance));
 
     // 计算是否命中
     const roll = Math.random();
@@ -171,7 +183,7 @@ export class GeassSystem {
    */
   calculateKallenBoost(cardCount: number): number {
     if (cardCount < 2) return 0;
-    return Math.min(0.8, 0.2 * cardCount);
+    return Math.min(KALLEN_BOOST_MAX, KALLEN_BOOST_PER_CARD * cardCount);
   }
 
   /**

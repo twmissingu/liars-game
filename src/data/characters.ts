@@ -161,7 +161,8 @@ export function getCharacterById(id: string): Character | undefined {
   return characters.find(c => c.id === id);
 }
 
-export function getCharacterName(characterId: string): string {
+export function getCharacterName(characterId: string | null | undefined): string {
+  if (!characterId) return '未知角色';
   const char = getCharacterById(characterId);
   return char?.name || characterId;
 }

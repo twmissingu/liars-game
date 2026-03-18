@@ -92,7 +92,6 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
         entries.forEach(entry => {
           if (entry.isIntersecting) {
             setIsInView(true);
-            observer.disconnect();
           }
         });
       },
@@ -102,12 +101,18 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
       }
     );
 
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
+    const currentContainer = containerRef.current;
+    if (currentContainer) {
+      observer.observe(currentContainer);
     }
 
-    return () => observer.disconnect();
-  }, [priority]);
+    return () => {
+      if (currentContainer) {
+        observer.unobserve(currentContainer);
+      }
+      observer.disconnect();
+    };
+  }, [priority, isInView]);
 
   // 预加载图片，支持WebP/PNG回退
   useEffect(() => {

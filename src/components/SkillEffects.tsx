@@ -32,6 +32,7 @@ export const SkillEffect: React.FC<SkillEffectProps> = ({ characterId, isActive,
 
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [isActive, onComplete]);
 
   if (!showEffect) return null;

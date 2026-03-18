@@ -60,11 +60,11 @@ interface GameSituation {
   /** 剩余牌堆估算 */
   remainingCards: Map<CardRank, number>;
   /** 当前出牌者声称的牌 */
-  currentClaim?: {
+  currentClaim: {
     playerId: string;
     claimedRank: CardRank;
     cardCount: number;
-  };
+  } | undefined;
 }
 
 /**
@@ -268,7 +268,6 @@ export class DynamicAIEngine {
 
     // 计算声称为真实的概率
     const claimedRank = currentClaim.claimedRank;
-    const cardCount = currentClaim.cardCount;
     const remainingOfClaimed = remainingCards.get(claimedRank) || 0;
 
     // 基于剩余牌计算真实概率
@@ -332,10 +331,12 @@ export class DynamicAIEngine {
     risk: number;
   }> {
     const hand = context.aiPlayer.hand;
-    const { liarCard, aiHP, playerHP } = situation;
+    const { liarCard } = situation;
     const options: ReturnType<typeof this.analyzePlayOptions> = [];
 
     if (hand.length === 0) return options;
+
+    const { aiHP, playerHP } = situation;
 
     // 分类手牌
     const liarCards = hand.filter(c => c.rank === liarCard || c.isJoker);
@@ -388,7 +389,7 @@ export class DynamicAIEngine {
    * 计算出牌风险
    */
   private calculatePlayRisk(
-    hasRealCard: boolean,
+    _hasRealCard: boolean,
     isBluff: boolean,
     aiHP: number,
     playerHP: number
@@ -442,11 +443,11 @@ export class DynamicAIEngine {
    * 选择最佳决策
    */
   private selectBestDecision(
-    context: StrategyContext,
+    _context: StrategyContext,
     situation: GameSituation,
     probabilities: ProbabilityAnalysis
   ): AIDecision {
-    const { currentClaim, aiHP } = situation;
+    const { currentClaim } = situation;
     const { challengeExpectedValue, playOptions } = probabilities;
 
     // 决策阈值（根据AI性格调整）
