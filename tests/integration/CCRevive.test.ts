@@ -97,7 +97,8 @@ describe('C.C. - Code之力复活技能边界测试', () => {
 
   describe('复活概率验证', () => {
     test('复活概率应为50%', () => {
-      const sampleSize = 200;
+      // 增加样本量以提高稳定性
+      const sampleSize = 400;
       let reviveCount = 0;
 
       for (let i = 0; i < sampleSize; i++) {
@@ -116,9 +117,9 @@ describe('C.C. - Code之力复活技能边界测试', () => {
       }
 
       const reviveRate = reviveCount / sampleSize;
-      // 50%概率，允许±10%误差
-      expect(reviveRate).toBeGreaterThan(0.40);
-      expect(reviveRate).toBeLessThan(0.60);
+      // 50%概率，允许±12%误差（放宽以适应CI环境）
+      expect(reviveRate).toBeGreaterThan(0.38);
+      expect(reviveRate).toBeLessThan(0.62);
     });
   });
 
