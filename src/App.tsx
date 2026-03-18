@@ -390,7 +390,7 @@ const App: React.FC = () => {
       console.log('[handleAITurn] AI已淘汰，跳过:', ai.name);
       
       // 检查是否只剩玩家存活
-      const activeAIs = state.aiPlayers.filter((a: any) => a.isActive && a.stats.hp > 0);
+      const activeAIs = state.aiPlayers.filter((a) => a.isActive && a.stats.hp > 0);
       if (activeAIs.length === 0 && state.playerStats.hp > 0) {
         // 只剩玩家存活，玩家获胜
         console.log('[handleAITurn] 只剩玩家存活，玩家获胜');

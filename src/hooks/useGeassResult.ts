@@ -3,7 +3,7 @@
  * 将App.tsx中的handleGeassResult逻辑抽取为独立的可复用hook
  */
 
-import { useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { playSound, playBGM, SFXType } from '../audio';
 import { FUNNY_ACTIONS, type GameState, type CharacterId } from '../types';
 import { getCharacterName } from '../data/characters';
