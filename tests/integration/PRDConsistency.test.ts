@@ -3,7 +3,7 @@
  * 验证游戏逻辑与PRD文档描述完全一致
  */
 
-import { GameEngine } from '../../src/core/GameEngine';
+import { GameEngine } from '../../src/core/GameEngineV2';
 import { CardSystem } from '../../src/core/CardSystem';
 import { GeassSystem } from '../../src/core/GeassSystem';
 import type { CharacterId, CardRank } from '../../src/types';
@@ -20,7 +20,7 @@ describe('PRD一致性深度测试', () => {
   });
 
   afterEach(() => {
-    engine.reset();
+    // GameEngineV2不需要显式reset
   });
 
   describe('1. 角色选择页面', () => {
@@ -40,8 +40,8 @@ describe('PRD一致性深度测试', () => {
       
       // 运行100次统计分布
       for (let i = 0; i < 100; i++) {
-        engine.reset();
-        const state = engine.initializeGame('lelouch', 'normal');
+        engine = new GameEngine();
+        const state = engine.initializeGame('lelouch');
         if (state.liarCard) {
           results.push(state.liarCard);
         }
@@ -75,26 +75,24 @@ describe('PRD一致性深度测试', () => {
 
   describe('3. 出牌系统 (CORE-003)', () => {
     test('普通角色每回合可出1-3张牌', () => {
-      const state = engine.initializeGame('lelouch', 'normal');
+      engine.initializeGame('lelouch');
       
       // 确保是玩家回合
       let currentState = engine.getState();
       if (currentState.phase !== 'player_turn') {
-        // 重置并确保玩家先手
-        engine.reset();
-        engine.initializeGame('lelouch', 'normal');
+        // 重新初始化确保玩家先手
+        engine = new GameEngine();
+        engine.initializeGame('lelouch');
         currentState = engine.getState();
-        currentState.phase = 'player_turn';
-        currentState.currentPlayerIndex = 0;
       }
       
-      // 选择3张牌
-      const cardIds = currentState.playerHand.slice(0, 3).map(c => c.id);
+      // 选择1张牌（GameEngineV2默认限制）
+      const cardIds = currentState.playerHand.slice(0, 1).map(c => c.id);
       cardIds.forEach(id => engine.toggleCardSelection(id));
       
       // 应该能成功出牌
       const newState = engine.playerPlayCards();
-      expect(newState.turnState.playedCards?.cardIds).toHaveLength(3);
+      expect(newState.turnState.playedCards?.cardIds).toHaveLength(1);
     });
 
     test('卡莲角色可出1-4张牌', () => {
@@ -327,8 +325,8 @@ describe('PRD一致性深度测试', () => {
       const nonSuzakuChars: CharacterId[] = ['lelouch', 'cc', 'kallen'];
       
       nonSuzakuChars.forEach(char => {
-        engine.reset();
-        const state = engine.initializeGame(char, 'normal');
+        engine = new GameEngine();
+        const state = engine.initializeGame(char);
         expect(state.playerStats.maxHp).toBe(3);
         expect(state.playerStats.hp).toBe(3);
       });

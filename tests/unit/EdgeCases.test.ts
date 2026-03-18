@@ -3,7 +3,7 @@
  * 测试各种极端和异常情况
  */
 
-import { GameEngine } from '../../src/core/GameEngine';
+import { GameEngine } from '../../src/core/GameEngineV2';
 import { CardSystem } from '../../src/core/CardSystem';
 import { GeassSystem } from '../../src/core/GeassSystem';
 
@@ -19,7 +19,7 @@ describe('边界情况测试', () => {
   });
 
   afterEach(() => {
-    gameEngine.reset();
+    // GameEngineV2不需要显式reset
   });
 
   describe('HP归零边界', () => {
