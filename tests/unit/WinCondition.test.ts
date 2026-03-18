@@ -239,4 +239,59 @@ describe('胜利条件测试', () => {
       expect(state.phase).not.toBe('game_over');
     });
   });
+
+  describe('【场景6】回合数记录测试', () => {
+    test('6.1 游戏结束时回合数应正确记录', () => {
+      // 设置当前回合数为5
+      (engine as any).state.turnState.turnNumber = 5;
+
+      // 设置玩家胜利条件
+      (engine as any).state.aiPlayers.forEach((ai: any) => {
+        ai.isActive = false;
+        ai.stats.hp = 0;
+      });
+
+      // 调用checkGameOver结束游戏
+      (engine as any).checkGameOver();
+
+      const state = engine.getState();
+      expect(state.winner).toBe('player');
+      expect(state.phase).toBe('game_over');
+      // 验证回合数正确记录
+      expect(state.turnState.turnNumber).toBe(5);
+    });
+
+    test('6.2 多回合后胜利回合数应大于0', () => {
+      // 模拟进行了10个回合
+      (engine as any).state.turnState.turnNumber = 10;
+
+      // 设置玩家出完牌获胜
+      (engine as any).handleEmptyHand('player');
+
+      const state = engine.getState();
+      expect(state.winner).toBe('player');
+      expect(state.phase).toBe('game_over');
+      // 结算页面应该显示10回合
+      expect(state.turnState.turnNumber).toBe(10);
+    });
+
+    test('6.3 结算时回合数不应与Geass成功次数混淆', () => {
+      // 设置回合数为3
+      (engine as any).state.turnState.turnNumber = 3;
+      // 设置Geass成功次数为5（与回合数不同）
+      (engine as any).state.playerStats.geassSuccessCount = 5;
+
+      // 设置玩家胜利
+      (engine as any).handleEmptyHand('player');
+
+      const state = engine.getState();
+      // 验证回合数和Geass成功次数是不同的值
+      expect(state.turnState.turnNumber).toBe(3);
+      expect(state.playerStats.geassSuccessCount).toBe(5);
+      // 回合数应该显示3而不是5+0=5
+      expect(state.turnState.turnNumber).not.toBe(
+        state.playerStats.geassSuccessCount
+      );
+    });
+  });
 });

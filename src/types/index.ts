@@ -309,6 +309,7 @@ export interface ResultScreenProps {
   isWin: boolean;
   playerScore: number;
   opponentScore: number;
+  turnNumber: number;
   onRestart: () => void;
   onMainMenu: () => void;
 }

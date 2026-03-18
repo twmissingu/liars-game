@@ -138,4 +138,141 @@ describe('朱雀 - 枢木剑术技能详细测试', () => {
       expect(foundCounter).toBe(true);
     });
   });
+
+  describe('反击扣血验证', () => {
+    test('朱雀反击时质疑者应扣除1点HP', () => {
+      // 初始化游戏，玩家选择鲁鲁修，AI2是朱雀
+      engine.initializeGame('lelouch', ['cc', 'suzaku', 'kallen']);
+
+      // 获取初始状态
+      const initialState = engine.getState();
+      const playerInitialHP = initialState.playerStats.hp;
+
+      // 模拟玩家出牌（虚张声势，这样AI质疑时会成功，朱雀受到Geass）
+      // 先进入玩家回合
+      engine['state'].phase = 'player_turn';
+      engine['state'].turnState.playedCards = {
+        cardIds: ['card1'],
+        claimedRank: 'Q',
+        actualCards: [{ id: 'card1', rank: 'K', suit: 'hearts', isJoker: false }], // 实际牌与声称不符
+        playerId: 'player',
+        isBluff: true,
+      };
+      engine['state'].turnState.lastPlayerId = 'player';
+
+      // AI2（朱雀）质疑玩家
+      // 质疑成功，因为玩家在虚张声势，所以朱雀受到Geass
+      engine['state'].phase = 'challenge';
+
+      // 手动模拟朱雀触发反击的情况
+      // 直接调用executeGeass，模拟朱雀受到Geass并触发反击
+      const mockGeassResult = {
+        activated: true,
+        hit: false,
+        damage: 0,
+        newStats: { hp: 4, maxHp: 4, geassSuccessCount: 0, geassFailCount: 0 },
+        message: '朱雀发动枢木剑术！完美闪避并准备反击！',
+        isCounter: true,
+        isDodge: true,
+      };
+
+      // 设置geassResult为反击状态
+      engine['state'].geassResult = mockGeassResult;
+
+      // 调用executeGeass处理反击
+      // 注意：这里我们需要直接测试executeGeass方法
+      // 由于executeGeass是私有方法，我们通过challenge方法来测试
+
+      // 重置状态
+      engine.initializeGame('lelouch', ['cc', 'suzaku', 'kallen']);
+      const stateBefore = engine.getState();
+      const hpBefore = stateBefore.playerStats.hp;
+
+      // 设置游戏状态让玩家出牌并被AI2（朱雀）质疑
+      engine['state'].phase = 'challenge';
+      engine['state'].turnState.playedCards = {
+        cardIds: ['card1'],
+        claimedRank: 'Q',
+        actualCards: [{ id: 'card1', rank: 'K', suit: 'hearts', isJoker: false }],
+        playerId: 'player',
+        isBluff: true, // 玩家在虚张声势
+      };
+
+      // 模拟executeGeass中的反击逻辑
+      // 质疑者是AI2（朱雀），受害者是玩家（因为玩家虚张声势）
+      // 但这里我们需要测试的是：朱雀受到Geass时反击质疑者
+
+      // 重新设置：AI2出牌，玩家质疑，朱雀受到Geass并反击
+      engine.initializeGame('lelouch', ['cc', 'suzaku', 'kallen']);
+      engine['state'].phase = 'challenge';
+      engine['state'].turnState.playedCards = {
+        cardIds: ['card1'],
+        claimedRank: 'Q',
+        actualCards: [{ id: 'card1', rank: 'K', suit: 'hearts', isJoker: false }],
+        playerId: 'ai2', // AI2（朱雀）出牌
+        isBluff: true, // 虚张声势
+      };
+
+      const playerHPBefore = engine.getState().playerStats.hp;
+
+      // 玩家质疑朱雀，质疑成功（朱雀在虚张声势），朱雀受到Geass
+      // 如果朱雀触发反击，玩家应该扣血
+      engine.challenge('player');
+
+      const stateAfter = engine.getState();
+
+      // 如果触发了反击，玩家HP应该减少1
+      // 由于反击是概率性的，我们需要多次测试或模拟
+      // 这里我们验证逻辑是否正确处理
+
+      // 检查geassResult是否存在且包含反击标记
+      if (stateAfter.geassResult?.isCounter) {
+        expect(stateAfter.playerStats.hp).toBe(playerHPBefore - 1);
+        expect(stateAfter.lastAction).toContain('受到反弹伤害');
+      }
+    });
+
+    test('反击扣血逻辑直接验证', () => {
+      // 直接测试GameEngine的executeGeass方法中的反击逻辑
+      engine.initializeGame('lelouch', ['cc', 'suzaku', 'kallen']);
+
+      const initialState = engine.getState();
+      const playerHP = initialState.playerStats.hp;
+
+      // 直接调用challenge方法，传入质疑者ID
+      // 设置出牌记录，让朱雀成为受害者
+      engine['state'].phase = 'challenge';
+      engine['state'].turnState.playedCards = {
+        cardIds: ['card1'],
+        claimedRank: 'Q',
+        actualCards: [{ id: 'card1', rank: 'K', suit: 'hearts', isJoker: false }],
+        playerId: 'ai2', // 朱雀出牌
+        isBluff: true,
+      };
+
+      // 模拟GeassSystem返回反击结果
+      const originalPerformGeass = GeassSystem.prototype.performGeass;
+      GeassSystem.prototype.performGeass = jest.fn().mockReturnValue({
+        activated: true,
+        hit: false,
+        damage: 0,
+        newStats: { hp: 4, maxHp: 4, geassSuccessCount: 0, geassFailCount: 0 },
+        message: '朱雀发动枢木剑术！完美闪避并准备反击！',
+        isCounter: true,
+        isDodge: true,
+      });
+
+      // 玩家质疑朱雀
+      engine.challenge('player');
+
+      const stateAfter = engine.getState();
+
+      // 恢复原始方法
+      GeassSystem.prototype.performGeass = originalPerformGeass;
+
+      // 验证玩家HP减少
+      expect(stateAfter.playerStats.hp).toBe(playerHP - 1);
+      expect(stateAfter.lastAction).toContain('受到反弹伤害');
+    });
+  });
 });

@@ -11,6 +11,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   isWin,
   playerScore,
   opponentScore,
+  turnNumber,
   onRestart,
   onMainMenu,
 }) => {
@@ -136,7 +137,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
         <div className="cg-result-score">
           <div className="cg-score-simple">
             <span className="cg-score-label">回合数</span>
-            <span className="cg-score-value">{playerScore + opponentScore}</span>
+            <span className="cg-score-value">{turnNumber}</span>
           </div>
         </div>
 

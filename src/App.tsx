@@ -873,12 +873,14 @@ const App: React.FC = () => {
               sum + (ai.stats?.geassSuccessCount || 0),
             0
           ) || 0;
+        const turnNumber = gameState?.turnState?.turnNumber || 0;
 
         return (
           <ResultScreen
             isWin={isWin}
             playerScore={playerScore}
             opponentScore={aiScore}
+            turnNumber={turnNumber}
             onRestart={handleRestart}
             onMainMenu={handleMainMenu}
           />
