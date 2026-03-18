@@ -28,12 +28,15 @@ describe('AI决策集成测试', () => {
     test('AI出牌后手牌减少', () => {
       gameEngine.initializeGame('lelouch');
       
-      const state = gameEngine.getState();
+      let state = gameEngine.getState();
       const initialHandSize = state.aiPlayers[0].hand.length;
       
-      gameEngine.aiPlayCards('ai');
+      // AI出牌并获取新状态
+      state = gameEngine.aiPlayCards('ai');
       
-      expect(state.aiPlayers[0].hand.length).toBeLessThan(initialHandSize);
+      // 从aiPlayers中查找对应的AI
+      const aiPlayer = state.aiPlayers.find(ai => ai.id === 'ai');
+      expect(aiPlayer?.hand.length).toBeLessThan(initialHandSize);
     });
   });
 

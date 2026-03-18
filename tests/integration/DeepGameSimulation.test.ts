@@ -14,7 +14,7 @@
  *    - 游戏界面和日志记录一致
  */
 
-import { GameEngine } from '../../src/core/GameEngine';
+import { GameEngine } from '../../src/core/GameEngineV2';
 import type { CharacterId, GameState } from '../../src/types';
 
 describe('深度测试 - 10轮游戏模拟', () => {
@@ -36,7 +36,7 @@ describe('深度测试 - 10轮游戏模拟', () => {
   });
 
   afterEach(() => {
-    engine.reset();
+    // GameEngineV2不需要reset
   });
 
   // 验证HP
@@ -132,8 +132,8 @@ describe('深度测试 - 10轮游戏模拟', () => {
       const nonSuzakuChars: CharacterId[] = ['lelouch', 'cc', 'kallen'];
       
       nonSuzakuChars.forEach(char => {
-        engine.reset();
-        const state = engine.initializeGame(char, 'normal');
+        engine = new GameEngine();
+        const state = engine.initializeGame(char);
         expect(state.playerStats.maxHp).toBe(3);
         expect(state.playerStats.hp).toBe(3);
       });
@@ -525,9 +525,8 @@ describe('深度测试 - 10轮游戏模拟', () => {
       const chars: CharacterId[] = ['lelouch', 'cc', 'kallen'];
       
       chars.forEach(char => {
-        engine.reset();
-        engine.initializeGame(char, 'normal');
-        const state = engine.getState();
+        engine = new GameEngine();
+        const state = engine.initializeGame(char);
         
         expect(state.playerStats.maxHp).toBe(3);
         expect(state.playerStats.hp).toBe(3);

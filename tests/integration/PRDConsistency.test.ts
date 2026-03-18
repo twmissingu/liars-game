@@ -128,12 +128,14 @@ describe('PRD一致性深度测试', () => {
 
   describe('4. 质疑系统 (CORE-004)', () => {
     test('质疑应该从出牌者下家开始', () => {
-      engine.initializeGame('lelouch', 'normal');
-      let state = engine.getState();
+      // 重新初始化直到玩家先手
+      let state = engine.initializeGame('lelouch');
+      while (state.currentPlayerIndex !== 0) {
+        engine = new GameEngine();
+        state = engine.initializeGame('lelouch');
+      }
       
-      // 设置玩家出牌
-      state.phase = 'player_turn';
-      state.currentPlayerIndex = 0;
+      // 玩家出牌
       const cardId = state.playerHand[0].id;
       engine.toggleCardSelection(cardId);
       state = engine.playerPlayCards();
@@ -177,12 +179,14 @@ describe('PRD一致性深度测试', () => {
     });
 
     test('质疑失败时质疑者应受罚', () => {
-      engine.initializeGame('lelouch', 'normal');
-      let state = engine.getState();
+      // 重新初始化直到玩家先手
+      let state = engine.initializeGame('lelouch');
+      while (state.currentPlayerIndex !== 0) {
+        engine = new GameEngine();
+        state = engine.initializeGame('lelouch');
+      }
       
       // 玩家出骗子牌（诚实）
-      state.phase = 'player_turn';
-      state.currentPlayerIndex = 0;
       const liarCard = state.liarCard;
       const liarCards = state.playerHand.filter(c => c.rank === liarCard || c.isJoker);
       

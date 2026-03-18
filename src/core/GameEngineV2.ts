@@ -197,6 +197,11 @@ export class GameEngine {
       return names[charId] || charId;
     };
 
+    // 获取角色HP（朱雀4点，其他3点）
+    const getCharacterHP = (charId: CharacterId): number => {
+      return charId === 'suzaku' ? 4 : 3;
+    };
+
     this.state = {
       ...this.createInitialState(),
       phase: startingPlayerIndex === 0 ? 'player_turn' : 'ai_turn',
@@ -210,7 +215,7 @@ export class GameEngine {
           name: getAIName(aiChars[0]),
           character: aiChars[0],
           hand: ai1Cards,
-          stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 },
+          stats: { hp: getCharacterHP(aiChars[0]), maxHp: getCharacterHP(aiChars[0]), geassSuccessCount: 0, geassFailCount: 0 },
           isActive: true,
         },
         {
@@ -218,7 +223,7 @@ export class GameEngine {
           name: getAIName(aiChars[1]),
           character: aiChars[1],
           hand: ai2Cards,
-          stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 },
+          stats: { hp: getCharacterHP(aiChars[1]), maxHp: getCharacterHP(aiChars[1]), geassSuccessCount: 0, geassFailCount: 0 },
           isActive: true,
         },
         {
@@ -226,10 +231,11 @@ export class GameEngine {
           name: getAIName(aiChars[2]),
           character: aiChars[2],
           hand: ai3Cards,
-          stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 },
+          stats: { hp: getCharacterHP(aiChars[2]), maxHp: getCharacterHP(aiChars[2]), geassSuccessCount: 0, geassFailCount: 0 },
           isActive: true,
         },
       ],
+      playerStats: { hp: getCharacterHP(playerCharacter), maxHp: getCharacterHP(playerCharacter), geassSuccessCount: 0, geassFailCount: 0 },
       turnState: {
         turnNumber: 1,
         playedCards: null,
