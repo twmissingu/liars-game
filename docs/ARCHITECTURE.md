@@ -1,759 +1,357 @@
-# Code Geass: Liar's Game - 架构设计文档
+# Code Geass: Liar's Game - 架构说明文档
 
-> 本文档描述《Code Geass: Liar's Game》的技术架构设计，旨在帮助开发人员理解系统结构、模块职责和数据流。
-
-**版本**: v2.1.0  
-**日期**: 2026-03-14  
-**作者**: PM Agent  
-**状态**: 完善中
+**版本**: 1.0.0  
+**更新日期**: 2026-03-18  
 
 ---
 
-## 📋 目录
+## 一、系统架构概览
 
-- [架构概述](#-架构概述)
-- [系统架构图](#-系统架构图)
-- [核心模块说明](#-核心模块说明)
-- [数据流](#-数据流)
-- [状态管理](#-状态管理)
-- [扩展性设计](#-扩展性设计)
-- [性能优化](#-性能优化)
-
----
-
-## 🏗️ 架构概述
-
-### 设计目标
-
-| 目标 | 说明 |
-|------|------|
-| **可维护性** | 清晰的模块划分，便于后续开发和维护 |
-| **可扩展性** | 支持未来功能扩展（新角色、新模式） |
-| **高性能** | 流畅的游戏体验，60fps动画 |
-| **可靠性** | 稳定的游戏逻辑，完善的错误处理 |
-
-### 技术选型
-
-| 层级 | 技术 | 版本 | 选型理由 |
-|------|------|------|----------|
-| 框架 | React | 18.2.0 | 组件化开发，生态丰富 |
-| 语言 | TypeScript | 5.2.2 | 类型安全，IDE支持好 |
-| 构建 | Vite | 5.0.8 | 快速冷启动，HMR支持 |
-| 状态 | React Hooks | - | 轻量级，无需引入Redux |
-| 音效 | Howler.js | 2.2.4 | 跨浏览器兼容性好 |
-| 样式 | CSS Modules | - | 样式隔离，避免冲突 |
-| 部署 | GitHub Pages | - | 免费，自动化部署 |
-
-### 架构风格
-
-采用**分层架构** + **组件化设计**：
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        表现层 (Presentation)                  │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐│
-│  │   MainMenu   │  │CharacterSelect│  │      GameTable      ││
-│  │   (主菜单)    │  │  (角色选择)   │  │      (游戏桌)       ││
-│  └──────────────┘  └──────────────┘  └──────────────────────┘│
-├─────────────────────────────────────────────────────────────┤
-│                        业务逻辑层 (Business Logic)            │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐│
-│  │  GameEngine  │  │  CardSystem  │  │    GeassSystem      ││
-│  │   (游戏引擎)  │  │   (卡牌系统)  │  │    (Geass系统)      ││
-│  └──────────────┘  └──────────────┘  └──────────────────────┘│
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐│
-│  │   AIEngine   │  │SoundManager  │  │  EffectManager      ││
-│  │   (AI引擎)   │  │  (音效管理)   │  │    (特效管理)       ││
-│  └──────────────┘  └──────────────┘  └──────────────────────┘│
-├─────────────────────────────────────────────────────────────┤
-│                        数据层 (Data Layer)                    │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐│
-│  │    Types     │  │  Characters  │  │    Game State       ││
-│  │   (类型定义)  │  │   (角色数据)  │  │    (游戏状态)       ││
-│  └──────────────┘  └──────────────┘  └──────────────────────┘│
-└─────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 🗺️ 系统架构图
-
-### 整体架构
+### 1.1 架构图
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                           用户界面层                              │
-├─────────────────────────────────────────────────────────────────┤
+│                        用户界面层 (UI Layer)                      │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
-│  │  MainMenu   │  │ Character   │  │  GameTable  │             │
-│  │  (主菜单)   │  │  Select     │  │  (游戏桌)   │             │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘             │
-│         │                │                │                    │
-│         └────────────────┼────────────────┘                    │
-│                          │                                      │
-│                          ▼                                      │
-│                   ┌─────────────┐                               │
-│                   │   App.tsx   │                               │
-│                   │  (状态管理)  │                               │
-│                   └──────┬──────┘                               │
-└──────────────────────────┼──────────────────────────────────────┘
-                           │
-┌──────────────────────────┼──────────────────────────────────────┐
-│                          ▼                                      │
+│  │  MainMenu   │  │  GameTable  │  │ ResultScreen│             │
+│  └─────────────┘  └─────────────┘  └─────────────┘             │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                       应用逻辑层 (App Layer)                      │
 │  ┌─────────────────────────────────────────────────────────┐   │
-│  │                      游戏核心层                          │   │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐     │   │
-│  │  │ GameEngine  │  │ CardSystem  │  │ GeassSystem │     │   │
-│  │  │  (游戏引擎)  │  │  (卡牌系统)  │  │ (Geass系统) │     │   │
-│  │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘     │   │
-│  │         │                │                │            │   │
-│  │         └────────────────┼────────────────┘            │   │
-│  │                          │                            │   │
-│  │         ┌────────────────┼────────────────┐            │   │
-│  │         ▼                ▼                ▼            │   │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐     │   │
-│  │  │  AIEngine   │  │SoundManager │  │EffectManager│     │   │
-│  │  │  (AI引擎)   │  │ (音效管理)  │  │ (特效管理)  │     │   │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘     │   │
+│  │                      App.tsx                            │   │
+│  │  - 游戏状态管理    - 事件处理    - 路由控制              │   │
 │  └─────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
-                           │
-┌──────────────────────────┼──────────────────────────────────────┐
-│                          ▼                                      │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │                      数据层                              │   │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐     │   │
-│  │  │    Types    │  │ Characters  │  │    Utils    │     │   │
-│  │  │  (类型定义)  │  │  (角色数据)  │  │  (工具函数)  │     │   │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘     │   │
-│  └─────────────────────────────────────────────────────────┘   │
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                       核心逻辑层 (Core Layer)                     │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
+│  │GameEngineV2 │  │ CardSystem  │  │ GeassSystem │             │
+│  └─────────────┘  └─────────────┘  └─────────────┘             │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
+│  │DynamicAIEng │  │CharacterInt │  │  Character  │             │
+│  └─────────────┘  └─────────────┘  └─────────────┘             │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      基础服务层 (Service Layer)                   │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
+│  │SoundManager │  │  Utilities  │  │    Types    │             │
+│  └─────────────┘  └─────────────┘  └─────────────┘             │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 模块依赖关系
+### 1.2 技术栈
+
+| 层级 | 技术 | 用途 |
+|------|------|------|
+| 前端框架 | React 18 | UI 渲染 |
+| 构建工具 | Vite 5 | 项目构建和开发服务器 |
+| 类型系统 | TypeScript 5 | 类型安全 |
+| 样式方案 | CSS-in-JS | 组件样式 |
+| 测试框架 | Jest + React Testing Library | 单元测试 |
+| 音频管理 | Web Audio API | 音效播放 |
+
+---
+
+## 二、模块详细说明
+
+### 2.1 核心游戏引擎 (GameEngineV2)
+
+**文件**: `src/core/GameEngineV2.ts`
+
+**职责**: 
+- 游戏状态管理
+- 回合流程控制
+- 玩家行动处理
+- 游戏结束判定
+
+**主要方法**:
+
+| 方法 | 描述 | 参数 | 返回值 |
+|------|------|------|--------|
+| `initializeGame()` | 初始化游戏 | `playerCharacter: CharacterId` | `GameState` |
+| `playCards()` | 玩家出牌 | `cardIds: string[], claimedRank: string` | `boolean` |
+| `challenge()` | 质疑出牌 | `challengerId: string` | `ChallengeResult` |
+| `aiPlay()` | AI出牌 | `aiId: string` | `GameState` |
+| `resetRound()` | 重置回合 | `startingPlayerIndex?: number` | `GameState` |
+
+**状态流转图**:
 
 ```
-                    ┌─────────────┐
-                    │    App      │
-                    └──────┬──────┘
-                           │
-           ┌───────────────┼───────────────┐
-           │               │               │
-           ▼               ▼               ▼
-    ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
-    │  MainMenu   │ │CharacterSel │ │  GameTable  │
-    └─────────────┘ └─────────────┘ └──────┬──────┘
-                                           │
-                                           ▼
-                                    ┌─────────────┐
-                                    │  GameBoard  │
-                                    └──────┬──────┘
-                                           │
-                    ┌──────────────────────┼──────────────────────┐
-                    │                      │                      │
-                    ▼                      ▼                      ▼
-            ┌─────────────┐        ┌─────────────┐        ┌─────────────┐
-            │ GameEngine  │◀──────▶│ CardSystem  │        │SoundManager │
-            └──────┬──────┘        └─────────────┘        └─────────────┘
-                   │
-        ┌──────────┼──────────┐
-        │          │          │
-        ▼          ▼          ▼
-┌─────────────┐ ┌─────────────┐ ┌─────────────┐
-│GeassSystem  │ │  AIEngine   │ │EffectManager│
-└─────────────┘ └──────┬──────┘ └─────────────┘
-                       │
-              ┌────────┴────────┐
-              │                 │
-              ▼                 ▼
-    ┌─────────────────┐ ┌─────────────────┐
-    │ StrategyInterface│ │   CharacterData  │
-    └─────────────────┘ └─────────────────┘
+setup → player_turn → ai_turn → challenge → geass → (resetRound) → player_turn
+         ↑___________________________________________________________|
 ```
 
 ---
 
-## 🔧 核心模块说明
+### 2.2 卡牌系统 (CardSystem)
 
-### 1. 游戏引擎 (GameEngine)
+**文件**: `src/core/CardSystem.ts`
 
-#### 职责
-- 管理游戏生命周期（初始化、进行、结束）
-- 处理玩家和AI的操作
-- 维护游戏状态
-- 协调其他系统
+**职责**:
+- 牌组生成和管理
+- 洗牌算法
+- 发牌逻辑
+- 骗子牌设定
 
-#### 类图
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        GameEngine                           │
-├─────────────────────────────────────────────────────────────┤
-│ - cardSystem: CardSystem                                    │
-│ - geassSystem: GeassSystem                                  │
-│ - state: GameState                                          │
-│ - playerCharacter: CharacterId | null                       │
-├─────────────────────────────────────────────────────────────┤
-│ + initializeGame(playerCharacter: CharacterId): GameState   │
-│ + resetRound(): GameState                                   │
-│ + toggleCardSelection(cardId: string): GameState            │
-│ + playerPlayCards(): GameState                              │
-│ + playerChallengeDecision(challenge: boolean): GameState    │
-│ + aiPlayCards(aiId: AIPlayerId): GameState                  │
-│ + aiChallengeDecision(aiId: AIPlayerId): GameState          │
-│ + lelouchChangeLiarCard(newRank: CardRank): GameState       │
-│ + passTurn(): GameState                                     │
-│ + getState(): GameState                                     │
-│ + reset(): void                                             │
-├─────────────────────────────────────────────────────────────┤
-│ - getNextPlayerIndex(): number                              │
-│ - resolveChallenge(challenger: PlayerId): GameState         │
-│ - executeGeass(loser: PlayerId, boost: number): GeassResult │
-└─────────────────────────────────────────────────────────────┘
-```
-
-#### 状态机
-
-```
-                    ┌─────────────┐
-         ┌─────────▶│    setup    │◀────────┐
-         │          │   (初始化)   │         │
-         │          └─────────────┘         │
-         │                  │               │
-         │                  ▼               │
-         │          ┌─────────────┐         │
-         │    ┌────│ player_turn │────┐    │
-         │    │    │  (玩家回合)  │    │    │
-         │    │    └─────────────┘    │    │
-         │    │            │          │    │
-         │    │            ▼          │    │
-         │    │    ┌─────────────┐    │    │
-         │    └───▶│  ai_turn    │◀───┘    │
-         │         │  (AI回合)   │         │
-         │         └─────────────┘         │
-         │                  │              │
-         │                  ▼              │
-         │         ┌─────────────┐         │
-         │         │  challenge  │         │
-         │         │  (质疑阶段)  │         │
-         │         └─────────────┘         │
-         │                  │              │
-         │                  ▼              │
-         │         ┌─────────────┐         │
-         │         │   resolve   │         │
-         │         │  (结算阶段)  │         │
-         │         └─────────────┘         │
-         │                  │              │
-         │                  ▼              │
-         │         ┌─────────────┐         │
-         └────────▶│    geass    │─────────┘
-                   │ (Geass判定) │
-                   └─────────────┘
-                            │
-                            ▼
-                   ┌─────────────┐
-                   │  game_over  │
-                   │  (游戏结束)  │
-                   └─────────────┘
-```
-
-### 2. 卡牌系统 (CardSystem)
-
-#### 职责
-- 管理牌组（生成、洗牌、发牌）
-- 处理骗子牌逻辑
-- 管理卡牌状态
-
-#### 类图
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        CardSystem                           │
-├─────────────────────────────────────────────────────────────┤
-│ - deck: Card[]                                              │
-│ - discardPile: Card[]                                       │
-│ - liarCard: CardRank | null                                 │
-│ - playedCards: Card[]                                       │
-├─────────────────────────────────────────────────────────────┤
-│ + generateDeck(): void                                      │
-│ + shuffle(): void                                           │
-│ + dealCards(): DealResult                                   │
-│ + setLiarCard(): CardRank                                   │
-│ + forceSetLiarCard(rank: CardRank): void                    │
-│ + playCards(cardIds: string[]): Card[]                      │
-│ + drawCard(): Card | null                                   │
-│ + reset(): void                                             │
-├─────────────────────────────────────────────────────────────┤
-│ - createCard(suit: CardSuit, rank: CardRank): Card          │
-│ - generateId(): string                                      │
-└─────────────────────────────────────────────────────────────┘
-```
-
-#### 卡牌数据结构
+**数据结构**:
 
 ```typescript
-// 卡牌定义
 interface Card {
-  id: string;              // 唯一标识符
-  suit: CardSuit;          // 花色
-  rank: CardRank;          // 点数
-  value: number;           // 数值权重
-  isRevealed: boolean;     // 是否已揭示
-  isJoker: boolean;        // 是否小丑牌
+  id: string;
+  rank: 'A' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | 'J' | 'Q' | 'K' | 'JOKER';
+  suit: 'spades' | 'hearts' | 'clubs' | 'diamonds' | 'joker';
+  isJoker: boolean;
 }
-
-type CardSuit = 'spades' | 'hearts' | 'clubs' | 'diamonds';
-type CardRank = 'Q' | 'K' | 'A';
-
-// 发牌结果
-interface DealResult {
-  playerCards: Card[];
-  ai1Cards: Card[];
-  ai2Cards: Card[];
-  ai3Cards: Card[];
-}
-```
-
-### 3. Geass系统 (GeassSystem)
-
-#### 职责
-- 执行Geass判定
-- 应用角色技能效果
-- 计算伤害和特效
-
-#### 类图
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        GeassSystem                          │
-├─────────────────────────────────────────────────────────────┤
-│ - funnyActions: FunnyAction[]                               │
-├─────────────────────────────────────────────────────────────┤
-│ + performGeass(                                              │
-│     target: PlayerId,                                        │
-│     stats: PlayerStats,                                      │
-│     character: CharacterId,                                  │
-│     hitChanceBoost: number                                   │
-│   ): GeassResult                                             │
-│ + calculateHitChance(base: number, boost: number): number   │
-│ + getRandomFunnyAction(): FunnyAction                       │
-├─────────────────────────────────────────────────────────────┤
-│ - checkCCImmunity(): boolean                                │
-│ - checkSuzakuEvade(): boolean                               │
-│ - checkSuzakuCounter(): boolean                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-#### Geass判定流程
-
-```
-开始Geass判定
-    │
-    ▼
-计算基础命中率 (33.33%)
-    │
-    ▼
-应用命中率加成 (卡莲技能)
-    │
-    ▼
-检查C.C.免疫 (50%概率)
-    │
-    ├── 免疫成功 ──▶ 结果: 免疫
-    │
-    ▼
-检查朱雀闪避 (15%概率)
-    │
-    ├── 闪避成功 ──▶ 检查反击 (25%概率)
-    │                    │
-    │                    ├── 反击成功 ──▶ 结果: 闪避+反击
-    │                    │
-    │                    └── 反击失败 ──▶ 结果: 闪避
-    │
-    ▼
-执行随机判定
-    │
-    ├── 命中 ──▶ HP-1, 选择搞笑动作 ──▶ 结果: 命中
-    │
-    └── 未命中 ──▶ 结果: 未命中
-```
-
-### 4. AI系统
-
-#### 架构
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                         AIEngine                            │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │ EasyStrategy│  │NormalStrategy│  │ HardStrategy│         │
-│  │  (简单策略)  │  │  (普通策略)  │  │  (困难策略)  │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
-│         │                │                │                │
-│         └────────────────┼────────────────┘                │
-│                          │                                 │
-│                          ▼                                 │
-│              ┌─────────────────────┐                       │
-│              │  StrategyInterface  │                       │
-│              │    (策略接口)        │                       │
-│              └─────────────────────┘                       │
-│                          │                                 │
-│                          ▼                                 │
-│                   ┌─────────────┐                          │
-│                   │  AIEngine   │                          │
-│                   │  (AI引擎)   │                          │
-│                   └─────────────┘                          │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-#### 策略接口
-
-```typescript
-interface StrategyInterface {
-  // 决定出牌
-  decidePlay(
-    aiPlayer: AIPlayer,
-    gameState: GameState
-  ): PlayDecision;
-  
-  // 决定是否质疑
-  decideChallenge(
-    aiPlayer: AIPlayer,
-    lastPlay: PlayAction,
-    gameState: GameState
-  ): boolean;
-  
-  // 获取难度等级
-  getDifficulty(): Difficulty;
-}
-```
-
-### 5. 音效系统 (SoundManager)
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                       SoundManager                          │
-├─────────────────────────────────────────────────────────────┤
-│ - sounds: Map<string, Howl>                                 │
-│ - bgm: Howl | null                                          │
-│ - volume: number                                            │
-│ - muted: boolean                                            │
-├─────────────────────────────────────────────────────────────┤
-│ + initialize(): Promise<void>                               │
-│ + load(soundId: string, url: string): Promise<void>         │
-│ + play(soundId: string): void                               │
-│ + stop(soundId: string): void                               │
-│ + playBGM(bgmId: string): void                              │
-│ + stopBGM(): void                                           │
-│ + setVolume(volume: number): void                           │
-│ + mute(): void                                              │
-│ + unmute(): void                                            │
-└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🌊 数据流
+### 2.3 Geass判定系统 (GeassSystem)
 
-### 游戏流程数据流
+**文件**: `src/core/GeassSystem.ts`
 
-```
-用户操作
-    │
-    ▼
-┌─────────────────┐
-│   UI Component  │
-│  (React组件)    │
-└────────┬────────┘
-         │ 调用
-         ▼
-┌─────────────────┐
-│   GameEngine    │
-│   (游戏引擎)     │
-└────────┬────────┘
-         │ 调用
-         ▼
-┌─────────────────────────────────────────┐
-│           核心系统调用                   │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ │
-│  │CardSystem│ │GeassSys  │ │AIEngine  │ │
-│  └──────────┘ └──────────┘ └──────────┘ │
-└─────────────────────────────────────────┘
-         │
-         ▼ 返回新状态
-┌─────────────────┐
-│   setState()    │
-│  (React状态更新) │
-└────────┬────────┘
-         │
-         ▼ 触发重渲染
-┌─────────────────┐
-│   UI Re-render  │
-│   (界面更新)     │
-└─────────────────┘
-```
+**职责**:
+- Geass命中判定
+- 角色技能处理
+- 闪避/反击逻辑
 
-### 出牌流程数据流
+**技能系统**:
+
+| 角色 | 技能名称 | 效果 | 触发概率 |
+|------|---------|------|----------|
+| 鲁鲁修 | Geass之力 | 命中+15% | 被动 |
+| 朱雀 | 枢木剑术 | 闪避+15%，反击25% | 被动/触发 |
+| C.C. | 不老不死 | 复活1次 | 100% |
+| 卡莲 | 红莲之牙 | 每多1张牌命中+20% | 被动 |
+
+---
+
+### 2.4 AI引擎 (DynamicAIEngine)
+
+**文件**: `src/ai/DynamicAIEngine.ts`
+
+**职责**:
+- AI决策逻辑
+- 性格模拟
+- 难度适配
+
+**决策流程**:
 
 ```
-1. 用户点击出牌按钮
-         │
-         ▼
-2. App.tsx 调用 gameEngine.playerPlayCards()
-         │
-         ▼
-3. GameEngine 验证并更新状态
-   ├── 验证当前阶段
-   ├── 验证选中牌
-   ├── 调用 cardSystem.playCards()
-   └── 更新 gameState
-         │
-         ▼
-4. 进入质疑阶段
-   ├── 设置 phase = 'challenge'
-   └── 通知AI进行质疑决策
-         │
-         ▼
-5. AI质疑决策
-   ├── AIEngine.decideChallenge()
-   ├── 根据策略决定是否质疑
-   └── 返回决策结果
-         │
-         ▼
-6. 质疑结算
-   ├── 翻牌验证
-   ├── 判定胜负
-   └── 触发Geass判定
-         │
-         ▼
-7. Geass判定
-   ├── GeassSystem.performGeass()
-   ├── 计算命中率
-   ├── 检查角色技能
-   └── 返回判定结果
-         │
-         ▼
-8. 更新游戏状态
-   ├── 更新HP
-   ├── 检查游戏结束
-   └── 切换到下一玩家
+1. 分析当前局势（手牌、骗子牌、对手行为）
+2. 根据性格计算决策概率
+3. 执行决策（出牌/质疑）
+4. 更新学习数据
+```
+
+**性格参数**:
+
+```typescript
+interface AIPersonality {
+  bluffTendency: number;      // 虚张声势倾向 (0-1)
+  challengeTendency: number;  // 质疑倾向 (0-1)
+  riskTolerance: number;      // 风险承受度 (0-1)
+  aggressiveness: number;     // 攻击性 (0-1)
+}
 ```
 
 ---
 
-## 🗄️ 状态管理
+## 三、数据流设计
 
-### 游戏状态结构
+### 3.1 游戏状态流
+
+```
+用户操作 → App.tsx事件处理 → GameEngine方法调用 → 状态更新 → UI重新渲染
+                ↓
+         游戏日志记录
+                ↓
+         音频效果播放
+```
+
+### 3.2 状态管理
+
+**全局状态** (App.tsx):
+- `gameState`: 游戏核心状态
+- `gameLog`: 游戏日志
+- `selectedCards`: 玩家选中的牌
+- `currentScreen`: 当前屏幕
+
+**引擎状态** (GameEngineV2):
+- `phase`: 游戏阶段
+- `playerStats`: 玩家状态
+- `aiPlayers`: AI玩家数组
+- `turnState`: 回合状态
+
+---
+
+## 四、接口设计
+
+### 4.1 核心类型定义
 
 ```typescript
+// 游戏状态
 interface GameState {
-  // 基础状态
-  phase: GamePhase;                    // 当前游戏阶段
-  currentScreen: ScreenType;           // 当前屏幕
-
-  // 角色信息
-  selectedCharacter: CharacterId | null;
-  playerCharacter: CharacterId | null;
-  aiCharacters: CharacterId[];
-  characterStates: Map<string, CharacterState>;
-
-  // 卡牌状态
-  liarCard: LiarCard | null;           // 当前骗子牌
-  playerHand: Card[];                  // 玩家手牌
-  aiPlayers: AIPlayer[];               // AI玩家列表
-  tableCards: Card[];                  // 桌面上的牌
-
-  // 回合状态
-  currentPlayerIndex: number;          // 当前玩家索引
-  turnNumber: number;                  // 回合数
-  playedCards: PlayedCards | null;     // 已出的牌
-  lastPlayerId: PlayerId | null;       // 最后出牌玩家
-
-  // 玩家统计
+  phase: GamePhase;
+  liarCard: string | null;
   playerStats: PlayerStats;
-
-  // 游戏结果
-  winner: 'player' | 'ai' | null;
-  lastAction: string;
+  playerHand: Card[];
+  aiPlayers: AIPlayer[];
+  turnState: TurnState;
   geassResult: GeassResult | null;
+}
 
-  // UI状态
-  playerSelectedCards: string[];
-  gameLog: string[];
+// 玩家状态
+interface PlayerStats {
+  hp: number;
+  maxHp: number;
+  geassSuccessCount: number;
+  geassFailCount: number;
+}
+
+// AI玩家
+interface AIPlayer {
+  id: 'ai' | 'ai2' | 'ai3';
+  name: string;
+  character: CharacterId;
+  hand: Card[];
+  stats: PlayerStats;
+  isActive: boolean;
+}
+
+// 回合状态
+interface TurnState {
+  turnNumber: number;
+  currentPlayerIndex: number;
+  playedCards: PlayedCards | null;
+  geassConsecutiveMisses: number;
 }
 ```
 
-### 状态更新原则
+### 4.2 事件接口
 
-1. **不可变性**: 每次状态更新都创建新对象
-   ```typescript
-   this.state = {
-     ...this.state,
-     playerHand: newHand,
-     phase: 'challenge'
-   };
-   ```
-
-2. **集中管理**: 所有状态变更通过GameEngine方法
-   ```typescript
-   // ✅ 正确
-   const newState = gameEngine.playerPlayCards();
-   setGameState(newState);
-   
-   // ❌ 错误
-   gameState.playerHand = newHand; // 直接修改
-   ```
-
-3. **派生状态**: 使用useMemo计算派生状态
-   ```typescript
-   const currentPlayer = useMemo(() => {
-     return gameState.currentPlayerIndex === 0 
-       ? 'player' 
-       : gameState.aiPlayers[gameState.currentPlayerIndex - 1];
-   }, [gameState.currentPlayerIndex]);
-   ```
+```typescript
+// 游戏事件
+interface GameEvents {
+  onCardPlay: (cards: Card[], claimedRank: string) => void;
+  onChallenge: (challengerId: string) => void;
+  onPass: () => void;
+  onGameEnd: (winner: 'player' | 'ai') => void;
+}
+```
 
 ---
 
-## 🔮 扩展性设计
+## 五、性能优化策略
 
-### 新增角色
+### 5.1 已实施优化
 
-要新增角色，只需：
+1. **组件懒加载**: 使用 `React.lazy` 延迟加载非首屏组件
+2. **图片优化**: 使用 WebP 格式，实现懒加载
+3. **状态优化**: 使用 `useMemo` 和 `useCallback` 减少不必要重渲染
+4. **日志限制**: 限制游戏日志数量为最近100条
+
+### 5.2 待实施优化
+
+1. **代码分割**: 按路由分割代码包
+2. **状态管理**: 引入 Zustand 替代部分 useState
+3. **虚拟列表**: 长列表使用虚拟化
+4. **Web Workers**: 复杂计算移至 Worker 线程
+
+---
+
+## 六、安全设计
+
+### 6.1 XSS 防护
+
+- ✅ 使用 React JSX 自动转义
+- ✅ 避免使用 `dangerouslySetInnerHTML`
+- ✅ 用户输入验证
+
+### 6.2 状态安全
+
+- ✅ 状态更新使用不可变模式
+- ✅ 关键操作前验证游戏阶段
+- ✅ 防止非法状态转换
+
+---
+
+## 七、扩展性设计
+
+### 7.1 新增角色
 
 1. 在 `src/data/characters.ts` 添加角色数据
-2. 在 `src/characters/` 添加技能实现
-3. 添加角色头像资源
+2. 在 `src/core/GeassSystem.ts` 实现角色技能
+3. 在 `src/ai/DynamicAIEngine.ts` 配置AI性格
 
-```typescript
-// 新增角色示例
-{
-  id: 'new-character',
-  name: '新角色',
-  skill: {
-    name: '新技能',
-    effect: newCharacterEffect
-  }
-}
-```
+### 7.2 新增游戏模式
 
-### 新增AI策略
-
-1. 实现 `StrategyInterface`
-2. 在 `AIEngine` 中注册
-
-```typescript
-class NewStrategy implements StrategyInterface {
-  decidePlay(ai, state) { /* ... */ }
-  decideChallenge(ai, play, state) { /* ... */ }
-  getDifficulty() { return 'expert'; }
-}
-```
-
-### 联网对战（未来）
-
-架构预留：
-
-```
-┌─────────────┐     WebSocket     ┌─────────────┐
-│   Client    │◀─────────────────▶│   Server    │
-│  (Browser)  │                   │  (Node.js)  │
-└─────────────┘                   └─────────────┘
-                                         │
-                                         ▼
-                                  ┌─────────────┐
-                                  │  Game Room  │
-                                  │   Manager   │
-                                  └─────────────┘
-```
+1. 扩展 `GamePhase` 类型
+2. 在 `GameEngineV2` 实现新模式逻辑
+3. 更新UI组件支持新模式
 
 ---
 
-## ⚡ 性能优化
+## 八、部署架构
 
-### 渲染优化
+### 8.1 构建流程
 
-#### React优化
-
-```typescript
-// 使用memo避免不必要的重渲染
-const GameBoard = React.memo(({ gameState, onAction }: Props) => {
-  // ...
-});
-
-// 使用useMemo缓存计算结果
-const sortedPlayers = useMemo(() => 
-  players.sort((a, b) => b.hp - a.hp),
-  [players]
-);
-
-// 使用useCallback缓存回调
-const handlePlayCard = useCallback((cardId: string) => {
-  // ...
-}, [gameState]);
+```
+源代码 → TypeScript编译 → Vite打包 → 静态资源 → CDN部署
 ```
 
-#### CSS优化
+### 8.2 环境配置
 
-```css
-/* 使用transform代替top/left */
-.card {
-  transform: translateX(100px); /* 好 */
-  /* left: 100px; */ /* 避免 */
-}
-
-/* 使用will-change提示浏览器优化 */
-.animating {
-  will-change: transform, opacity;
-}
-
-/* 动画结束后移除will-change */
-.animation-complete {
-  will-change: auto;
-}
-```
-
-### 资源优化
-
-#### 图片优化
-- 使用WebP格式
-- 懒加载非首屏图片
-- 使用CSS精灵图合并小图标
-
-#### 音效优化
-- 压缩至128kbps
-- 延迟加载非关键音效
-- 使用对象池复用Howl实例
-
-### 代码优化
-
-```typescript
-// 避免重复计算
-// 优化前
-const liarCards = hand.filter(c => c.rank === liarCard);
-const hasLiarCard = liarCards.length > 0;
-
-// 优化后
-const hasLiarCard = hand.some(c => c.rank === liarCard);
-
-// 使用合适的数据结构
-// 使用Set提高查找效率
-const selectedCardSet = new Set(selectedCards);
-const isSelected = selectedCardSet.has(cardId); // O(1)
-```
+| 环境 | 构建命令 | 输出目录 |
+|------|---------|----------|
+| 开发 | `npm run dev` | - |
+| 生产 | `npm run build` | `dist/` |
+| 测试 | `npm test` | - |
 
 ---
 
-## 📚 相关文档
+## 九、监控与日志
 
-- [PRD.md](./PRD.md) - 产品需求文档
-- [SRS.md](./SRS.md) - 软件需求规格书
-- [API.md](./API.md) - API接口文档
-- [CONTRIBUTING.md](./CONTRIBUTING.md) - 贡献指南
-- [DEV_GUIDE.md](./DEV_GUIDE.md) - 开发维护手册
+### 9.1 日志级别
+
+- **ERROR**: 系统错误，需要立即处理
+- **WARN**: 警告信息，需要注意
+- **INFO**: 一般信息，正常运行
+- **DEBUG**: 调试信息，开发使用
+
+### 9.2 性能监控
+
+- 游戏帧率监控
+- 内存使用监控
+- 用户操作响应时间
 
 ---
 
-**文档结束**
+## 十、附录
+
+### 10.1 术语表
+
+| 术语 | 说明 |
+|------|------|
+| Geass | 游戏中的惩罚机制 |
+| Liar Card | 每回合指定的骗子牌 |
+| Bluff | 虚张声势，出的牌与声称不符 |
+| Challenge | 质疑对方的出牌 |
+
+### 10.2 参考资料
+
+- [React 官方文档](https://react.dev/)
+- [TypeScript 官方文档](https://www.typescriptlang.org/)
+- [Vite 官方文档](https://vitejs.dev/)
+
+---
+
+**文档维护**: Code Agent  
+**最后更新**: 2026-03-18
