@@ -318,6 +318,7 @@ export const GameTable: React.FC<GameTableProps> = ({
       } else {
         // AI质疑直接触发普通动画
         triggerCharacterAnimation(playerId, 'challenge', '质疑', 1500);
+        console.log(`[Animation] AI质疑动画已触发: ${playerId}`);
       }
     }
 
@@ -335,7 +336,7 @@ export const GameTable: React.FC<GameTableProps> = ({
         lastAction.includes('卡莲') ? 'ai3' :
         lastAction.includes('C.C.') || lastAction.includes('C.C') ? 'ai' : 'ai';
       console.log('[Animation] 不质疑动画触发:', { playerId, lastAction });
-      triggerCharacterAnimation(playerId, 'play', '跳过', 1500);
+      triggerCharacterAnimation(playerId, 'skip', '跳过', 1500);
     }
 
     // Geass动画 - 受质疑者（出牌者）触发

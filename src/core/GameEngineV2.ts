@@ -409,6 +409,15 @@ export class GameEngine {
     // 确定谁受到Geass
     const victimId = isBluff ? targetId : challengerId;
 
+    // 设置lastAction用于动画触发
+    const challengerName = challengerId === 'player' ? '玩家' :
+      challengerId === 'ai' ? 'C.C.' :
+      challengerId === 'ai2' ? '朱雀' : '卡莲';
+    const targetName = targetId === 'player' ? '玩家' :
+      targetId === 'ai' ? 'C.C.' :
+      targetId === 'ai2' ? '朱雀' : '卡莲';
+    this.state.lastAction = `${challengerName}向${targetName}发起质疑！`;
+
     // 执行Geass判定，传入质疑者ID用于反击技能
     this.executeGeass(victimId, challengerId);
 
