@@ -305,8 +305,15 @@ const App: React.FC = () => {
         // 记录AI选择不质疑
         addLog(`${challengerAI.name}选择不质疑`);
 
-        // 添加延迟，让玩家能看到每个AI的决策
-        await new Promise(resolve => setTimeout(resolve, 600));
+        // 更新lastAction以触发动画
+        const noChallengeState = {
+          ...engine.getState(),
+          lastAction: `${challengerAI.name}选择不质疑`,
+        };
+        setGameState(noChallengeState);
+
+        // 添加延迟，让玩家能看到每个AI的决策和动画
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
       // 移动到下一个质疑者

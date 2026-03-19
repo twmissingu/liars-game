@@ -22,14 +22,14 @@ export const ANIMATION_DURATION = {
   /** AI出牌动画 - 与玩家出牌区分颜色 */
   AI_PLAY: 350,
 
-  /** 质疑动画 - 较长的戏剧性效果 */
-  CHALLENGE: 1800,
+  /** 质疑动画 - 统一为1000ms */
+  CHALLENGE: 1000,
 
-  /** 闪避动画 - Geass未命中 */
-  DODGE: 900,
+  /** 闪避动画 - 统一为1000ms */
+  DODGE: 1000,
 
-  /** 命中动画 - Geass命中 */
-  HIT: 900,
+  /** 命中动画 - 统一为1000ms */
+  HIT: 1000,
 
   /** 回合切换动画 */
   TURN_TRANSITION: 500,
@@ -47,19 +47,22 @@ export const AI_DELAY = {
   THINKING: 1000,
 
   /** AI出牌后等待质疑的时间 - 必须 >= 出牌动画时间 */
-  PLAY_TO_CHALLENGE: 1200, // 350ms动画 + 850ms缓冲
+  PLAY_TO_CHALLENGE: 1500, // 350ms动画 + 1150ms缓冲
 
   /** 质疑后等待结算的时间 - 必须 >= 质疑动画时间 */
-  CHALLENGE_TO_RESOLVE: 2000, // 1800ms动画 + 200ms缓冲
+  CHALLENGE_TO_RESOLVE: 1500, // 1000ms动画 + 500ms缓冲
 
   /** Geass结果展示时间 - 必须 >= 闪避/命中动画时间 */
-  GEASS_RESULT_DISPLAY: 1200, // 900ms动画 + 300ms缓冲
+  GEASS_RESULT_DISPLAY: 1500, // 1000ms动画 + 500ms缓冲
 
   /** 回合切换延迟 */
-  TURN_SWITCH: 800,
+  TURN_SWITCH: 1000,
 
   /** 新回合开始前的准备时间 */
   ROUND_START: 600,
+
+  /** AI不质疑动画展示时间 */
+  NO_CHALLENGE_DISPLAY: 1000,
 } as const;
 
 /** 动画与状态同步配置 */

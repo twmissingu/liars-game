@@ -119,12 +119,19 @@ export const GameTable: React.FC<GameTableProps> = ({
   // 持续动画状态 - 用于出牌等需要持续显示的动画
   const [persistentAnimation, setPersistentAnimation] = useState<{
     playerId: string | null;
-    type: 'play' | 'aiPlay' | null;
+    type: 'play' | 'aiPlay' | 'challenge' | null;
     text: string;
   }>({ playerId: null, type: null, text: '' });
 
+  // 玩家质疑动画状态
+  const [playerChallengeAnimation, setPlayerChallengeAnimation] = useState<{
+    show: boolean;
+    targetId: string | null;
+  }>({ show: false, targetId: null });
+
   // 动画定时器引用
   const animationTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const playerChallengeTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // 自动滚动到最新日志
   useEffect(() => {
@@ -215,7 +222,8 @@ export const GameTable: React.FC<GameTableProps> = ({
     const { lastAction, geassResult, turnState, phase } = gameState;
 
     // 出牌动画 - 持续播放直到质疑阶段开始
-    if (turnState?.playedCards && lastAction?.includes('出牌')) {
+    // 匹配 "出了X张牌" 或 "出牌" 格式的lastAction
+    if (turnState?.playedCards && (lastAction?.includes('出牌') || lastAction?.includes('出了'))) {
       const playerId = turnState.playedCards.playerId;
       // 清除之前的定时器
       if (animationTimerRef.current) {
@@ -248,7 +256,31 @@ export const GameTable: React.FC<GameTableProps> = ({
       const playerId = lastAction.includes('玩家') ? 'player' :
         lastAction.includes('AI2') ? 'ai2' :
         lastAction.includes('AI3') ? 'ai3' : 'ai';
-      triggerCharacterAnimation(playerId, 'challenge', '质疑', 1000);
+
+      // 玩家质疑时设置持续动画
+      if (playerId === 'player' && turnState?.playedCards) {
+        // 清除之前的定时器
+        if (playerChallengeTimerRef.current) {
+          clearTimeout(playerChallengeTimerRef.current);
+        }
+        // 设置玩家质疑持续动画
+        setPlayerChallengeAnimation({
+          show: true,
+          targetId: turnState.playedCards.playerId
+        });
+        // 触发普通质疑动画
+        triggerCharacterAnimation(playerId, 'challenge', '质疑中...', 1000);
+      } else {
+        // AI质疑直接触发普通动画
+        triggerCharacterAnimation(playerId, 'challenge', '质疑', 1000);
+      }
+    }
+
+    // 当Geass结果出现时，清除玩家质疑动画
+    if (geassResult?.activated && playerChallengeAnimation.show) {
+      playerChallengeTimerRef.current = setTimeout(() => {
+        setPlayerChallengeAnimation({ show: false, targetId: null });
+      }, 500);
     }
 
     // 不质疑动画 - 显示"跳过"提示
@@ -260,11 +292,10 @@ export const GameTable: React.FC<GameTableProps> = ({
       triggerCharacterAnimation(playerId, 'play', '跳过', 1000);
     }
 
-    // Geass动画 - 受质疑者触发
-    if (geassResult?.activated) {
-      const victimId = lastAction?.includes('玩家') ? 'player' :
-        lastAction?.includes('AI2') ? 'ai2' :
-        lastAction?.includes('AI3') ? 'ai3' : 'ai';
+    // Geass动画 - 受质疑者（出牌者）触发
+    // 受害者是被质疑的那个人，即 playedCards.playerId
+    if (geassResult?.activated && turnState?.playedCards) {
+      const victimId = turnState.playedCards.playerId;
 
       if (geassResult.isDodge) {
         // 闪避动画
@@ -340,8 +371,12 @@ export const GameTable: React.FC<GameTableProps> = ({
     const isPersistentAnimating = persistentAnimation.playerId === playerId && persistentAnimation.type;
     const persistentAnimationClass = isPersistentAnimating ? `cg-anim-${persistentAnimation.type}` : '';
 
+    // 检查是否显示玩家质疑动画
+    const isPlayerChallenging = playerChallengeAnimation.show && playerId === 'player';
+    const isBeingChallenged = playerChallengeAnimation.show && playerChallengeAnimation.targetId === playerId;
+
     return (
-      <div className={`cg-character ${isTop ? 'cg-character-top' : ''} ${!isActive ? 'cg-character-dead' : ''} ${animationClass} ${persistentAnimationClass} ${isThinking ? 'cg-character-thinking' : ''}`}>
+      <div className={`cg-character ${isTop ? 'cg-character-top' : ''} ${!isActive ? 'cg-character-dead' : ''} ${animationClass} ${persistentAnimationClass} ${isThinking ? 'cg-character-thinking' : ''} ${isPlayerChallenging ? 'cg-player-challenging' : ''} ${isBeingChallenged ? 'cg-being-challenged' : ''}`}>
         {/* 动画文字提示 */}
         {animation.showText && (
           <div className={`cg-action-text cg-action-${animation.type}`}>
@@ -352,6 +387,18 @@ export const GameTable: React.FC<GameTableProps> = ({
         {isPersistentAnimating && (
           <div className={`cg-action-text cg-action-${persistentAnimation.type} cg-persistent-text`}>
             {persistentAnimation.text}
+          </div>
+        )}
+        {/* 玩家质疑动画提示 */}
+        {isPlayerChallenging && (
+          <div className="cg-action-text cg-action-challenge cg-persistent-text">
+            质疑中...
+          </div>
+        )}
+        {/* 被质疑动画提示 */}
+        {isBeingChallenged && (
+          <div className="cg-action-text cg-action-challenge cg-persistent-text">
+            被质疑
           </div>
         )}
         {/* AI思考指示器 */}
@@ -1063,6 +1110,40 @@ export const GameTable: React.FC<GameTableProps> = ({
         .cg-persistent-text {
           animation: none !important;
           opacity: 1 !important;
+        }
+
+        /* 玩家质疑动画样式 */
+        .cg-player-challenging {
+          border-color: #9D50BB !important;
+          box-shadow: 0 0 20px rgba(157, 80, 187, 0.6), inset 0 0 15px rgba(157, 80, 187, 0.3);
+          animation: challengingPulse 1s ease-in-out infinite;
+        }
+        @keyframes challengingPulse {
+          0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 0 20px rgba(157, 80, 187, 0.6), inset 0 0 15px rgba(157, 80, 187, 0.3);
+          }
+          50% {
+            transform: scale(1.02);
+            box-shadow: 0 0 30px rgba(157, 80, 187, 0.8), inset 0 0 20px rgba(157, 80, 187, 0.4);
+          }
+        }
+
+        /* 被质疑动画样式 */
+        .cg-being-challenged {
+          border-color: #ff6b6b !important;
+          box-shadow: 0 0 20px rgba(255, 107, 107, 0.6), inset 0 0 15px rgba(255, 107, 107, 0.3);
+          animation: beingChallengedPulse 1s ease-in-out infinite;
+        }
+        @keyframes beingChallengedPulse {
+          0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.6), inset 0 0 15px rgba(255, 107, 107, 0.3);
+          }
+          50% {
+            transform: scale(1.02);
+            box-shadow: 0 0 30px rgba(255, 107, 107, 0.8), inset 0 0 20px rgba(255, 107, 107, 0.4);
+          }
         }
 
         /* 角色动画效果 */
