@@ -1033,57 +1033,63 @@ export const GameTable: React.FC<GameTableProps> = ({
           background: linear-gradient(135deg, #22c55e, #16a34a);
           color: white;
           box-shadow: 0 2px 8px rgba(34, 197, 94, 0.5);
-          animation: actionTextPopPlay 0.35s ease-out forwards;
+          animation: actionTextPopPlay 1.5s ease-out forwards;
         }
         .cg-action-aiPlay {
           background: linear-gradient(135deg, #f97316, #ea580c);
           color: white;
           box-shadow: 0 2px 8px rgba(249, 115, 22, 0.5);
-          animation: actionTextPopPlay 0.35s ease-out forwards;
+          animation: actionTextPopPlay 1.5s ease-out forwards;
         }
         .cg-action-challenge {
           background: linear-gradient(135deg, #9D50BB, #6E48AA);
           color: white;
           box-shadow: 0 2px 8px rgba(157, 80, 187, 0.5);
-          animation: actionTextPopChallenge 1.8s ease-out forwards;
+          animation: actionTextPopChallenge 1.5s ease-out forwards;
         }
         .cg-action-dodge {
           background: transparent;
           color: white;
           text-shadow: 0 0 4px #1E90FF, 0 0 8px #1E90FF;
-          animation: actionTextPopDodge 0.9s ease-out forwards;
+          animation: actionTextPopDodge 1.5s ease-out forwards;
         }
         .cg-action-hit {
           background: transparent;
           color: white;
           text-shadow: 0 0 4px #DC143C, 0 0 8px #DC143C;
-          animation: actionTextPopHit 0.9s ease-out forwards;
+          animation: actionTextPopHit 1.5s ease-out forwards;
+        }
+        .cg-action-skip {
+          background: linear-gradient(135deg, #6B7280, #4B5563);
+          color: white;
+          box-shadow: 0 2px 8px rgba(107, 114, 128, 0.5);
+          animation: actionTextPopSkip 1.5s ease-out forwards;
         }
 
-        /* 出牌文字动画 - 350ms */
+        /* 出牌文字动画 - 1500ms */
         @keyframes actionTextPopPlay {
           0% {
             opacity: 0;
             transform: translateX(-50%) translateY(10px) scale(0.8);
           }
-          40% {
+          10% {
             opacity: 1;
             transform: translateX(-50%) translateY(0) scale(1.1);
           }
-          60% {
+          15% {
             transform: translateX(-50%) translateY(0) scale(1);
           }
-          80% {
+          85% {
             opacity: 1;
             transform: translateX(-50%) translateY(0) scale(1);
           }
           100% {
             opacity: 0;
-            transform: translateX(-50%) translateY(-8px) scale(0.95);
+            transform: translateX(-50%) translateY(-10px) scale(0.9);
           }
         }
 
-        /* 质疑文字动画 - 1800ms */
+        /* 质疑文字动画 - 1500ms */
         @keyframes actionTextPopChallenge {
           0% {
             opacity: 0;
@@ -1106,7 +1112,7 @@ export const GameTable: React.FC<GameTableProps> = ({
           }
         }
 
-        /* 闪避文字动画 - 900ms */
+        /* 闪避文字动画 - 1500ms */
         @keyframes actionTextPopDodge {
           0% {
             opacity: 0;
@@ -1129,26 +1135,49 @@ export const GameTable: React.FC<GameTableProps> = ({
           }
         }
 
-        /* 命中文字动画 - 900ms */
+        /* 命中文字动画 - 1500ms */
         @keyframes actionTextPopHit {
           0% {
             opacity: 0;
             transform: translateX(-50%) translateY(10px) scale(0.8);
           }
-          20% {
+          10% {
             opacity: 1;
             transform: translateX(-50%) translateY(0) scale(1.1);
           }
-          30% {
+          15% {
             transform: translateX(-50%) translateY(0) scale(1);
           }
-          70% {
+          85% {
             opacity: 1;
             transform: translateX(-50%) translateY(0) scale(1);
           }
           100% {
             opacity: 0;
-            transform: translateX(-50%) translateY(-8px) scale(0.95);
+            transform: translateX(-50%) translateY(-10px) scale(0.9);
+          }
+        }
+
+        /* 不质疑文字动画 - 1500ms */
+        @keyframes actionTextPopSkip {
+          0% {
+            opacity: 0;
+            transform: translateX(-50%) translateY(10px) scale(0.8);
+          }
+          10% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0) scale(1.1);
+          }
+          15% {
+            transform: translateX(-50%) translateY(0) scale(1);
+          }
+          85% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0) scale(1);
+          }
+          100% {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-10px) scale(0.9);
           }
         }
 

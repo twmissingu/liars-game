@@ -31,6 +31,9 @@ export const ANIMATION_DURATION = {
   /** 命中动画 - 统一为1500ms */
   HIT: 1500,
 
+  /** 不质疑动画 - 统一为1500ms */
+  SKIP: 1500,
+
   /** 回合切换动画 */
   TURN_TRANSITION: 500,
 
