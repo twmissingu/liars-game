@@ -137,13 +137,6 @@ export const GameTable: React.FC<GameTableProps> = ({
     duration: number;
   }>>([]);
 
-  // 正在处理的动画（用于调试）
-  const [, setCurrentAnimation] = useState<{
-    playerId: string;
-    type: string;
-    text: string;
-  } | null>(null);
-
   // 动画定时器引用
   const animationTimerRef = useRef<NodeJS.Timeout | null>(null);
   const playerChallengeTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -203,35 +196,40 @@ export const GameTable: React.FC<GameTableProps> = ({
     };
   }, [isLogExpanded, isMobile]);
 
-  // 处理动画队列
+  // 处理动画队列 - 原子操作
   useEffect(() => {
-    if (animationProcessingRef.current || animationQueue.length === 0) return;
+    // 防止并发处理
+    if (animationProcessingRef.current) return;
 
+    // 队列为空，不处理
+    if (animationQueue.length === 0) return;
+
+    // 标记为处理中
     animationProcessingRef.current = true;
+
+    // 获取并移除队列中的第一个动画
     const nextAnimation = animationQueue[0];
 
-    // 处理下一个动画
+    // 立即处理动画
     setCharacterAnimations(prev => ({
       ...prev,
       [nextAnimation.playerId]: { type: nextAnimation.type as any, showText: nextAnimation.text },
     }));
 
-    setCurrentAnimation({
-      playerId: nextAnimation.playerId,
-      type: nextAnimation.type,
-      text: nextAnimation.text,
-    });
-
-    // 从队列中移除已处理的动画
+    // 清除队列中的已处理项
     setAnimationQueue(prev => prev.slice(1));
 
-    // 设置定时器清除动画
+    // 设置定时器在指定时间后清除动画
+    if (animationTimerRef.current) {
+      clearTimeout(animationTimerRef.current);
+    }
     animationTimerRef.current = setTimeout(() => {
+      // 清除动画状态
       setCharacterAnimations(prev => ({
         ...prev,
         [nextAnimation.playerId]: { type: null, showText: '' },
       }));
-      setCurrentAnimation(null);
+      // 重置处理标志，允许处理下一个动画
       animationProcessingRef.current = false;
     }, nextAnimation.duration);
   }, [animationQueue]);
@@ -251,12 +249,10 @@ export const GameTable: React.FC<GameTableProps> = ({
        type === 'hit' ? ANIMATION_DURATION.HIT : 1000);
 
     // 将动画添加到队列
-    setAnimationQueue(prev => [...prev, {
-      playerId,
-      type,
-      text,
-      duration: animationDuration
-    }]);
+    setAnimationQueue(prev => {
+      const newQueue = [...prev, { playerId, type, text, duration: animationDuration }];
+      return newQueue;
+    });
   };
 
   // 监听游戏状态变化触发动画
