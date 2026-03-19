@@ -203,4 +203,120 @@ describe('质疑流程专项测试', () => {
       expect(state.turnState.playedCards?.cardIds.length).toBeGreaterThan(0);
     });
   });
+
+  describe('无人质疑场景测试', () => {
+    test('无人质疑时应由原出牌者继续出牌', () => {
+      // 初始化并确保玩家先手
+      let state = gameEngine.initializeGame('lelouch');
+      while (state.currentPlayerIndex !== 0) {
+        gameEngine = new GameEngine();
+        state = gameEngine.initializeGame('lelouch');
+      }
+
+      const initialTurnNumber = state.turnState.turnNumber;
+      const playerHandCount = state.playerHand.length;
+
+      // 玩家出牌
+      const cardId = state.playerHand[0].id;
+      gameEngine.toggleCardSelection(cardId);
+      state = gameEngine.playerPlayCards();
+
+      expect(state.phase).toBe('challenge');
+      expect(state.turnState.playedCards?.playerId).toBe('player');
+
+      // 模拟无人质疑场景 - 调用endChallengePhase(true)
+      state = gameEngine.endChallengePhase(true);
+
+      // 验证1: 回合号不应增加
+      expect(state.turnState.turnNumber).toBe(initialTurnNumber);
+
+      // 验证2: 出牌记录应被清除
+      expect(state.turnState.playedCards).toBeNull();
+
+      // 验证3: 阶段应该仍然是player_turn（玩家继续）
+      expect(state.phase).toBe('player_turn');
+
+      // 验证4: 玩家手牌数量应减少（因为出了牌）
+      expect(state.playerHand.length).toBe(playerHandCount - 1);
+
+      // 验证5: 桌面应该有一张牌
+      expect(state.turnState.tableCards.length).toBeGreaterThanOrEqual(1);
+
+      // 验证6: lastAction应该反映无人质疑
+      expect(state.lastAction).toBe('无人质疑，回合继续');
+    });
+
+    test('无人质疑时AI出牌者应继续AI回合', () => {
+      // 初始化游戏
+      let state = gameEngine.initializeGame('lelouch');
+
+      // 直接设置状态为挑战阶段，模拟AI出牌后的情况
+      // 使用反射来设置测试状态
+      const challengeState = {
+        phase: 'challenge',
+        turnState: {
+          turnNumber: 1,
+          playedCards: {
+            playerId: 'ai' as const,
+            cardIds: ['card1'],
+            claimedRank: 'Q' as const,
+            actualCards: [],
+            isBluff: false
+          },
+          lastPlayerId: 'ai' as const,
+          tableCards: [],
+          geassConsecutiveMisses: 0
+        }
+      };
+
+      // 手动设置engine的状态来进行测试
+      (gameEngine as any).state.phase = challengeState.phase;
+      (gameEngine as any).state.turnState = challengeState.turnState;
+
+      // 模拟无人质疑场景 - 调用endChallengePhase(true)
+      state = gameEngine.endChallengePhase(true);
+
+      // 验证1: 回合号不应增加
+      expect(state.turnState.turnNumber).toBe(1);
+
+      // 验证2: 阶段应该仍然是ai_turn（AI继续）
+      expect(state.phase).toBe('ai_turn');
+
+      // 验证3: 出牌记录应被清除
+      expect(state.turnState.playedCards).toBeNull();
+
+      // 验证4: lastAction应该反映无人质疑
+      expect(state.lastAction).toBe('无人质疑，回合继续');
+    });
+
+    test('有质疑时应正常进入下一回合', () => {
+      // 初始化并确保玩家先手
+      let state = gameEngine.initializeGame('lelouch');
+      while (state.currentPlayerIndex !== 0) {
+        gameEngine = new GameEngine();
+        state = gameEngine.initializeGame('lelouch');
+      }
+
+      const initialTurnNumber = state.turnState.turnNumber;
+
+      // 玩家出牌
+      const cardId = state.playerHand[0].id;
+      gameEngine.toggleCardSelection(cardId);
+      state = gameEngine.playerPlayCards();
+
+      expect(state.phase).toBe('challenge');
+
+      // 模拟有质疑场景 - 调用endChallengePhase(false)
+      state = gameEngine.endChallengePhase(false);
+
+      // 验证1: 回合号应该增加
+      expect(state.turnState.turnNumber).toBe(initialTurnNumber + 1);
+
+      // 验证2: 出牌记录应被清除
+      expect(state.turnState.playedCards).toBeNull();
+
+      // 验证3: 阶段应该是player_turn或ai_turn
+      expect(['player_turn', 'ai_turn']).toContain(state.phase);
+    });
+  });
 });

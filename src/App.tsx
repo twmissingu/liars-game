@@ -321,27 +321,25 @@ const App: React.FC = () => {
       checkedCount++;
     }
 
-    // 所有人都未质疑，继续下一回合
-    console.log('[enterChallengePhase] 所有人都未质疑，继续下一回合');
+    // 所有人都未质疑，原出牌者继续出牌
+    console.log('[enterChallengePhase] 所有人都未质疑，原出牌者继续');
     addLog('无人质疑，回合继续');
 
-    // 使用引擎方法结束质疑阶段
-    const nextState = engine.endChallengePhase();
+    // 使用引擎方法结束质疑阶段，传递true表示无人质疑
+    const nextState = engine.endChallengePhase(true);
     setGameState(nextState);
 
-    // 索引映射: 1 (AI3/卡莲) -> 2, 2 (AI2/朱雀) -> 1, 3 (AI1/C.C.) -> 0
-    const aiArrayIndexMap: Record<number, number> = { 1: 2, 2: 1, 3: 0 };
-    const firstPlayerName = nextState.currentPlayerIndex === 0
-      ? getCharacterName(selectedCharacter!)
-      : nextState.aiPlayers[aiArrayIndexMap[nextState.currentPlayerIndex]]?.name;
+    // 无人质疑时，原出牌者继续，不切换到其他玩家
+    // 维持当前玩家的回合状态
+    const currentPlayerId = state.turnState.playedCards?.playerId || state.turnState.lastPlayerId;
+    const isPlayer = currentPlayerId === 'player' || !currentPlayerId;
 
-    addLog(`【第${nextState.turnState.turnNumber}回合】骗子牌是${nextState.liarCard}`);
-    addLog(`${firstPlayerName}先手！`);
-
-    if (nextState.currentPlayerIndex === 0) {
+    if (isPlayer) {
+      // 原出牌者是玩家
       setIsProcessing(false);
+      addLog('轮到玩家出牌');
     } else {
-      // 延迟执行AI回合 - 使用统一的回合切换延迟
+      // 原出牌者是AI，触发AI回合
       setTimeout(() => {
         aiTurnRef.current?.();
       }, AI_DELAY.TURN_SWITCH);

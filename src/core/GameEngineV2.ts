@@ -1024,14 +1024,40 @@ export class GameEngine {
 
   /**
    * 结束质疑阶段，继续下一回合
+   * @param continueWithSamePlayer - 无人质疑时是否由原出牌者继续出牌
    * @returns 新的游戏状态
    */
-  endChallengePhase(): GameState {
+  endChallengePhase(continueWithSamePlayer: boolean = false): GameState {
     // 将出的牌放到桌面
     if (this.state.turnState.playedCards) {
       this.state.turnState.tableCards.push(...this.state.turnState.playedCards.actualCards);
     }
 
+    if (continueWithSamePlayer) {
+      // 无人质疑，同一出牌者继续出牌
+      // 维持当前回合状态不变，先保存出牌者信息
+      const playedBy = this.state.turnState.lastPlayerId || this.state.turnState.playedCards?.playerId;
+      this.state.turnState.playedCards = null;
+      this.state.lastAction = '无人质疑，回合继续';
+
+      // 设置正确的阶段 - 如果是原出牌者是玩家则设为player_turn，否则为ai_turn
+      if (playedBy === 'player') {
+        this.state.phase = 'player_turn';
+      } else {
+        this.state.phase = 'ai_turn';
+      }
+
+      // 记录日志
+      const playedByName = playedBy === 'player' ? '玩家' :
+        playedBy === 'ai' ? 'C.C.' :
+        playedBy === 'ai2' ? '朱雀' :
+        playedBy === 'ai3' ? '卡莲' : playedBy;
+      console.log(`[endChallengePhase] 无人质疑，${playedByName}继续出牌`);
+
+      return this.getState();
+    }
+
+    // 有质疑发生，正常进入下一回合
     // UI布局顺序: 顶部=AI2, 左侧=AI3, 右侧=AI1, 底部=玩家
       // 顺时针顺序: 玩家(0) -> AI3(1) -> AI2(2) -> AI1(3) -> 玩家(0)
       // 映射关系: 0=玩家, 1=ai3, 2=ai2, 3=ai
@@ -1075,17 +1101,17 @@ export class GameEngine {
     this.state.turnState.turnNumber++;
 
     this.state.turnState.playedCards = null;
-    
+
     // 添加调试日志
-    const nextPlayerName = nextPlayerIndex === 0 
-      ? '玩家' 
-      : nextPlayerIndex === 1 
-        ? 'AI3(卡莲)' 
-        : nextPlayerIndex === 2 
-          ? 'AI2(朱雀)' 
+    const nextPlayerName = nextPlayerIndex === 0
+      ? '玩家'
+      : nextPlayerIndex === 1
+        ? 'AI3(卡莲)'
+        : nextPlayerIndex === 2
+          ? 'AI2(朱雀)'
           : 'AI1(C.C.)';
     console.log(`[endChallengePhase] 出牌者: ${playedBy}, 下一个玩家: ${nextPlayerName}(索引${nextPlayerIndex})`);
-    
+
     this.state.lastAction = '质疑阶段结束，回合继续';
 
     return this.getState();
