@@ -129,9 +129,25 @@ export const GameTable: React.FC<GameTableProps> = ({
     targetId: string | null;
   }>({ show: false, targetId: null });
 
+  // 动画队列 - 用于处理连续动画
+  const [animationQueue, setAnimationQueue] = useState<Array<{
+    playerId: string;
+    type: 'play' | 'aiPlay' | 'challenge' | 'dodge' | 'hit' | 'skip';
+    text: string;
+    duration: number;
+  }>>([]);
+
+  // 正在处理的动画（用于调试）
+  const [, setCurrentAnimation] = useState<{
+    playerId: string;
+    type: string;
+    text: string;
+  } | null>(null);
+
   // 动画定时器引用
   const animationTimerRef = useRef<NodeJS.Timeout | null>(null);
   const playerChallengeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const animationProcessingRef = useRef(false);
 
   // 自动滚动到最新日志
   useEffect(() => {
@@ -187,10 +203,43 @@ export const GameTable: React.FC<GameTableProps> = ({
     };
   }, [isLogExpanded, isMobile]);
 
+  // 处理动画队列
+  useEffect(() => {
+    if (animationProcessingRef.current || animationQueue.length === 0) return;
+
+    animationProcessingRef.current = true;
+    const nextAnimation = animationQueue[0];
+
+    // 处理下一个动画
+    setCharacterAnimations(prev => ({
+      ...prev,
+      [nextAnimation.playerId]: { type: nextAnimation.type as any, showText: nextAnimation.text },
+    }));
+
+    setCurrentAnimation({
+      playerId: nextAnimation.playerId,
+      type: nextAnimation.type,
+      text: nextAnimation.text,
+    });
+
+    // 从队列中移除已处理的动画
+    setAnimationQueue(prev => prev.slice(1));
+
+    // 设置定时器清除动画
+    animationTimerRef.current = setTimeout(() => {
+      setCharacterAnimations(prev => ({
+        ...prev,
+        [nextAnimation.playerId]: { type: null, showText: '' },
+      }));
+      setCurrentAnimation(null);
+      animationProcessingRef.current = false;
+    }, nextAnimation.duration);
+  }, [animationQueue]);
+
   // 触发角色动画 - 使用统一的动画时间常量
   const triggerCharacterAnimation = (
     playerId: 'player' | 'ai' | 'ai2' | 'ai3',
-    type: 'play' | 'aiPlay' | 'challenge' | 'dodge' | 'hit',
+    type: 'play' | 'aiPlay' | 'challenge' | 'dodge' | 'hit' | 'skip',
     text: string,
     duration?: number
   ) => {
@@ -201,18 +250,13 @@ export const GameTable: React.FC<GameTableProps> = ({
        type === 'dodge' ? ANIMATION_DURATION.DODGE :
        type === 'hit' ? ANIMATION_DURATION.HIT : 1000);
 
-    setCharacterAnimations(prev => ({
-      ...prev,
-      [playerId]: { type, showText: text },
-    }));
-
-    // 指定时长后清除动画
-    setTimeout(() => {
-      setCharacterAnimations(prev => ({
-        ...prev,
-        [playerId]: { type: null, showText: '' },
-      }));
-    }, animationDuration);
+    // 将动画添加到队列
+    setAnimationQueue(prev => [...prev, {
+      playerId,
+      type,
+      text,
+      duration: animationDuration
+    }]);
   };
 
   // 监听游戏状态变化触发动画
