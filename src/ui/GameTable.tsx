@@ -98,6 +98,17 @@ export const GameTable: React.FC<GameTableProps> = ({
   const autoCollapseTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
 
+  // 动画状态
+  const [characterAnimations, setCharacterAnimations] = useState<Record<string, {
+    type: 'play' | 'challenge' | 'geass' | 'dodge' | 'hit' | null;
+    showText: string;
+  }>>({
+    player: { type: null, showText: '' },
+    ai: { type: null, showText: '' },
+    ai2: { type: null, showText: '' },
+    ai3: { type: null, showText: '' },
+  });
+
   // 自动滚动到最新日志
   useEffect(() => {
     if (logContentRef.current && gameLog.length > prevLogLengthRef.current) {
@@ -152,6 +163,62 @@ export const GameTable: React.FC<GameTableProps> = ({
     };
   }, [isLogExpanded, isMobile]);
 
+  // 触发角色动画
+  const triggerCharacterAnimation = (
+    playerId: 'player' | 'ai' | 'ai2' | 'ai3',
+    type: 'play' | 'challenge' | 'geass' | 'dodge' | 'hit',
+    text: string
+  ) => {
+    setCharacterAnimations(prev => ({
+      ...prev,
+      [playerId]: { type, showText: text },
+    }));
+
+    // 1.5秒后清除动画
+    setTimeout(() => {
+      setCharacterAnimations(prev => ({
+        ...prev,
+        [playerId]: { type: null, showText: '' },
+      }));
+    }, 1500);
+  };
+
+  // 监听游戏状态变化触发动画
+  useEffect(() => {
+    if (!gameState) return;
+
+    const { phase, lastAction, geassResult, turnState } = gameState;
+
+    // 出牌动画
+    if (turnState?.playedCards && lastAction?.includes('出牌')) {
+      const playerId = turnState.playedCards.playerId;
+      triggerCharacterAnimation(playerId, 'play', '出牌');
+    }
+
+    // 质疑动画
+    if (lastAction?.includes('质疑')) {
+      const playerId = lastAction.includes('玩家') ? 'player' :
+        lastAction.includes('AI2') ? 'ai2' :
+        lastAction.includes('AI3') ? 'ai3' : 'ai';
+      triggerCharacterAnimation(playerId, 'challenge', '质疑');
+    }
+
+    // Geass动画
+    if (geassResult?.activated) {
+      const victimId = lastAction?.includes('玩家') ? 'player' :
+        lastAction?.includes('AI2') ? 'ai2' :
+        lastAction?.includes('AI3') ? 'ai3' : 'ai';
+
+      if (geassResult.isDodge) {
+        triggerCharacterAnimation(victimId, 'dodge', '闪避');
+      } else if (geassResult.hit) {
+        triggerCharacterAnimation(victimId, 'hit', '命中');
+      } else if (phase === 'geass') {
+        triggerCharacterAnimation(victimId, 'geass', 'Geass');
+      }
+    }
+  }, [gameState?.lastAction, gameState?.geassResult?.activated]);
+
   useEffect(() => {
     if (selectedCharacter) {
       AvatarPreloader.preloadAvatar(selectedCharacter, selectedAvatar);
@@ -203,34 +270,61 @@ export const GameTable: React.FC<GameTableProps> = ({
     color: string,
     avatarNum: number,
     isTop: boolean = false,
-    isActive: boolean = true
-  ) => (
-    <div className={`cg-character ${isTop ? 'cg-character-top' : ''} ${!isActive ? 'cg-character-dead' : ''}`}>
-      <div className="cg-character-avatar">
-        {characterId && (
-          <ChibiAvatar
-            characterId={characterId}
-            size={120}
-            avatarNumber={avatarNum}
-            priority={true}
-          />
+    isActive: boolean = true,
+    playerId: 'player' | 'ai' | 'ai2' | 'ai3' = 'player'
+  ) => {
+    const animation = characterAnimations[playerId];
+    const animationClass = animation.type ? `cg-anim-${animation.type}` : '';
+
+    return (
+      <div className={`cg-character ${isTop ? 'cg-character-top' : ''} ${!isActive ? 'cg-character-dead' : ''} ${animationClass}`}>
+        {/* 动画文字提示 */}
+        {animation.showText && (
+          <div className={`cg-action-text cg-action-${animation.type}`}>
+            {animation.showText}
+          </div>
         )}
-      </div>
-      <div className="cg-character-info">
-        <div className="cg-character-name" style={{ color }}>{name}</div>
-        <div className="cg-character-stats">
-          <span className="cg-hp-display">{Array(hp).fill('❤').join('')}</span>
-          <span className="cg-card-count">🃏{cardCount}</span>
+        <div className="cg-character-avatar">
+          {characterId && (
+            <ChibiAvatar
+              characterId={characterId}
+              size={120}
+              avatarNumber={avatarNum}
+              priority={true}
+            />
+          )}
+        </div>
+        <div className="cg-character-info">
+          <div className="cg-character-name" style={{ color }}>{name}</div>
+          <div className="cg-character-stats">
+            <span className="cg-hp-display">{Array(hp).fill('❤').join('')}</span>
+            <span className="cg-card-count">🃏{cardCount}</span>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="cg-game-table">
+      {/* 顶部栏 - 包含游戏记录按钮 */}
+      <div className="cg-top-bar">
+        <button
+          className={`cg-log-toggle-btn-top ${isLogExpanded ? 'expanded' : ''}`}
+          onClick={toggleLogPanel}
+          aria-label={isLogExpanded ? '收起记录' : '展开记录'}
+        >
+          <span className="cg-log-toggle-icon">📜</span>
+          <span className="cg-log-toggle-text">记录</span>
+          {!isLogExpanded && gameLog.length > 0 && (
+            <span className="cg-log-badge">{gameLog.length}</span>
+          )}
+        </button>
+      </div>
+
       {/* 主布局：左侧日志 + 中间游戏区 */}
       <div className="cg-main-layout">
-        {/* 移动端日志栏展开按钮 */}
+        {/* 移动端日志栏展开按钮 - 保留在左侧作为备选 */}
         <button
           className={`cg-log-toggle-btn ${isLogExpanded ? 'expanded' : ''}`}
           onClick={toggleLogPanel}
@@ -278,7 +372,8 @@ export const GameTable: React.FC<GameTableProps> = ({
               getCharacterColor(aiPlayers?.[1]?.character || aiCharacters[1]),
               aiAvatars[aiPlayers?.[1]?.character || aiCharacters[1]] || 1,
               true,
-              aiPlayers?.[1]?.isActive !== false && (aiPlayers?.[1]?.stats?.hp || 0) > 0
+              aiPlayers?.[1]?.isActive !== false && (aiPlayers?.[1]?.stats?.hp || 0) > 0,
+              'ai2'
             )}
           </div>
 
@@ -294,7 +389,8 @@ export const GameTable: React.FC<GameTableProps> = ({
                 getCharacterColor(aiPlayers?.[2]?.character || aiCharacters[2]),
                 aiAvatars[aiPlayers?.[2]?.character || aiCharacters[2]] || 1,
                 false,
-                aiPlayers?.[2]?.isActive !== false && (aiPlayers?.[2]?.stats?.hp || 0) > 0
+                aiPlayers?.[2]?.isActive !== false && (aiPlayers?.[2]?.stats?.hp || 0) > 0,
+                'ai3'
               )}
             </div>
 
@@ -344,7 +440,8 @@ export const GameTable: React.FC<GameTableProps> = ({
                 getCharacterColor(aiPlayers?.[0]?.character || aiCharacters[0]),
                 aiAvatars[aiPlayers?.[0]?.character || aiCharacters[0]] || 1,
                 false,
-                aiPlayers?.[0]?.isActive !== false && (aiPlayers?.[0]?.stats?.hp || 0) > 0
+                aiPlayers?.[0]?.isActive !== false && (aiPlayers?.[0]?.stats?.hp || 0) > 0,
+                'ai'
               )}
             </div>
           </div>
@@ -359,7 +456,10 @@ export const GameTable: React.FC<GameTableProps> = ({
                 playerStats.hp,
                 playerHand.length,
                 playerColor,
-                selectedAvatar
+                selectedAvatar,
+                false,
+                true,
+                'player'
               )}
             </div>
 
@@ -643,6 +743,43 @@ export const GameTable: React.FC<GameTableProps> = ({
         .cg-card-count-display { color: #d4af37; font-size: 12px; margin-top: 8px; }
         .cg-placeholder-text { color: rgba(255,255,255,0.3); font-size: 14px; }
 
+        /* 顶部栏 */
+        .cg-top-bar {
+          position: fixed;
+          top: 10px;
+          left: 10px;
+          z-index: 50;
+          display: flex;
+          align-items: center;
+        }
+        .cg-log-toggle-btn-top {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 14px;
+          background: linear-gradient(135deg, rgba(212, 175, 55, 0.9), rgba(180, 148, 31, 0.9));
+          border: 2px solid rgba(212, 175, 55, 1);
+          border-radius: 20px;
+          color: #0a0a0f;
+          font-size: 13px;
+          font-weight: bold;
+          cursor: pointer;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+          transition: all 0.3s ease;
+        }
+        .cg-log-toggle-btn-top:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 16px rgba(212, 175, 55, 0.4);
+        }
+        .cg-log-toggle-btn-top.expanded {
+          background: rgba(60, 60, 70, 0.95);
+          border-color: rgba(255, 255, 255, 0.3);
+          color: white;
+        }
+        .cg-log-toggle-text {
+          font-size: 12px;
+        }
+
         /* 角色卡片 - 统一尺寸 */
         .cg-character { 
           display: flex; 
@@ -659,6 +796,7 @@ export const GameTable: React.FC<GameTableProps> = ({
           min-height: 170px;
           justify-content: flex-start;
           transition: all 0.3s ease;
+          position: relative;
         }
         .cg-character-dead {
           opacity: 0.4;
@@ -687,12 +825,12 @@ export const GameTable: React.FC<GameTableProps> = ({
           gap: 4px;
         }
         .cg-character-name { font-size: 14px; font-weight: bold; }
-        .cg-character-stats { 
-          display: flex; 
-          gap: 8px; 
-          align-items: center; 
+        .cg-character-stats {
+          display: flex;
+          gap: 8px;
+          align-items: center;
           justify-content: center;
-          font-size: 12px; 
+          font-size: 12px;
           white-space: nowrap;
           flex-wrap: nowrap;
         }
@@ -701,6 +839,187 @@ export const GameTable: React.FC<GameTableProps> = ({
           align-items: center;
           gap: 1px;
           font-size: 11px;
+        }
+
+        /* 动作文字提示 */
+        .cg-action-text {
+          position: absolute;
+          top: -25px;
+          left: 50%;
+          transform: translateX(-50%);
+          padding: 4px 12px;
+          border-radius: 12px;
+          font-size: 12px;
+          font-weight: bold;
+          white-space: nowrap;
+          animation: actionTextPop 1.5s ease-out forwards;
+          z-index: 10;
+        }
+        .cg-action-play {
+          background: linear-gradient(135deg, #22c55e, #16a34a);
+          color: white;
+          box-shadow: 0 2px 8px rgba(34, 197, 94, 0.5);
+        }
+        .cg-action-challenge {
+          background: linear-gradient(135deg, #a855f7, #7c3aed);
+          color: white;
+          box-shadow: 0 2px 8px rgba(168, 85, 247, 0.5);
+        }
+        .cg-action-geass {
+          background: linear-gradient(135deg, #f97316, #ea580c);
+          color: white;
+          box-shadow: 0 2px 8px rgba(249, 115, 22, 0.5);
+        }
+        .cg-action-dodge {
+          background: linear-gradient(135deg, #3b82f6, #2563eb);
+          color: white;
+          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
+        }
+        .cg-action-hit {
+          background: linear-gradient(135deg, #dc2626, #b91c1c);
+          color: white;
+          box-shadow: 0 2px 8px rgba(220, 38, 38, 0.5);
+        }
+        @keyframes actionTextPop {
+          0% {
+            opacity: 0;
+            transform: translateX(-50%) translateY(10px) scale(0.8);
+          }
+          20% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0) scale(1.1);
+          }
+          30% {
+            transform: translateX(-50%) translateY(0) scale(1);
+          }
+          80% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0) scale(1);
+          }
+          100% {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-10px) scale(0.9);
+          }
+        }
+
+        /* 角色动画效果 */
+        /* 出牌动画 - 轻微缩放 */
+        .cg-anim-play {
+          animation: playPulse 0.6s ease-out;
+        }
+        @keyframes playPulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.08); }
+        }
+
+        /* 质疑动画 - 紫色边框闪烁 */
+        .cg-anim-challenge {
+          animation: challengeFlash 0.6s ease-out;
+        }
+        @keyframes challengeFlash {
+          0%, 100% {
+            border-color: rgba(212, 175, 55, 0.3);
+            box-shadow: none;
+          }
+          25%, 75% {
+            border-color: #a855f7;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.6);
+          }
+          50% {
+            border-color: #7c3aed;
+            box-shadow: 0 0 30px rgba(124, 58, 237, 0.8);
+          }
+        }
+
+        /* Geass释放动画 - 橙色 */
+        .cg-anim-geass {
+          animation: geassRelease 0.8s ease-out;
+        }
+        @keyframes geassRelease {
+          0% {
+            border-color: rgba(212, 175, 55, 0.3);
+            box-shadow: none;
+          }
+          30% {
+            border-color: #f97316;
+            box-shadow: 0 0 25px rgba(249, 115, 22, 0.7);
+          }
+          50% {
+            border-color: #ea580c;
+            box-shadow: 0 0 40px rgba(234, 88, 12, 0.9);
+            transform: scale(1.05);
+          }
+          70% {
+            border-color: #f97316;
+            box-shadow: 0 0 25px rgba(249, 115, 22, 0.7);
+          }
+          100% {
+            border-color: rgba(212, 175, 55, 0.3);
+            box-shadow: none;
+          }
+        }
+
+        /* Geass闪避动画 - 蓝色 */
+        .cg-anim-dodge {
+          animation: dodgeSuccess 0.8s ease-out;
+        }
+        @keyframes dodgeSuccess {
+          0%, 100% {
+            transform: translateX(0);
+            border-color: rgba(212, 175, 55, 0.3);
+          }
+          10% { transform: translateX(-5px); }
+          20% { transform: translateX(5px); }
+          30% { transform: translateX(-5px); }
+          40% { transform: translateX(5px); }
+          50% {
+            transform: translateX(0) scale(1.02);
+            border-color: #3b82f6;
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.8);
+          }
+          60% { transform: translateX(-3px); }
+          70% { transform: translateX(3px); }
+          80% { transform: translateX(-2px); }
+          90% { transform: translateX(2px); }
+        }
+
+        /* Geass命中动画 - 红色 */
+        .cg-anim-hit {
+          animation: hitImpact 0.8s ease-out;
+        }
+        @keyframes hitImpact {
+          0% {
+            transform: translate(0, 0);
+            border-color: rgba(212, 175, 55, 0.3);
+          }
+          15% {
+            transform: translate(-8px, -8px);
+            border-color: #dc2626;
+            box-shadow: 0 0 20px rgba(220, 38, 38, 0.6);
+          }
+          30% {
+            transform: translate(8px, 8px);
+            border-color: #b91c1c;
+            box-shadow: 0 0 35px rgba(185, 28, 28, 0.9);
+          }
+          45% {
+            transform: translate(-6px, 6px);
+          }
+          60% {
+            transform: translate(6px, -6px);
+            border-color: #dc2626;
+          }
+          75% {
+            transform: translate(-3px, -3px);
+          }
+          90% {
+            transform: translate(3px, 3px);
+          }
+          100% {
+            transform: translate(0, 0);
+            border-color: rgba(212, 175, 55, 0.3);
+            box-shadow: none;
+          }
         }
         .cg-card-count { color: #d4af37; }
 
@@ -1165,12 +1484,40 @@ export const GameTable: React.FC<GameTableProps> = ({
           }
         }
 
+        /* 移动端顶部按钮调整 */
+        @media (max-width: 768px) {
+          .cg-top-bar {
+            top: 8px;
+            left: 8px;
+          }
+          .cg-log-toggle-btn-top {
+            padding: 6px 10px;
+            font-size: 11px;
+          }
+          .cg-log-toggle-text {
+            font-size: 10px;
+          }
+          /* 动作文字提示位置调整 */
+          .cg-action-text {
+            top: -20px;
+            padding: 3px 8px;
+            font-size: 10px;
+          }
+        }
+
         /* 隐藏桌面端按钮 */
         @media (min-width: 769px) {
           .cg-log-toggle-btn,
           .cg-log-overlay,
           .cg-log-close-btn {
             display: none;
+          }
+          /* 桌面端也显示顶部按钮 */
+          .cg-top-bar {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 50;
           }
         }
       `}</style>
