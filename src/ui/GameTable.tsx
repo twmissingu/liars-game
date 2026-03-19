@@ -100,7 +100,7 @@ export const GameTable: React.FC<GameTableProps> = ({
 
   // 动画状态
   const [characterAnimations, setCharacterAnimations] = useState<Record<string, {
-    type: 'play' | 'challenge' | 'geass' | 'dodge' | 'hit' | null;
+    type: 'play' | 'challenge' | 'dodge' | 'hit' | null;
     showText: string;
   }>>({
     player: { type: null, showText: '' },
@@ -166,55 +166,59 @@ export const GameTable: React.FC<GameTableProps> = ({
   // 触发角色动画
   const triggerCharacterAnimation = (
     playerId: 'player' | 'ai' | 'ai2' | 'ai3',
-    type: 'play' | 'challenge' | 'geass' | 'dodge' | 'hit',
-    text: string
+    type: 'play' | 'challenge' | 'dodge' | 'hit',
+    text: string,
+    duration: number = 1500
   ) => {
     setCharacterAnimations(prev => ({
       ...prev,
       [playerId]: { type, showText: text },
     }));
 
-    // 1.5秒后清除动画
+    // 指定时长后清除动画
     setTimeout(() => {
       setCharacterAnimations(prev => ({
         ...prev,
         [playerId]: { type: null, showText: '' },
       }));
-    }, 1500);
+    }, duration);
   };
 
   // 监听游戏状态变化触发动画
   useEffect(() => {
     if (!gameState) return;
 
-    const { phase, lastAction, geassResult, turnState } = gameState;
+    const { lastAction, geassResult, turnState } = gameState;
 
-    // 出牌动画
+    // 出牌动画 - 仅玩家触发，350ms
     if (turnState?.playedCards && lastAction?.includes('出牌')) {
       const playerId = turnState.playedCards.playerId;
-      triggerCharacterAnimation(playerId, 'play', '出牌');
+      // 仅玩家角色触发出牌动画
+      if (playerId === 'player') {
+        triggerCharacterAnimation(playerId, 'play', '出牌', 350);
+      }
     }
 
-    // 质疑动画
+    // 质疑动画 - 发起质疑者触发，1800ms
     if (lastAction?.includes('质疑')) {
       const playerId = lastAction.includes('玩家') ? 'player' :
         lastAction.includes('AI2') ? 'ai2' :
         lastAction.includes('AI3') ? 'ai3' : 'ai';
-      triggerCharacterAnimation(playerId, 'challenge', '质疑');
+      triggerCharacterAnimation(playerId, 'challenge', '质疑', 1800);
     }
 
-    // Geass动画
+    // Geass动画 - 受质疑者触发
     if (geassResult?.activated) {
       const victimId = lastAction?.includes('玩家') ? 'player' :
         lastAction?.includes('AI2') ? 'ai2' :
         lastAction?.includes('AI3') ? 'ai3' : 'ai';
 
       if (geassResult.isDodge) {
-        triggerCharacterAnimation(victimId, 'dodge', '闪避');
+        // 闪避动画 - 900ms
+        triggerCharacterAnimation(victimId, 'dodge', '闪避', 900);
       } else if (geassResult.hit) {
-        triggerCharacterAnimation(victimId, 'hit', '命中');
-      } else if (phase === 'geass') {
-        triggerCharacterAnimation(victimId, 'geass', 'Geass');
+        // 命中动画 - 900ms
+        triggerCharacterAnimation(victimId, 'hit', '命中', 900);
       }
     }
   }, [gameState?.lastAction, gameState?.geassResult?.activated]);
@@ -844,43 +848,90 @@ export const GameTable: React.FC<GameTableProps> = ({
         /* 动作文字提示 */
         .cg-action-text {
           position: absolute;
-          top: -25px;
+          top: -28px;
           left: 50%;
           transform: translateX(-50%);
-          padding: 4px 12px;
-          border-radius: 12px;
-          font-size: 12px;
+          padding: 5px 14px;
+          border-radius: 14px;
+          font-size: 13px;
           font-weight: bold;
           white-space: nowrap;
-          animation: actionTextPop 1.5s ease-out forwards;
           z-index: 10;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.5);
         }
         .cg-action-play {
           background: linear-gradient(135deg, #22c55e, #16a34a);
           color: white;
           box-shadow: 0 2px 8px rgba(34, 197, 94, 0.5);
+          animation: actionTextPopPlay 0.35s ease-out forwards;
         }
         .cg-action-challenge {
-          background: linear-gradient(135deg, #a855f7, #7c3aed);
+          background: linear-gradient(135deg, #9D50BB, #6E48AA);
           color: white;
-          box-shadow: 0 2px 8px rgba(168, 85, 247, 0.5);
-        }
-        .cg-action-geass {
-          background: linear-gradient(135deg, #f97316, #ea580c);
-          color: white;
-          box-shadow: 0 2px 8px rgba(249, 115, 22, 0.5);
+          box-shadow: 0 2px 8px rgba(157, 80, 187, 0.5);
+          animation: actionTextPopChallenge 1.8s ease-out forwards;
         }
         .cg-action-dodge {
-          background: linear-gradient(135deg, #3b82f6, #2563eb);
+          background: transparent;
           color: white;
-          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
+          text-shadow: 0 0 4px #1E90FF, 0 0 8px #1E90FF;
+          animation: actionTextPopDodge 0.9s ease-out forwards;
         }
         .cg-action-hit {
-          background: linear-gradient(135deg, #dc2626, #b91c1c);
+          background: transparent;
           color: white;
-          box-shadow: 0 2px 8px rgba(220, 38, 38, 0.5);
+          text-shadow: 0 0 4px #DC143C, 0 0 8px #DC143C;
+          animation: actionTextPopHit 0.9s ease-out forwards;
         }
-        @keyframes actionTextPop {
+
+        /* 出牌文字动画 - 350ms */
+        @keyframes actionTextPopPlay {
+          0% {
+            opacity: 0;
+            transform: translateX(-50%) translateY(10px) scale(0.8);
+          }
+          40% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0) scale(1.1);
+          }
+          60% {
+            transform: translateX(-50%) translateY(0) scale(1);
+          }
+          80% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0) scale(1);
+          }
+          100% {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-8px) scale(0.95);
+          }
+        }
+
+        /* 质疑文字动画 - 1800ms */
+        @keyframes actionTextPopChallenge {
+          0% {
+            opacity: 0;
+            transform: translateX(-50%) translateY(10px) scale(0.8);
+          }
+          10% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0) scale(1.1);
+          }
+          15% {
+            transform: translateX(-50%) translateY(0) scale(1);
+          }
+          85% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0) scale(1);
+          }
+          100% {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-10px) scale(0.9);
+          }
+        }
+
+        /* 闪避文字动画 - 900ms */
+        @keyframes actionTextPopDodge {
           0% {
             opacity: 0;
             transform: translateX(-50%) translateY(10px) scale(0.8);
@@ -892,131 +943,148 @@ export const GameTable: React.FC<GameTableProps> = ({
           30% {
             transform: translateX(-50%) translateY(0) scale(1);
           }
-          80% {
+          70% {
             opacity: 1;
             transform: translateX(-50%) translateY(0) scale(1);
           }
           100% {
             opacity: 0;
-            transform: translateX(-50%) translateY(-10px) scale(0.9);
+            transform: translateX(-50%) translateY(-8px) scale(0.95);
+          }
+        }
+
+        /* 命中文字动画 - 900ms */
+        @keyframes actionTextPopHit {
+          0% {
+            opacity: 0;
+            transform: translateX(-50%) translateY(10px) scale(0.8);
+          }
+          20% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0) scale(1.1);
+          }
+          30% {
+            transform: translateX(-50%) translateY(0) scale(1);
+          }
+          70% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0) scale(1);
+          }
+          100% {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-8px) scale(0.95);
           }
         }
 
         /* 角色动画效果 */
-        /* 出牌动画 - 轻微缩放 */
+        /* 出牌动画 - 仅玩家，350ms，缩放1.0→1.1→1.0 */
         .cg-anim-play {
-          animation: playPulse 0.6s ease-out;
+          animation: playPulse 0.35s ease-out;
         }
         @keyframes playPulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.08); }
+          0% { transform: scale(1); }
+          50% { transform: scale(1.1); }
+          100% { transform: scale(1); }
         }
 
-        /* 质疑动画 - 紫色边框闪烁 */
+        /* 质疑动画 - 紫色边框闪烁 #9D50BB/#6E48AA，1800ms */
         .cg-anim-challenge {
-          animation: challengeFlash 0.6s ease-out;
+          animation: challengeFlash 1.8s ease-out;
         }
         @keyframes challengeFlash {
           0%, 100% {
             border-color: rgba(212, 175, 55, 0.3);
             box-shadow: none;
           }
-          25%, 75% {
-            border-color: #a855f7;
-            box-shadow: 0 0 20px rgba(168, 85, 247, 0.6);
+          10%, 30%, 50%, 70% {
+            border-color: #9D50BB;
+            box-shadow: 0 0 15px rgba(157, 80, 187, 0.7), inset 0 0 10px rgba(157, 80, 187, 0.3);
           }
-          50% {
-            border-color: #7c3aed;
-            box-shadow: 0 0 30px rgba(124, 58, 237, 0.8);
-          }
-        }
-
-        /* Geass释放动画 - 橙色 */
-        .cg-anim-geass {
-          animation: geassRelease 0.8s ease-out;
-        }
-        @keyframes geassRelease {
-          0% {
-            border-color: rgba(212, 175, 55, 0.3);
-            box-shadow: none;
-          }
-          30% {
-            border-color: #f97316;
-            box-shadow: 0 0 25px rgba(249, 115, 22, 0.7);
-          }
-          50% {
-            border-color: #ea580c;
-            box-shadow: 0 0 40px rgba(234, 88, 12, 0.9);
-            transform: scale(1.05);
-          }
-          70% {
-            border-color: #f97316;
-            box-shadow: 0 0 25px rgba(249, 115, 22, 0.7);
-          }
-          100% {
-            border-color: rgba(212, 175, 55, 0.3);
-            box-shadow: none;
+          20%, 40%, 60%, 80% {
+            border-color: #6E48AA;
+            box-shadow: 0 0 25px rgba(110, 72, 170, 0.9), inset 0 0 15px rgba(110, 72, 170, 0.4);
           }
         }
 
-        /* Geass闪避动画 - 蓝色 */
+        /* 闪避动画 - 蓝色 #1E90FF，±5px抖动，900ms */
         .cg-anim-dodge {
-          animation: dodgeSuccess 0.8s ease-out;
+          animation: dodgeSuccess 0.9s ease-out;
         }
         @keyframes dodgeSuccess {
           0%, 100% {
             transform: translateX(0);
             border-color: rgba(212, 175, 55, 0.3);
+            box-shadow: none;
           }
-          10% { transform: translateX(-5px); }
-          20% { transform: translateX(5px); }
-          30% { transform: translateX(-5px); }
-          40% { transform: translateX(5px); }
+          10% {
+            transform: translateX(-5px);
+            border-color: #1E90FF;
+            box-shadow: 0 0 20px rgba(30, 144, 255, 0.8);
+          }
+          20% {
+            transform: translateX(5px);
+            box-shadow: 0 0 30px rgba(30, 144, 255, 0.6);
+          }
+          30% {
+            transform: translateX(-5px);
+            box-shadow: 0 0 20px rgba(30, 144, 255, 0.4);
+          }
+          40% {
+            transform: translateX(5px);
+          }
           50% {
-            transform: translateX(0) scale(1.02);
-            border-color: #3b82f6;
-            box-shadow: 0 0 30px rgba(59, 130, 246, 0.8);
+            transform: translateX(0);
+            border-color: #1E90FF;
+            box-shadow: 0 0 25px rgba(30, 144, 255, 0.5);
           }
-          60% { transform: translateX(-3px); }
-          70% { transform: translateX(3px); }
-          80% { transform: translateX(-2px); }
-          90% { transform: translateX(2px); }
+          60% {
+            transform: translateX(-3px);
+          }
+          70% {
+            transform: translateX(3px);
+          }
+          80% {
+            transform: translateX(-2px);
+          }
+          90% {
+            transform: translateX(2px);
+          }
         }
 
-        /* Geass命中动画 - 红色 */
+        /* 命中动画 - 红色 #DC143C，脉冲+缩放，900ms */
         .cg-anim-hit {
-          animation: hitImpact 0.8s ease-out;
+          animation: hitImpact 0.9s ease-out;
         }
         @keyframes hitImpact {
           0% {
-            transform: translate(0, 0);
+            transform: scale(1);
             border-color: rgba(212, 175, 55, 0.3);
+            box-shadow: none;
           }
           15% {
-            transform: translate(-8px, -8px);
-            border-color: #dc2626;
-            box-shadow: 0 0 20px rgba(220, 38, 38, 0.6);
+            transform: scale(0.95);
+            border-color: #DC143C;
+            box-shadow: 0 0 15px rgba(220, 20, 60, 0.7);
           }
           30% {
-            transform: translate(8px, 8px);
-            border-color: #b91c1c;
-            box-shadow: 0 0 35px rgba(185, 28, 28, 0.9);
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(220, 20, 60, 0.9);
           }
           45% {
-            transform: translate(-6px, 6px);
+            transform: scale(0.98);
+            box-shadow: 0 0 20px rgba(220, 20, 60, 0.6);
           }
           60% {
-            transform: translate(6px, -6px);
-            border-color: #dc2626;
+            transform: scale(1.02);
+            border-color: #DC143C;
+            box-shadow: 0 0 25px rgba(220, 20, 60, 0.7);
           }
           75% {
-            transform: translate(-3px, -3px);
-          }
-          90% {
-            transform: translate(3px, 3px);
+            transform: scale(0.99);
+            box-shadow: 0 0 15px rgba(220, 20, 60, 0.5);
           }
           100% {
-            transform: translate(0, 0);
+            transform: scale(1);
             border-color: rgba(212, 175, 55, 0.3);
             box-shadow: none;
           }
