@@ -264,11 +264,12 @@ export const GameTable: React.FC<GameTableProps> = ({
     });
   };
 
-  // 监听游戏状态变化触发动画
+  // 监听游戏状态变化触发动画 - 使用独立的状态快照避免竞态条件
   useEffect(() => {
     if (!gameState) return;
 
-    const { lastAction, geassResult, turnState, phase } = gameState;
+    const { lastAction, turnState, phase } = gameState;
+    const currentPersistentPlayerId = persistentAnimation.playerId;
 
     // 出牌动画 - 持续播放直到质疑阶段开始
     // 匹配 "出了X张牌" 或 "出牌" 格式的lastAction
@@ -294,12 +295,19 @@ export const GameTable: React.FC<GameTableProps> = ({
     }
 
     // 当进入质疑阶段时，清除持续动画
-    if (phase === 'challenge' && persistentAnimation.playerId) {
+    if (phase === 'challenge' && currentPersistentPlayerId) {
       // 延迟清除，让玩家能看到最后的出牌状态
       animationTimerRef.current = setTimeout(() => {
         setPersistentAnimation({ playerId: null, type: null, text: '' });
       }, 500);
     }
+  }, [gameState?.lastAction, gameState?.phase, gameState?.turnState?.playedCards?.playerId, persistentAnimation.playerId]);
+
+  // 质疑动画 - 独立useEffect确保正确触发
+  useEffect(() => {
+    if (!gameState) return;
+
+    const { lastAction, geassResult, turnState } = gameState;
 
     // 质疑动画 - 发起质疑者触发
     if (lastAction?.includes('质疑') && lastAction?.includes('发起')) {
@@ -337,6 +345,13 @@ export const GameTable: React.FC<GameTableProps> = ({
         setPlayerChallengeAnimation({ show: false, targetId: null });
       }, 500);
     }
+  }, [gameState?.lastAction, gameState?.geassResult?.activated]);
+
+  // 不质疑和Geass动画 - 独立useEffect
+  useEffect(() => {
+    if (!gameState) return;
+
+    const { lastAction, geassResult, turnState } = gameState;
 
     // 不质疑动画 - 显示"跳过"提示
     if (lastAction?.includes('选择不质疑')) {
@@ -363,7 +378,7 @@ export const GameTable: React.FC<GameTableProps> = ({
         triggerCharacterAnimation(victimId, 'hit', '命中', 1500);
       }
     }
-  }, [gameState?.lastAction, gameState?.geassResult?.activated, gameState?.phase, persistentAnimation.playerId]);
+  }, [gameState?.lastAction, gameState?.geassResult?.activated]);
 
   useEffect(() => {
     if (selectedCharacter) {
