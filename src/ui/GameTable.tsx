@@ -331,18 +331,6 @@ export const GameTable: React.FC<GameTableProps> = ({
 
       {/* 主布局：左侧日志 + 中间游戏区 */}
       <div className="cg-main-layout">
-        {/* 移动端日志栏展开按钮 - 保留在左侧作为备选 */}
-        <button
-          className={`cg-log-toggle-btn ${isLogExpanded ? 'expanded' : ''}`}
-          onClick={toggleLogPanel}
-          aria-label={isLogExpanded ? '收起记录' : '展开记录'}
-        >
-          <span className="cg-log-toggle-icon">📜</span>
-          {!isLogExpanded && gameLog.length > 0 && (
-            <span className="cg-log-badge">{gameLog.length}</span>
-          )}
-        </button>
-
         {/* 左侧游戏记录栏 */}
         <div
           ref={logPanelRef}

@@ -997,37 +997,278 @@ interface HPBarProps {
 | HP变化 | 300ms | ease-out | 伤害显示 |
 | Geass特效 | 2000ms | ease-out | 技能触发 |
 
-#### 4.4.2 Geass特效动画
+#### 4.4.2 角色动作动画系统
 
-**红色光圈效果**:
+**动画总览**:
+
+| 动画类型 | 触发条件 | 执行角色 | 动画时长 | 视觉表现 | 颜色标识 |
+|---------|---------|---------|---------|---------|---------|
+| **玩家出牌** | 玩家出牌时 | 玩家 | 350ms | 缩放脉冲 1.0→1.1→1.0 | 绿色 `#22c55e` |
+| **AI出牌** | AI出牌时 | AI | 350ms | 缩放脉冲+橙色发光 | 橙色 `#f97316` |
+| **质疑** | 发起质疑时 | 质疑者 | 1800ms | 紫色边框闪烁 | 紫色 `#9D50BB`/`#6E48AA` |
+| **闪避** | Geass闪避成功时 | 受击者 | 900ms | 蓝色光晕+水平抖动±5px | 蓝色 `#1E90FF` |
+| **命中** | Geass命中时 | 受击者 | 900ms | 红色脉冲+缩放震动 | 红色 `#DC143C` |
+
+**1. 出牌动画详细规范**:
+
+**玩家出牌动画**:
 ```css
-@keyframes geass-expand {
-  0% {
-    width: 0;
-    height: 0;
-    opacity: 1;
-    border-color: #ff0000;
+/* 触发条件: 玩家出牌时 */
+/* 执行角色: 玩家 */
+/* 动画时长: 350ms */
+/* 视觉表现: 缩放脉冲 1.0→1.1→1.0 */
+
+@keyframes playPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* 文字提示样式 */
+.cg-action-play {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.5);
+}
+```
+
+**AI出牌动画**:
+```css
+/* 触发条件: AI出牌时 */
+/* 执行角色: AI */
+/* 动画时长: 350ms */
+/* 视觉表现: 缩放脉冲+橙色发光 */
+
+@keyframes aiPlayPulse {
+  0% { transform: scale(1); }
+  50% {
+    transform: scale(1.1);
+    border-color: #f97316;
+    box-shadow: 0 0 20px rgba(249, 115, 22, 0.6);
+  }
+  100% { transform: scale(1); }
+}
+
+/* 文字提示样式 */
+.cg-action-aiPlay {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: white;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.5);
+}
+```
+
+**2. 质疑动画详细规范**:
+
+```css
+/* 触发条件: 玩家或AI发起质疑时 */
+/* 执行角色: 质疑发起者 */
+/* 动画时长: 1800ms */
+/* 视觉表现: 紫色边框闪烁，频率0.3-0.5秒/次 */
+/* 边框宽度: 2-3像素 */
+/* 颜色: #9D50BB(主色) / #6E48AA(阴影色) */
+
+@keyframes challengeFlash {
+  0%, 100% {
+    border-color: rgba(212, 175, 55, 0.3);
+    box-shadow: none;
+  }
+  10%, 30%, 50%, 70% {
+    border-color: #9D50BB;
+    box-shadow: 0 0 15px rgba(157, 80, 187, 0.7), inset 0 0 10px rgba(157, 80, 187, 0.3);
+  }
+  20%, 40%, 60%, 80% {
+    border-color: #6E48AA;
+    box-shadow: 0 0 25px rgba(110, 72, 170, 0.9), inset 0 0 15px rgba(110, 72, 170, 0.4);
+  }
+}
+
+/* 文字提示样式 */
+.cg-action-challenge {
+  background: linear-gradient(135deg, #9D50BB, #6E48AA);
+  color: white;
+  box-shadow: 0 2px 8px rgba(157, 80, 187, 0.5);
+}
+```
+
+**3. 闪避动画详细规范**:
+
+```css
+/* 触发条件: 受到质疑且成功闪避时 */
+/* 执行角色: 受质疑者（闪避成功者） */
+/* 动画时长: 900ms */
+/* 视觉表现: 蓝色光晕+水平抖动±5px */
+/* 颜色: #1E90FF，透明度80%→0% */
+
+@keyframes dodgeSuccess {
+  0%, 100% {
+    transform: translateX(0);
+    border-color: rgba(212, 175, 55, 0.3);
+    box-shadow: none;
+  }
+  10% {
+    transform: translateX(-5px);
+    border-color: #1E90FF;
+    box-shadow: 0 0 20px rgba(30, 144, 255, 0.8);
+  }
+  20% {
+    transform: translateX(5px);
+    box-shadow: 0 0 30px rgba(30, 144, 255, 0.6);
+  }
+  30% {
+    transform: translateX(-5px);
+    box-shadow: 0 0 20px rgba(30, 144, 255, 0.4);
+  }
+  40% {
+    transform: translateX(5px);
   }
   50% {
-    opacity: 0.8;
-    border-color: #ff3333;
+    transform: translateX(0);
+    border-color: #1E90FF;
+    box-shadow: 0 0 25px rgba(30, 144, 255, 0.5);
   }
-  100% {
-    width: 300px;
-    height: 300px;
-    opacity: 0;
-    border-color: #ff6666;
-  }
+  60% { transform: translateX(-3px); }
+  70% { transform: translateX(3px); }
+  80% { transform: translateX(-2px); }
+  90% { transform: translateX(2px); }
+}
+
+/* 文字提示样式 - 白色字体+蓝色描边 */
+.cg-action-dodge {
+  background: transparent;
+  color: white;
+  text-shadow: 0 0 4px #1E90FF, 0 0 8px #1E90FF;
 }
 ```
 
-**Geass符号旋转**:
+**4. 命中动画详细规范**:
+
 ```css
-@keyframes geass-rotate {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+/* 触发条件: 受到质疑且被命中时 */
+/* 执行角色: 受质疑者（被命中者） */
+/* 动画时长: 900ms */
+/* 视觉表现: 红色脉冲+缩放震动 */
+/* 脉冲次数: 2-3次 */
+/* 缩放序列: 1.0→0.95→1.05→1.0 */
+/* 颜色: #DC143C */
+
+@keyframes hitImpact {
+  0% {
+    transform: scale(1);
+    border-color: rgba(212, 175, 55, 0.3);
+    box-shadow: none;
+  }
+  15% {
+    transform: scale(0.95);
+    border-color: #DC143C;
+    box-shadow: 0 0 15px rgba(220, 20, 60, 0.7);
+  }
+  30% {
+    transform: scale(1.05);
+    box-shadow: 0 0 30px rgba(220, 20, 60, 0.9);
+  }
+  45% {
+    transform: scale(0.98);
+    box-shadow: 0 0 20px rgba(220, 20, 60, 0.6);
+  }
+  60% {
+    transform: scale(1.02);
+    border-color: #DC143C;
+    box-shadow: 0 0 25px rgba(220, 20, 60, 0.7);
+  }
+  75% {
+    transform: scale(0.99);
+    box-shadow: 0 0 15px rgba(220, 20, 60, 0.5);
+  }
+  100% {
+    transform: scale(1);
+    border-color: rgba(212, 175, 55, 0.3);
+    box-shadow: none;
+  }
+}
+
+/* 文字提示样式 - 白色字体+红色描边 */
+.cg-action-hit {
+  background: transparent;
+  color: white;
+  text-shadow: 0 0 4px #DC143C, 0 0 8px #DC143C;
 }
 ```
+
+**5. 文字提示通用规范**:
+
+```css
+/* 位置: 角色图片上方 */
+/* 显示时长: 与动画时长一致 */
+/* 字体: 13px 粗体 */
+/* 动画: 弹出效果 */
+
+.cg-action-text {
+  position: absolute;
+  top: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 5px 14px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: bold;
+  white-space: nowrap;
+  z-index: 10;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+```
+
+**6. 动画触发逻辑**:
+
+```typescript
+// 动画触发条件映射
+const ANIMATION_TRIGGERS = {
+  // 出牌动画
+  play: {
+    trigger: '出牌动作完成',
+    playerCondition: 'playerId === "player"',
+    aiCondition: 'playerId !== "player"',
+    duration: 350,
+  },
+  
+  // 质疑动画
+  challenge: {
+    trigger: '质疑按钮点击',
+    condition: 'lastAction.includes("质疑")',
+    target: '质疑发起者',
+    duration: 1800,
+  },
+  
+  // 闪避动画
+  dodge: {
+    trigger: 'Geass判定闪避成功',
+    condition: 'geassResult.isDodge === true',
+    target: '受质疑者',
+    duration: 900,
+  },
+  
+  // 命中动画
+  hit: {
+    trigger: 'Geass判定命中',
+    condition: 'geassResult.hit === true',
+    target: '受质疑者',
+    duration: 900,
+  },
+};
+```
+
+**7. 性能优化要求**:
+
+- **帧率**: 所有动画保持60fps流畅度
+- **硬件加速**: 使用 `transform` 和 `opacity` 实现GPU加速
+- **内存管理**: 动画结束后自动清理DOM元素
+- **浏览器兼容**: 支持Chrome、Firefox、Safari、Edge最新版本
+- **移动端优化**: 动画时长和效果在移动端保持一致
+
+**8. 可访问性**:
+
+- **减少动画选项**: 提供设置选项允许用户关闭动画效果
+- **视觉提示**: 动画同时提供文字说明，确保信息可获取
+- **闪烁警告**: 质疑动画频率控制在安全范围内，避免光敏性癫痫风险
 
 ### 4.5 响应式设计
 
