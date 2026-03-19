@@ -116,6 +116,16 @@ export const GameTable: React.FC<GameTableProps> = ({
     ai3: { type: null, showText: '' },
   });
 
+  // 持续动画状态 - 用于出牌等需要持续显示的动画
+  const [persistentAnimation, setPersistentAnimation] = useState<{
+    playerId: string | null;
+    type: 'play' | 'aiPlay' | null;
+    text: string;
+  }>({ playerId: null, type: null, text: '' });
+
+  // 动画定时器引用
+  const animationTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   // 自动滚动到最新日志
   useEffect(() => {
     if (logContentRef.current && gameLog.length > prevLogLengthRef.current) {
@@ -202,26 +212,43 @@ export const GameTable: React.FC<GameTableProps> = ({
   useEffect(() => {
     if (!gameState) return;
 
-    const { lastAction, geassResult, turnState } = gameState;
+    const { lastAction, geassResult, turnState, phase } = gameState;
 
-    // 出牌动画 - 所有角色触发，350ms
+    // 出牌动画 - 持续播放直到质疑阶段开始
     if (turnState?.playedCards && lastAction?.includes('出牌')) {
       const playerId = turnState.playedCards.playerId;
-      // 玩家使用绿色，AI使用橙色
+      // 清除之前的定时器
+      if (animationTimerRef.current) {
+        clearTimeout(animationTimerRef.current);
+      }
+      // 设置持续动画
+      setPersistentAnimation({
+        playerId,
+        type: playerId === 'player' ? 'play' : 'aiPlay',
+        text: '出牌中...'
+      });
+      // 同时触发普通动画
       if (playerId === 'player') {
         triggerCharacterAnimation(playerId, 'play', '出牌', 350);
       } else {
-        // AI出牌使用橙色系
         triggerCharacterAnimation(playerId, 'aiPlay', '出牌', 350);
       }
     }
 
-    // 质疑动画 - 发起质疑者触发，1800ms
+    // 当进入质疑阶段时，清除持续动画
+    if (phase === 'challenge' && persistentAnimation.playerId) {
+      // 延迟清除，让玩家能看到最后的出牌状态
+      animationTimerRef.current = setTimeout(() => {
+        setPersistentAnimation({ playerId: null, type: null, text: '' });
+      }, 500);
+    }
+
+    // 质疑动画 - 发起质疑者触发
     if (lastAction?.includes('质疑') && lastAction?.includes('发起')) {
       const playerId = lastAction.includes('玩家') ? 'player' :
         lastAction.includes('AI2') ? 'ai2' :
         lastAction.includes('AI3') ? 'ai3' : 'ai';
-      triggerCharacterAnimation(playerId, 'challenge', '质疑', 1800);
+      triggerCharacterAnimation(playerId, 'challenge', '质疑', 1000);
     }
 
     // 不质疑动画 - 显示"跳过"提示
@@ -230,7 +257,7 @@ export const GameTable: React.FC<GameTableProps> = ({
         lastAction.includes('朱雀') ? 'ai2' :
         lastAction.includes('卡莲') ? 'ai3' :
         lastAction.includes('C.C.') ? 'ai' : 'ai';
-      triggerCharacterAnimation(playerId, 'play', '跳过', 600);
+      triggerCharacterAnimation(playerId, 'play', '跳过', 1000);
     }
 
     // Geass动画 - 受质疑者触发
@@ -240,14 +267,14 @@ export const GameTable: React.FC<GameTableProps> = ({
         lastAction?.includes('AI3') ? 'ai3' : 'ai';
 
       if (geassResult.isDodge) {
-        // 闪避动画 - 900ms
-        triggerCharacterAnimation(victimId, 'dodge', '闪避', 900);
+        // 闪避动画
+        triggerCharacterAnimation(victimId, 'dodge', '闪避', 1000);
       } else if (geassResult.hit) {
-        // 命中动画 - 900ms
-        triggerCharacterAnimation(victimId, 'hit', '命中', 900);
+        // 命中动画
+        triggerCharacterAnimation(victimId, 'hit', '命中', 1000);
       }
     }
-  }, [gameState?.lastAction, gameState?.geassResult?.activated]);
+  }, [gameState?.lastAction, gameState?.geassResult?.activated, gameState?.phase, persistentAnimation.playerId]);
 
   useEffect(() => {
     if (selectedCharacter) {
@@ -309,12 +336,22 @@ export const GameTable: React.FC<GameTableProps> = ({
     // 检查是否显示思考指示器
     const isThinking = aiThinkingState?.isThinking && aiThinkingState?.aiId === playerId;
 
+    // 检查是否显示持续动画（出牌中）
+    const isPersistentAnimating = persistentAnimation.playerId === playerId && persistentAnimation.type;
+    const persistentAnimationClass = isPersistentAnimating ? `cg-anim-${persistentAnimation.type}` : '';
+
     return (
-      <div className={`cg-character ${isTop ? 'cg-character-top' : ''} ${!isActive ? 'cg-character-dead' : ''} ${animationClass} ${isThinking ? 'cg-character-thinking' : ''}`}>
+      <div className={`cg-character ${isTop ? 'cg-character-top' : ''} ${!isActive ? 'cg-character-dead' : ''} ${animationClass} ${persistentAnimationClass} ${isThinking ? 'cg-character-thinking' : ''}`}>
         {/* 动画文字提示 */}
         {animation.showText && (
           <div className={`cg-action-text cg-action-${animation.type}`}>
             {animation.showText}
+          </div>
+        )}
+        {/* 持续动画提示（出牌中） */}
+        {isPersistentAnimating && (
+          <div className={`cg-action-text cg-action-${persistentAnimation.type} cg-persistent-text`}>
+            {persistentAnimation.text}
           </div>
         )}
         {/* AI思考指示器 */}
@@ -639,7 +676,7 @@ export const GameTable: React.FC<GameTableProps> = ({
           border-right: 1px solid rgba(212,175,55,0.2);
           display: flex;
           flex-direction: column;
-          height: 100vh;
+          height: calc(100vh - 70px);
           position: fixed;
           left: 0;
           top: 0;
@@ -1020,6 +1057,12 @@ export const GameTable: React.FC<GameTableProps> = ({
             opacity: 0;
             transform: translateX(-50%) translateY(-8px) scale(0.95);
           }
+        }
+
+        /* 持续动画文字样式 */
+        .cg-persistent-text {
+          animation: none !important;
+          opacity: 1 !important;
         }
 
         /* 角色动画效果 */
