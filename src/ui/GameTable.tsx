@@ -100,7 +100,7 @@ export const GameTable: React.FC<GameTableProps> = ({
 
   // 动画状态
   const [characterAnimations, setCharacterAnimations] = useState<Record<string, {
-    type: 'play' | 'challenge' | 'dodge' | 'hit' | null;
+    type: 'play' | 'aiPlay' | 'challenge' | 'dodge' | 'hit' | null;
     showText: string;
   }>>({
     player: { type: null, showText: '' },
@@ -166,7 +166,7 @@ export const GameTable: React.FC<GameTableProps> = ({
   // 触发角色动画
   const triggerCharacterAnimation = (
     playerId: 'player' | 'ai' | 'ai2' | 'ai3',
-    type: 'play' | 'challenge' | 'dodge' | 'hit',
+    type: 'play' | 'aiPlay' | 'challenge' | 'dodge' | 'hit',
     text: string,
     duration: number = 1500
   ) => {
@@ -190,12 +190,15 @@ export const GameTable: React.FC<GameTableProps> = ({
 
     const { lastAction, geassResult, turnState } = gameState;
 
-    // 出牌动画 - 仅玩家触发，350ms
+    // 出牌动画 - 所有角色触发，350ms
     if (turnState?.playedCards && lastAction?.includes('出牌')) {
       const playerId = turnState.playedCards.playerId;
-      // 仅玩家角色触发出牌动画
+      // 玩家使用绿色，AI使用橙色
       if (playerId === 'player') {
         triggerCharacterAnimation(playerId, 'play', '出牌', 350);
+      } else {
+        // AI出牌使用橙色系
+        triggerCharacterAnimation(playerId, 'aiPlay', '出牌', 350);
       }
     }
 
@@ -865,6 +868,12 @@ export const GameTable: React.FC<GameTableProps> = ({
           box-shadow: 0 2px 8px rgba(34, 197, 94, 0.5);
           animation: actionTextPopPlay 0.35s ease-out forwards;
         }
+        .cg-action-aiPlay {
+          background: linear-gradient(135deg, #f97316, #ea580c);
+          color: white;
+          box-shadow: 0 2px 8px rgba(249, 115, 22, 0.5);
+          animation: actionTextPopPlay 0.35s ease-out forwards;
+        }
         .cg-action-challenge {
           background: linear-gradient(135deg, #9D50BB, #6E48AA);
           color: white;
@@ -977,13 +986,26 @@ export const GameTable: React.FC<GameTableProps> = ({
         }
 
         /* 角色动画效果 */
-        /* 出牌动画 - 仅玩家，350ms，缩放1.0→1.1→1.0 */
+        /* 出牌动画 - 玩家绿色，350ms，缩放1.0→1.1→1.0 */
         .cg-anim-play {
           animation: playPulse 0.35s ease-out;
+        }
+        /* AI出牌动画 - 橙色系，350ms，缩放1.0→1.1→1.0 */
+        .cg-anim-aiPlay {
+          animation: aiPlayPulse 0.35s ease-out;
         }
         @keyframes playPulse {
           0% { transform: scale(1); }
           50% { transform: scale(1.1); }
+          100% { transform: scale(1); }
+        }
+        @keyframes aiPlayPulse {
+          0% { transform: scale(1); }
+          50% {
+            transform: scale(1.1);
+            border-color: #f97316;
+            box-shadow: 0 0 20px rgba(249, 115, 22, 0.6);
+          }
           100% { transform: scale(1); }
         }
 
