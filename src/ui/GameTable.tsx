@@ -237,9 +237,9 @@ export const GameTable: React.FC<GameTableProps> = ({
       });
       // 同时触发普通动画
       if (playerId === 'player') {
-        triggerCharacterAnimation(playerId, 'play', '出牌', 350);
+        triggerCharacterAnimation(playerId, 'play', '出牌', 1500);
       } else {
-        triggerCharacterAnimation(playerId, 'aiPlay', '出牌', 350);
+        triggerCharacterAnimation(playerId, 'aiPlay', '出牌', 1500);
       }
     }
 
@@ -269,10 +269,10 @@ export const GameTable: React.FC<GameTableProps> = ({
           targetId: turnState.playedCards.playerId
         });
         // 触发普通质疑动画
-        triggerCharacterAnimation(playerId, 'challenge', '质疑中...', 1000);
+        triggerCharacterAnimation(playerId, 'challenge', '质疑中...', 1500);
       } else {
         // AI质疑直接触发普通动画
-        triggerCharacterAnimation(playerId, 'challenge', '质疑', 1000);
+        triggerCharacterAnimation(playerId, 'challenge', '质疑', 1500);
       }
     }
 
@@ -289,7 +289,7 @@ export const GameTable: React.FC<GameTableProps> = ({
         lastAction.includes('朱雀') ? 'ai2' :
         lastAction.includes('卡莲') ? 'ai3' :
         lastAction.includes('C.C.') ? 'ai' : 'ai';
-      triggerCharacterAnimation(playerId, 'play', '跳过', 1000);
+      triggerCharacterAnimation(playerId, 'play', '跳过', 1500);
     }
 
     // Geass动画 - 受质疑者（出牌者）触发
@@ -299,10 +299,10 @@ export const GameTable: React.FC<GameTableProps> = ({
 
       if (geassResult.isDodge) {
         // 闪避动画
-        triggerCharacterAnimation(victimId, 'dodge', '闪避', 1000);
+        triggerCharacterAnimation(victimId, 'dodge', '闪避', 1500);
       } else if (geassResult.hit) {
         // 命中动画
-        triggerCharacterAnimation(victimId, 'hit', '命中', 1000);
+        triggerCharacterAnimation(victimId, 'hit', '命中', 1500);
       }
     }
   }, [gameState?.lastAction, gameState?.geassResult?.activated, gameState?.phase, persistentAnimation.playerId]);
@@ -978,10 +978,10 @@ export const GameTable: React.FC<GameTableProps> = ({
           min-width: max-content;
           pointer-events: none;
         }
-        /* 顶部角色动画文字特殊处理 */
+        /* 顶部角色动画文字 - 统一显示在上方 */
         .cg-ai-top .cg-action-text {
-          top: auto;
-          bottom: -35px;
+          top: -35px;
+          bottom: auto;
         }
         .cg-action-play {
           background: linear-gradient(135deg, #22c55e, #16a34a);
@@ -1116,7 +1116,7 @@ export const GameTable: React.FC<GameTableProps> = ({
         .cg-player-challenging {
           border-color: #9D50BB !important;
           box-shadow: 0 0 20px rgba(157, 80, 187, 0.6), inset 0 0 15px rgba(157, 80, 187, 0.3);
-          animation: challengingPulse 1s ease-in-out infinite;
+          animation: challengingPulse 1.5s ease-in-out infinite;
         }
         @keyframes challengingPulse {
           0%, 100% {
@@ -1133,7 +1133,7 @@ export const GameTable: React.FC<GameTableProps> = ({
         .cg-being-challenged {
           border-color: #ff6b6b !important;
           box-shadow: 0 0 20px rgba(255, 107, 107, 0.6), inset 0 0 15px rgba(255, 107, 107, 0.3);
-          animation: beingChallengedPulse 1s ease-in-out infinite;
+          animation: beingChallengedPulse 1.5s ease-in-out infinite;
         }
         @keyframes beingChallengedPulse {
           0%, 100% {
