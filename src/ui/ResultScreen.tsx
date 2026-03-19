@@ -9,8 +9,6 @@ import type { ResultScreenProps, CharacterId } from '../types';
 
 export const ResultScreen: React.FC<ResultScreenProps> = ({
   isWin,
-  playerScore,
-  opponentScore,
   turnNumber,
   onRestart,
   onMainMenu,

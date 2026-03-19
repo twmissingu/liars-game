@@ -91,8 +91,12 @@ export const GameTable: React.FC<GameTableProps> = ({
   canUseSkill = true,
 }) => {
   const [showLelouchSkill, setShowLelouchSkill] = useState(false);
+  const [isLogExpanded, setIsLogExpanded] = useState(false);
   const logContentRef = useRef<HTMLDivElement>(null);
+  const logPanelRef = useRef<HTMLDivElement>(null);
   const prevLogLengthRef = useRef(gameLog.length);
+  const autoCollapseTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
 
   // 自动滚动到最新日志
   useEffect(() => {
@@ -106,6 +110,47 @@ export const GameTable: React.FC<GameTableProps> = ({
     }
     prevLogLengthRef.current = gameLog.length;
   }, [gameLog]);
+
+  // 移动端3秒无操作自动收起日志栏
+  useEffect(() => {
+    if (!isMobile || !isLogExpanded) return;
+
+    const resetTimer = () => {
+      if (autoCollapseTimerRef.current) {
+        clearTimeout(autoCollapseTimerRef.current);
+      }
+      autoCollapseTimerRef.current = setTimeout(() => {
+        setIsLogExpanded(false);
+      }, 3000);
+    };
+
+    // 初始化计时器
+    resetTimer();
+
+    // 监听日志栏内的交互事件
+    const logPanel = logPanelRef.current;
+    if (logPanel) {
+      const events = ['click', 'touchstart', 'scroll'];
+      events.forEach(event => {
+        logPanel.addEventListener(event, resetTimer);
+      });
+
+      return () => {
+        events.forEach(event => {
+          logPanel.removeEventListener(event, resetTimer);
+        });
+        if (autoCollapseTimerRef.current) {
+          clearTimeout(autoCollapseTimerRef.current);
+        }
+      };
+    }
+
+    return () => {
+      if (autoCollapseTimerRef.current) {
+        clearTimeout(autoCollapseTimerRef.current);
+      }
+    };
+  }, [isLogExpanded, isMobile]);
 
   useEffect(() => {
     if (selectedCharacter) {
@@ -131,6 +176,10 @@ export const GameTable: React.FC<GameTableProps> = ({
   };
 
   const handleLelouchSkillClick = () => setShowLelouchSkill(true);
+
+  const toggleLogPanel = () => {
+    setIsLogExpanded(prev => !prev);
+  };
 
   const handleLelouchRankSelect = (rank: CardRank) => {
     setShowLelouchSkill(false);
@@ -181,9 +230,27 @@ export const GameTable: React.FC<GameTableProps> = ({
     <div className="cg-game-table">
       {/* 主布局：左侧日志 + 中间游戏区 */}
       <div className="cg-main-layout">
+        {/* 移动端日志栏展开按钮 */}
+        <button
+          className={`cg-log-toggle-btn ${isLogExpanded ? 'expanded' : ''}`}
+          onClick={toggleLogPanel}
+          aria-label={isLogExpanded ? '收起记录' : '展开记录'}
+        >
+          <span className="cg-log-toggle-icon">📜</span>
+          {!isLogExpanded && gameLog.length > 0 && (
+            <span className="cg-log-badge">{gameLog.length}</span>
+          )}
+        </button>
+
         {/* 左侧游戏记录栏 */}
-        <div className="cg-log-panel">
-          <div className="cg-log-header">📜 游戏记录</div>
+        <div
+          ref={logPanelRef}
+          className={`cg-log-panel ${isLogExpanded ? 'expanded' : 'collapsed'}`}
+        >
+          <div className="cg-log-header">
+            <span>📜 游戏记录</span>
+            <button className="cg-log-close-btn" onClick={toggleLogPanel}>✕</button>
+          </div>
           <div ref={logContentRef} className="cg-log-content">
             {gameLog.map((log, i) => (
               <div
@@ -195,6 +262,9 @@ export const GameTable: React.FC<GameTableProps> = ({
             ))}
           </div>
         </div>
+
+        {/* 遮罩层 - 移动端展开时显示 */}
+        {isLogExpanded && <div className="cg-log-overlay" onClick={toggleLogPanel} />}
 
         {/* 中间游戏区域 */}
         <div className="cg-game-area">
@@ -864,13 +934,205 @@ export const GameTable: React.FC<GameTableProps> = ({
           .cg-table { width: 180px; height: 180px; }
           .cg-table-inner { width: 155px; height: 155px; }
         }
+
+        /* 移动端日志栏优化 */
         @media (max-width: 768px) {
-          .cg-log-panel { width: 160px; min-width: 160px; }
-          .cg-character-avatar { transform: scale(0.85); }
-          .cg-table { width: 160px; height: 160px; }
-          .cg-table-inner { width: 135px; height: 135px; }
-          .cg-bottom-bar { padding: 0 10px; height: 60px; }
-          .cg-bottom-left, .cg-bottom-right { width: 100px; }
+          /* 日志面板默认收起 */
+          .cg-log-panel {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 70px;
+            width: 280px;
+            min-width: 280px;
+            z-index: 100;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            background: rgba(10, 10, 15, 0.98);
+            border-right: 1px solid rgba(212, 175, 55, 0.3);
+          }
+          .cg-log-panel.expanded {
+            transform: translateX(0);
+          }
+          .cg-log-panel.collapsed {
+            transform: translateX(-100%);
+          }
+
+          /* 展开/收起按钮 */
+          .cg-log-toggle-btn {
+            position: fixed;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.9), rgba(180, 148, 31, 0.9));
+            border: 2px solid rgba(212, 175, 55, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 99;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+          }
+          .cg-log-toggle-btn.expanded {
+            left: 290px;
+            background: rgba(60, 60, 70, 0.95);
+            border-color: rgba(255, 255, 255, 0.3);
+          }
+          .cg-log-toggle-btn:active {
+            transform: translateY(-50%) scale(0.95);
+          }
+          .cg-log-toggle-icon {
+            font-size: 20px;
+          }
+          .cg-log-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #dc2626;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          /* 关闭按钮 */
+          .cg-log-close-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 16px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+          }
+          .cg-log-close-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+          }
+
+          /* 遮罩层 */
+          .cg-log-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 99;
+            backdrop-filter: blur(2px);
+          }
+
+          /* 游戏区域居中 */
+          .cg-game-area {
+            padding: 5px 10px;
+            width: 100%;
+            max-width: 100%;
+          }
+
+          /* 调整角色尺寸 */
+          .cg-character-avatar { transform: scale(0.75); }
+          .cg-character {
+            width: 110px;
+            min-width: 110px;
+            height: 150px;
+            min-height: 150px;
+            padding: 8px;
+          }
+          .cg-character-name { font-size: 12px; }
+          .cg-character-stats { font-size: 11px; gap: 6px; }
+
+          /* 调整圆桌尺寸 */
+          .cg-table { width: 140px; height: 140px; }
+          .cg-table-inner { width: 115px; height: 115px; }
+          .cg-played-name { font-size: 11px; }
+          .cg-card-small { width: 28px; height: 38px; }
+          .cg-card-count-display { font-size: 11px; }
+
+          /* 调整AI区域 */
+          .cg-ai-top { height: 130px; margin-bottom: -5px; }
+          .cg-ai-left, .cg-ai-right { width: 120px; }
+          .cg-table-area { max-width: 200px; }
+
+          /* 调整玩家区域 */
+          .cg-player-section {
+            height: 160px;
+            gap: 15px;
+            padding: 0 10px;
+          }
+          .cg-hand-section {
+            min-width: 120px;
+            max-width: 280px;
+          }
+          .cg-card {
+            width: 42px;
+            height: 62px;
+          }
+
+          /* 底部栏优化 */
+          .cg-bottom-bar {
+            padding: 0 10px;
+            height: 60px;
+            gap: 10px;
+          }
+          .cg-bottom-left, .cg-bottom-right { width: 80px; }
+          .cg-back-btn {
+            padding: 6px 10px;
+            font-size: 11px;
+          }
+          .cg-status-text { font-size: 11px; }
+          .cg-btn {
+            padding: 6px 14px;
+            font-size: 12px;
+          }
+          .cg-round-number, .cg-liar-value { font-size: 16px; }
+          .cg-round-label, .cg-liar-label { font-size: 10px; }
+        }
+
+        /* 超小屏幕适配 */
+        @media (max-width: 480px) {
+          .cg-log-panel {
+            width: 260px;
+            min-width: 260px;
+          }
+          .cg-log-toggle-btn.expanded {
+            left: 270px;
+          }
+          .cg-character {
+            width: 95px;
+            min-width: 95px;
+            height: 135px;
+            min-height: 135px;
+          }
+          .cg-character-avatar { transform: scale(0.65); }
+          .cg-ai-top { height: 110px; }
+          .cg-ai-left, .cg-ai-right { width: 100px; }
+          .cg-table { width: 120px; height: 120px; }
+          .cg-table-inner { width: 100px; height: 100px; }
+          .cg-player-section {
+            height: 140px;
+            gap: 10px;
+          }
+          .cg-card {
+            width: 38px;
+            height: 56px;
+          }
+          .cg-hand { height: 70px; }
+        }
+
+        /* 隐藏桌面端按钮 */
+        @media (min-width: 769px) {
+          .cg-log-toggle-btn,
+          .cg-log-overlay,
+          .cg-log-close-btn {
+            display: none;
+          }
         }
       `}</style>
     </div>
