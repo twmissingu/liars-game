@@ -225,6 +225,7 @@ export const GameTable: React.FC<GameTableProps> = ({
     // 匹配 "出了X张牌" 或 "出牌" 格式的lastAction
     if (turnState?.playedCards && (lastAction?.includes('出牌') || lastAction?.includes('出了'))) {
       const playerId = turnState.playedCards.playerId;
+      console.log('[Animation] 出牌动画触发:', { playerId, lastAction });
       // 清除之前的定时器
       if (animationTimerRef.current) {
         clearTimeout(animationTimerRef.current);
@@ -253,9 +254,13 @@ export const GameTable: React.FC<GameTableProps> = ({
 
     // 质疑动画 - 发起质疑者触发
     if (lastAction?.includes('质疑') && lastAction?.includes('发起')) {
+      // 通过lastAction中的角色名识别
       const playerId = lastAction.includes('玩家') ? 'player' :
-        lastAction.includes('AI2') ? 'ai2' :
-        lastAction.includes('AI3') ? 'ai3' : 'ai';
+        lastAction.includes('朱雀') ? 'ai2' :
+        lastAction.includes('卡莲') ? 'ai3' :
+        lastAction.includes('C.C.') || lastAction.includes('C.C') ? 'ai' : 'ai';
+
+      console.log('[Animation] 质疑动画触发:', { playerId, lastAction });
 
       // 玩家质疑时设置持续动画
       if (playerId === 'player' && turnState?.playedCards) {
@@ -288,7 +293,8 @@ export const GameTable: React.FC<GameTableProps> = ({
       const playerId = lastAction.includes('玩家') ? 'player' :
         lastAction.includes('朱雀') ? 'ai2' :
         lastAction.includes('卡莲') ? 'ai3' :
-        lastAction.includes('C.C.') ? 'ai' : 'ai';
+        lastAction.includes('C.C.') || lastAction.includes('C.C') ? 'ai' : 'ai';
+      console.log('[Animation] 不质疑动画触发:', { playerId, lastAction });
       triggerCharacterAnimation(playerId, 'play', '跳过', 1500);
     }
 
