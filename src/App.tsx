@@ -331,7 +331,8 @@ const App: React.FC = () => {
 
     // 无人质疑时，原出牌者继续，不切换到其他玩家
     // 维持当前玩家的回合状态
-    const currentPlayerId = state.turnState.playedCards?.playerId || state.turnState.lastPlayerId;
+    // 注意：必须使用nextState而非state，因为nextState已经更新了playedCards
+    const currentPlayerId = nextState.turnState.lastPlayerId || nextState.turnState.playedCards?.playerId;
     const isPlayer = currentPlayerId === 'player' || !currentPlayerId;
 
     if (isPlayer) {
