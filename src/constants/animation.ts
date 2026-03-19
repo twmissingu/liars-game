@@ -64,8 +64,11 @@ export const AI_DELAY = {
   /** 新回合开始前的准备时间 */
   ROUND_START: 600,
 
-  /** AI不质疑动画展示时间 */
+  /** AI不质疑动画展示时间 - 必须 >= 动画时长 */
   NO_CHALLENGE_DISPLAY: 1500,
+
+  /** AI质疑决策间隔 - 必须 >= 动画时长 */
+  AI_CHALLENGE_INTERVAL: 1500,
 } as const;
 
 /** 动画与状态同步配置 */

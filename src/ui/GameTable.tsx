@@ -137,6 +137,9 @@ export const GameTable: React.FC<GameTableProps> = ({
     duration: number;
   }>>([]);
 
+  // 等待动画完成的Promise resolve函数
+  const animationCompleteResolveRef = useRef<(() => void) | null>(null);
+
   // 动画定时器引用
   const animationTimerRef = useRef<NodeJS.Timeout | null>(null);
   const playerChallengeTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -231,6 +234,12 @@ export const GameTable: React.FC<GameTableProps> = ({
       }));
       // 重置处理标志，允许处理下一个动画
       animationProcessingRef.current = false;
+
+      // 如果队列已空且有等待者，通知等待者
+      if (animationQueue.length <= 1 && animationCompleteResolveRef.current) {
+        animationCompleteResolveRef.current();
+        animationCompleteResolveRef.current = null;
+      }
     }, nextAnimation.duration);
   }, [animationQueue]);
 

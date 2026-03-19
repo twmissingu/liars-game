@@ -313,7 +313,7 @@ const App: React.FC = () => {
         setGameState(noChallengeState);
 
         // 添加延迟，让玩家能看到每个AI的决策和动画
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, AI_DELAY.NO_CHALLENGE_DISPLAY));
       }
 
       // 移动到下一个质疑者
