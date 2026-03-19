@@ -35,6 +35,8 @@ import { storage } from './utils';
 
 // Hooks导入
 import { useGeassResult } from './hooks/useGeassResult';
+import { useAnimationSync } from './hooks/useAnimationSync';
+import { AI_DELAY } from './constants/animation';
 
 // 类型导入
 import type {
@@ -92,6 +94,12 @@ const App: React.FC = () => {
 
   /** 是否正在处理中（防止重复操作） */
   const [isProcessing, setIsProcessing] = useState(false);
+
+  /** AI思考状态 */
+  const [aiThinkingState, setAiThinkingState] = useState<{ isThinking: boolean; aiId: string | null }>({
+    isThinking: false,
+    aiId: null,
+  });
 
   // ============================================
   // Ref定义 - 用于避免循环依赖
@@ -326,10 +334,10 @@ const App: React.FC = () => {
     if (nextState.currentPlayerIndex === 0) {
       setIsProcessing(false);
     } else {
-      // 延迟执行AI回合
+      // 延迟执行AI回合 - 使用统一的回合切换延迟
       setTimeout(() => {
         aiTurnRef.current?.();
-      }, 500);
+      }, AI_DELAY.TURN_SWITCH);
     }
   }, [addLog, selectedCharacter, handleGeassResult]);
 
@@ -407,10 +415,10 @@ const App: React.FC = () => {
       setGameState({ ...state });
 
       if (nextIndex !== 0) {
-        setTimeout(() => aiTurnRef.current?.(), 500);
+        setTimeout(() => aiTurnRef.current?.(), AI_DELAY.TURN_SWITCH);
       } else if (state.playerStats.hp <= 0) {
         // 下一个玩家但玩家已死亡，继续跳过
-        setTimeout(() => aiTurnRef.current?.(), 500);
+        setTimeout(() => aiTurnRef.current?.(), AI_DELAY.TURN_SWITCH);
       }
       return;
     }
@@ -419,10 +427,16 @@ const App: React.FC = () => {
     playSound('turn-start');
     addLog(`${ai.name} 的回合...`);
 
-    // AI思考延迟
+    // 设置AI思考状态（显示思考指示器）
+    setAiThinkingState({ isThinking: true, aiId: currentAIId });
+
+    // AI思考延迟 - 使用统一的延迟配置
     setTimeout(() => {
       try {
         console.log('[handleAITurn] AI开始出牌:', ai.name);
+
+        // 清除思考状态
+        setAiThinkingState({ isThinking: false, aiId: null });
 
         // AI出牌
         const newState = engine.aiPlayCards(currentAIId);
@@ -441,16 +455,17 @@ const App: React.FC = () => {
           addLog(`${ai.name}出了${cardCount}张牌，声称是${claimedRank}`);
         }
 
-        // 延迟后进入质疑阶段
+        // 延迟后进入质疑阶段 - 使用AI_DELAY.PLAY_TO_CHALLENGE确保动画完成
         setTimeout(() => {
           console.log('[handleAITurn] 进入质疑阶段');
           enterChallengePhase(engine, newState);
-        }, 1000);
+        }, AI_DELAY.PLAY_TO_CHALLENGE);
       } catch (e) {
         console.error('AI出牌错误:', e);
         setIsProcessing(false);
+        setAiThinkingState({ isThinking: false, aiId: null });
       }
-    }, 1000);
+    }, AI_DELAY.THINKING);
   }, [addLog, enterChallengePhase]);
 
   // 更新ref
@@ -607,10 +622,10 @@ const App: React.FC = () => {
         addLog(`${playerName}出了${cardCount}张牌，声称是${claimedRank}`);
       }
 
-      // 延迟后进入质疑阶段
+      // 延迟后进入质疑阶段 - 使用统一的延迟配置
       setTimeout(() => {
         enterChallengePhase(engine, newState);
-      }, 1500);
+      }, AI_DELAY.PLAY_TO_CHALLENGE);
     } catch (e) {
       console.error('出牌错误:', e);
       setIsProcessing(false);
@@ -772,7 +787,7 @@ const App: React.FC = () => {
     } else {
       setTimeout(() => {
         handleAITurn();
-      }, 500);
+      }, AI_DELAY.TURN_SWITCH);
     }
   }, [isProcessing, addLog, selectedCharacter, handleGeassResult, handleAITurn]);
 
@@ -861,6 +876,7 @@ const App: React.FC = () => {
             funnyAction={currentFunnyAction}
             isProcessing={isProcessing}
             canUseSkill={gameEngineRef.current?.canPlayerUseSkill('player') ?? true}
+            aiThinkingState={aiThinkingState}
           />
         ) : null;
 

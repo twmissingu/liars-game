@@ -3,3 +3,4 @@
  */
 
 export { useGeassResult } from './useGeassResult';
+export { useAnimationSync } from './useAnimationSync';

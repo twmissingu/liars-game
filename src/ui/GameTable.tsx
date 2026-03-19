@@ -21,6 +21,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ChibiAvatar, AvatarPreloader } from '../components/characters';
 import { characters, getCharacterName } from '../data/characters';
 import type { Card, CardRank, CharacterId, FunnyAction, GameState } from '../types';
+import { ANIMATION_DURATION } from '../constants/animation';
 import cardBack from '/assets/cards/card-back.svg';
 
 /**
@@ -59,6 +60,11 @@ interface GameTableProps {
   isProcessing?: boolean;
   /** 是否可以使用技能 */
   canUseSkill?: boolean;
+  /** AI思考状态 */
+  aiThinkingState?: {
+    isThinking: boolean;
+    aiId: string | null;
+  };
 }
 
 /**
@@ -89,6 +95,7 @@ export const GameTable: React.FC<GameTableProps> = ({
   gameLog = [],
   isProcessing = false,
   canUseSkill = true,
+  aiThinkingState,
 }) => {
   const [showLelouchSkill, setShowLelouchSkill] = useState(false);
   const [isLogExpanded, setIsLogExpanded] = useState(false);
@@ -163,13 +170,20 @@ export const GameTable: React.FC<GameTableProps> = ({
     };
   }, [isLogExpanded, isMobile]);
 
-  // 触发角色动画
+  // 触发角色动画 - 使用统一的动画时间常量
   const triggerCharacterAnimation = (
     playerId: 'player' | 'ai' | 'ai2' | 'ai3',
     type: 'play' | 'aiPlay' | 'challenge' | 'dodge' | 'hit',
     text: string,
-    duration: number = 1500
+    duration?: number
   ) => {
+    // 如果没有指定持续时间，使用常量配置
+    const animationDuration = duration ??
+      (type === 'play' || type === 'aiPlay' ? ANIMATION_DURATION.PLAY :
+       type === 'challenge' ? ANIMATION_DURATION.CHALLENGE :
+       type === 'dodge' ? ANIMATION_DURATION.DODGE :
+       type === 'hit' ? ANIMATION_DURATION.HIT : 1000);
+
     setCharacterAnimations(prev => ({
       ...prev,
       [playerId]: { type, showText: text },
@@ -181,7 +195,7 @@ export const GameTable: React.FC<GameTableProps> = ({
         ...prev,
         [playerId]: { type: null, showText: '' },
       }));
-    }, duration);
+    }, animationDuration);
   };
 
   // 监听游戏状态变化触发动画
@@ -283,12 +297,21 @@ export const GameTable: React.FC<GameTableProps> = ({
     const animation = characterAnimations[playerId];
     const animationClass = animation.type ? `cg-anim-${animation.type}` : '';
 
+    // 检查是否显示思考指示器
+    const isThinking = aiThinkingState?.isThinking && aiThinkingState?.aiId === playerId;
+
     return (
-      <div className={`cg-character ${isTop ? 'cg-character-top' : ''} ${!isActive ? 'cg-character-dead' : ''} ${animationClass}`}>
+      <div className={`cg-character ${isTop ? 'cg-character-top' : ''} ${!isActive ? 'cg-character-dead' : ''} ${animationClass} ${isThinking ? 'cg-character-thinking' : ''}`}>
         {/* 动画文字提示 */}
         {animation.showText && (
           <div className={`cg-action-text cg-action-${animation.type}`}>
             {animation.showText}
+          </div>
+        )}
+        {/* AI思考指示器 */}
+        {isThinking && (
+          <div className="cg-thinking-indicator">
+            <span className="cg-thinking-dots">...</span>
           </div>
         )}
         <div className="cg-character-avatar">
@@ -1058,6 +1081,42 @@ export const GameTable: React.FC<GameTableProps> = ({
           }
           90% {
             transform: translateX(2px);
+          }
+        }
+
+        /* AI思考指示器样式 */
+        .cg-character-thinking {
+          border-color: #3b82f6 !important;
+          box-shadow: 0 0 15px rgba(59, 130, 246, 0.5), inset 0 0 10px rgba(59, 130, 246, 0.2);
+        }
+        .cg-thinking-indicator {
+          position: absolute;
+          top: -25px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: linear-gradient(135deg, #3b82f6, #2563eb);
+          padding: 4px 12px;
+          border-radius: 12px;
+          font-size: 12px;
+          font-weight: bold;
+          color: white;
+          z-index: 20;
+          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
+          animation: thinkingPulse 1s ease-in-out infinite;
+        }
+        .cg-thinking-dots {
+          display: inline-block;
+          min-width: 20px;
+          text-align: center;
+        }
+        @keyframes thinkingPulse {
+          0%, 100% {
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+          }
+          50% {
+            opacity: 0.8;
+            transform: translateX(-50%) scale(1.05);
           }
         }
 
