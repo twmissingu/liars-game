@@ -219,7 +219,7 @@ export const GameTable: React.FC<GameTableProps> = ({
       <div className="cg-character-info">
         <div className="cg-character-name" style={{ color }}>{name}</div>
         <div className="cg-character-stats">
-          <span>{Array(hp).fill('❤️').join('')}</span>
+          <span className="cg-hp-display">{Array(hp).fill('❤').join('')}</span>
           <span className="cg-card-count">🃏{cardCount}</span>
         </div>
       </div>
@@ -361,18 +361,9 @@ export const GameTable: React.FC<GameTableProps> = ({
                 playerColor,
                 selectedAvatar
               )}
-              {selectedCharacter === 'lelouch' && isPlayerTurn && (
-                <button
-                  className="cg-skill-btn"
-                  onClick={handleLelouchSkillClick}
-                  disabled={isProcessing || !canUseSkill}
-                >
-                  {canUseSkill ? '绝对命令' : '已使用'}
-                </button>
-              )}
             </div>
 
-            {/* 右侧：手牌区域 - 层叠布局，右侧覆盖左侧 */}
+            {/* 右侧：手牌区域 + 技能按钮 */}
             <div className="cg-hand-section">
               <div className="cg-hand" style={{ width: `${Math.max(60, playerHand.length * 26 + 22)}px` }}>
                 {playerHand.map((card: Card, i: number) => {
@@ -400,6 +391,16 @@ export const GameTable: React.FC<GameTableProps> = ({
                   );
                 })}
               </div>
+              {/* 鲁鲁修技能按钮 - 移至手牌区域下方 */}
+              {selectedCharacter === 'lelouch' && (
+                <button
+                  className="cg-skill-btn"
+                  onClick={handleLelouchSkillClick}
+                  disabled={isProcessing || !canUseSkill || !isPlayerTurn}
+                >
+                  {canUseSkill ? '绝对命令' : '已使用'}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -410,7 +411,7 @@ export const GameTable: React.FC<GameTableProps> = ({
         {/* 左侧：返回按钮 */}
         <div className="cg-bottom-left">
           <button className="cg-back-btn" onClick={onBackToMenu}>
-            ← 返回主页面
+            ← 主页面
           </button>
         </div>
 
@@ -652,8 +653,8 @@ export const GameTable: React.FC<GameTableProps> = ({
           padding: 10px; 
           border-radius: 10px; 
           border: 1px solid rgba(212,175,55,0.3);
-          width: 130px;
-          min-width: 130px;
+          width: 140px;
+          min-width: 140px;
           height: 170px;
           min-height: 170px;
           justify-content: flex-start;
@@ -688,10 +689,18 @@ export const GameTable: React.FC<GameTableProps> = ({
         .cg-character-name { font-size: 14px; font-weight: bold; }
         .cg-character-stats { 
           display: flex; 
-          gap: 10px; 
+          gap: 8px; 
           align-items: center; 
           justify-content: center;
           font-size: 12px; 
+          white-space: nowrap;
+          flex-wrap: nowrap;
+        }
+        .cg-hp-display {
+          display: flex;
+          align-items: center;
+          gap: 1px;
+          font-size: 11px;
         }
         .cg-card-count { color: #d4af37; }
 
@@ -714,14 +723,27 @@ export const GameTable: React.FC<GameTableProps> = ({
           flex-shrink: 0;
         }
         .cg-skill-btn { 
-          padding: 4px 10px; 
+          padding: 6px 14px; 
           background: linear-gradient(135deg, #4c1d95, #7c3aed); 
           border: none; 
-          border-radius: 4px; 
+          border-radius: 6px; 
           color: white; 
-          font-size: 11px; 
+          font-size: 12px; 
+          font-weight: bold;
           cursor: pointer; 
-          margin-top: 4px;
+          box-shadow: 0 2px 8px rgba(76, 29, 149, 0.4);
+          transition: all 0.2s ease;
+          white-space: nowrap;
+        }
+        .cg-skill-btn:hover:not(:disabled) {
+          background: linear-gradient(135deg, #5c2da5, #8c4afd);
+          box-shadow: 0 4px 12px rgba(76, 29, 149, 0.6);
+          transform: translateY(-1px);
+        }
+        .cg-skill-btn:disabled {
+          background: linear-gradient(135deg, #3a3a4a, #4a4a5a);
+          cursor: not-allowed;
+          opacity: 0.7;
         }
 
         /* 手牌区域 - 位于角色右侧，层叠布局 */
@@ -730,9 +752,11 @@ export const GameTable: React.FC<GameTableProps> = ({
           min-width: 150px;
           max-width: 400px;
           display: flex; 
+          flex-direction: column;
           align-items: center;
           justify-content: center;
-          height: 85px;
+          gap: 8px;
+          min-height: 120px;
           padding: 0 10px;
           overflow: visible;
         }
@@ -1062,17 +1086,23 @@ export const GameTable: React.FC<GameTableProps> = ({
 
           /* 调整玩家区域 */
           .cg-player-section {
-            height: 160px;
-            gap: 15px;
+            height: 180px;
+            gap: 12px;
             padding: 0 10px;
           }
           .cg-hand-section {
             min-width: 120px;
             max-width: 280px;
+            min-height: 110px;
+            gap: 6px;
           }
           .cg-card {
             width: 42px;
             height: 62px;
+          }
+          .cg-skill-btn {
+            padding: 5px 12px;
+            font-size: 11px;
           }
 
           /* 底部栏优化 */
@@ -1081,14 +1111,14 @@ export const GameTable: React.FC<GameTableProps> = ({
             height: 60px;
             gap: 10px;
           }
-          .cg-bottom-left, .cg-bottom-right { width: 80px; }
+          .cg-bottom-left, .cg-bottom-right { width: 70px; }
           .cg-back-btn {
-            padding: 6px 10px;
+            padding: 6px 8px;
             font-size: 11px;
           }
           .cg-status-text { font-size: 11px; }
           .cg-btn {
-            padding: 6px 14px;
+            padding: 6px 12px;
             font-size: 12px;
           }
           .cg-round-number, .cg-liar-value { font-size: 16px; }
@@ -1105,25 +1135,34 @@ export const GameTable: React.FC<GameTableProps> = ({
             left: 270px;
           }
           .cg-character {
-            width: 95px;
-            min-width: 95px;
-            height: 135px;
-            min-height: 135px;
+            width: 100px;
+            min-width: 100px;
+            height: 140px;
+            min-height: 140px;
           }
           .cg-character-avatar { transform: scale(0.65); }
+          .cg-character-stats { font-size: 10px; gap: 4px; }
+          .cg-hp-display { font-size: 10px; }
           .cg-ai-top { height: 110px; }
           .cg-ai-left, .cg-ai-right { width: 100px; }
           .cg-table { width: 120px; height: 120px; }
           .cg-table-inner { width: 100px; height: 100px; }
           .cg-player-section {
-            height: 140px;
-            gap: 10px;
+            height: 160px;
+            gap: 8px;
+          }
+          .cg-hand-section {
+            min-height: 100px;
           }
           .cg-card {
             width: 38px;
             height: 56px;
           }
-          .cg-hand { height: 70px; }
+          .cg-hand { height: 65px; }
+          .cg-skill-btn {
+            padding: 4px 10px;
+            font-size: 10px;
+          }
         }
 
         /* 隐藏桌面端按钮 */
