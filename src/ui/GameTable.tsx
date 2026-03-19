@@ -217,11 +217,20 @@ export const GameTable: React.FC<GameTableProps> = ({
     }
 
     // 质疑动画 - 发起质疑者触发，1800ms
-    if (lastAction?.includes('质疑')) {
+    if (lastAction?.includes('质疑') && lastAction?.includes('发起')) {
       const playerId = lastAction.includes('玩家') ? 'player' :
         lastAction.includes('AI2') ? 'ai2' :
         lastAction.includes('AI3') ? 'ai3' : 'ai';
       triggerCharacterAnimation(playerId, 'challenge', '质疑', 1800);
+    }
+
+    // 不质疑动画 - 显示"跳过"提示
+    if (lastAction?.includes('选择不质疑')) {
+      const playerId = lastAction.includes('玩家') ? 'player' :
+        lastAction.includes('朱雀') ? 'ai2' :
+        lastAction.includes('卡莲') ? 'ai3' :
+        lastAction.includes('C.C.') ? 'ai' : 'ai';
+      triggerCharacterAnimation(playerId, 'play', '跳过', 600);
     }
 
     // Geass动画 - 受质疑者触发
@@ -337,7 +346,7 @@ export const GameTable: React.FC<GameTableProps> = ({
 
   return (
     <div className="cg-game-table">
-      {/* 顶部栏 - 包含游戏记录按钮 */}
+      {/* 顶部栏 - 移动端显示游戏记录按钮，桌面端隐藏 */}
       <div className="cg-top-bar">
         <button
           className={`cg-log-toggle-btn-top ${isLogExpanded ? 'expanded' : ''}`}
@@ -361,7 +370,7 @@ export const GameTable: React.FC<GameTableProps> = ({
         >
           <div className="cg-log-header">
             <span>📜 游戏记录</span>
-            <button className="cg-log-close-btn" onClick={toggleLogPanel}>✕</button>
+            <button className="cg-log-close-btn mobile-only" onClick={toggleLogPanel}>✕</button>
           </div>
           <div ref={logContentRef} className="cg-log-content">
             {gameLog.map((log, i) => (
@@ -622,15 +631,19 @@ export const GameTable: React.FC<GameTableProps> = ({
           margin-bottom: 0;
         }
 
-        /* 左侧游戏记录栏 */
-        .cg-log-panel { 
-          width: 240px; 
+        /* 左侧游戏记录栏 - 桌面端固定定位 */
+        .cg-log-panel {
+          width: 240px;
           min-width: 240px;
-          background: rgba(0,0,0,0.5); 
-          border-right: 1px solid rgba(212,175,55,0.2); 
-          display: flex; 
+          background: rgba(0,0,0,0.5);
+          border-right: 1px solid rgba(212,175,55,0.2);
+          display: flex;
           flex-direction: column;
-          height: 100%;
+          height: 100vh;
+          position: fixed;
+          left: 0;
+          top: 0;
+          z-index: 40;
         }
         .cg-log-header { 
           padding: 12px 15px;
@@ -685,22 +698,26 @@ export const GameTable: React.FC<GameTableProps> = ({
           border-left: 2px solid #d4af37; 
         }
 
-        /* 中间游戏区域 */
-        .cg-game-area { 
-          flex: 1; 
-          display: flex; 
+        /* 中间游戏区域 - 为固定左侧栏留出空间 */
+        .cg-game-area {
+          flex: 1;
+          display: flex;
           flex-direction: column;
           padding: 5px 20px;
           gap: 5px;
           overflow: hidden;
+          margin-left: 240px;
         }
 
-        /* 顶部AI - 更靠近圆桌 */
-        .cg-ai-top { 
-          display: flex; 
+        /* 顶部AI - 调整垂直位置向下移动 */
+        .cg-ai-top {
+          display: flex;
           justify-content: center;
           height: 160px;
           margin-bottom: -10px;
+          margin-top: 40px;
+          position: relative;
+          z-index: 5;
         }
 
         /* 中间行 */
@@ -862,16 +879,25 @@ export const GameTable: React.FC<GameTableProps> = ({
         /* 动作文字提示 */
         .cg-action-text {
           position: absolute;
-          top: -28px;
+          top: -35px;
           left: 50%;
           transform: translateX(-50%);
-          padding: 5px 14px;
+          padding: 6px 16px;
           border-radius: 14px;
           font-size: 13px;
           font-weight: bold;
           white-space: nowrap;
-          z-index: 10;
+          z-index: 1000;
           text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+          overflow: visible;
+          max-width: none;
+          min-width: max-content;
+          pointer-events: none;
+        }
+        /* 顶部角色动画文字特殊处理 */
+        .cg-ai-top .cg-action-text {
+          top: auto;
+          bottom: -35px;
         }
         .cg-action-play {
           background: linear-gradient(135deg, #22c55e, #16a34a);
@@ -1642,19 +1668,46 @@ export const GameTable: React.FC<GameTableProps> = ({
           }
         }
 
-        /* 隐藏桌面端按钮 */
+        /* 桌面端样式优化 */
         @media (min-width: 769px) {
+          /* 隐藏移动端按钮 */
           .cg-log-toggle-btn,
           .cg-log-overlay,
-          .cg-log-close-btn {
-            display: none;
-          }
-          /* 桌面端也显示顶部按钮 */
+          .cg-log-close-btn.mobile-only,
           .cg-top-bar {
+            display: none !important;
+          }
+
+          /* 桌面端日志栏始终显示 */
+          .cg-log-panel {
+            transform: none !important;
+          }
+
+          /* 桌面端游戏区域调整 */
+          .cg-game-area {
+            margin-left: 240px;
+          }
+        }
+
+        /* 移动端样式 */
+        @media (max-width: 768px) {
+          /* 移动端日志栏可收起 */
+          .cg-log-panel {
             position: fixed;
-            top: 15px;
-            left: 15px;
-            z-index: 50;
+            transform: translateX(-100%);
+          }
+          .cg-log-panel.expanded {
+            transform: translateX(0);
+          }
+
+          /* 移动端游戏区域无左边距 */
+          .cg-game-area {
+            margin-left: 0;
+          }
+
+          /* 显示移动端按钮 */
+          .cg-top-bar {
+            display: flex;
           }
         }
       `}</style>

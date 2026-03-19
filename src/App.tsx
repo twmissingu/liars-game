@@ -192,12 +192,12 @@ const App: React.FC = () => {
 
   /**
    * AI出牌后进入质疑阶段
-   * 同步调用质疑处理流程
+   * 异步处理质疑流程，确保每个AI的决策都有足够的时间显示动画
    *
    * @param engine - 游戏引擎实例
    * @param state - 当前游戏状态
    */
-  const enterChallengePhase = useCallback((engine: GameEngine, state: GameState) => {
+  const enterChallengePhase = useCallback(async (engine: GameEngine, state: GameState) => {
     console.log('[enterChallengePhase] 进入质疑阶段');
 
     // 获取出牌者信息
@@ -221,7 +221,6 @@ const App: React.FC = () => {
     const playedByIndex = getPlayerIndex(playedBy);
 
     // 从出牌者的下家开始质疑（顺时针）
-    // 注意：质疑顺序应该是顺时针，即索引递增
     let currentIndex = (playedByIndex + 1) % 4;
     let checkedCount = 0;
 
@@ -247,7 +246,6 @@ const App: React.FC = () => {
       }
 
       // AI质疑 - 根据索引映射到aiPlayers数组
-      // aiPlayers[0]=AI1(ai), aiPlayers[1]=AI2(ai2), aiPlayers[2]=AI3(ai3)
       const aiArrayIndex = currentIndex === 1 ? 2 : currentIndex === 2 ? 1 : 0;
       const challengerAI = state.aiPlayers[aiArrayIndex];
       if (!challengerAI || !challengerAI.isActive || challengerAI.stats.hp <= 0) {
@@ -306,6 +304,9 @@ const App: React.FC = () => {
       } else {
         // 记录AI选择不质疑
         addLog(`${challengerAI.name}选择不质疑`);
+
+        // 添加延迟，让玩家能看到每个AI的决策
+        await new Promise(resolve => setTimeout(resolve, 600));
       }
 
       // 移动到下一个质疑者
