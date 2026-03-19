@@ -35,7 +35,6 @@ import { storage } from './utils';
 
 // Hooks导入
 import { useGeassResult } from './hooks/useGeassResult';
-import { useAnimationSync } from './hooks/useAnimationSync';
 import { AI_DELAY } from './constants/animation';
 
 // 类型导入

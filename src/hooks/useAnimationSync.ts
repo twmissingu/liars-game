@@ -21,7 +21,6 @@ import {
   ANIMATION_DURATION,
   AI_DELAY,
   SYNC_CONFIG,
-  calculateWaitTime,
 } from '../constants/animation';
 
 /** 动画类型 */

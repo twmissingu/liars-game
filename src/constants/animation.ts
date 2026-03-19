@@ -111,6 +111,9 @@ export function calculateWaitTime(
   return ANIMATION_DURATION[animationType] + buffer;
 }
 
+// 导出calculateWaitTime供外部使用
+export { calculateWaitTime as _calculateWaitTime };
+
 /**
  * 验证延迟配置是否合理
  * @returns 验证结果
