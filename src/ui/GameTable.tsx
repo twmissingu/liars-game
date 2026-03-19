@@ -326,8 +326,8 @@ export const GameTable: React.FC<GameTableProps> = ({
         triggerCharacterAnimation(playerId, 'challenge', '质疑中...', 1500);
       } else {
         // AI质疑直接触发普通动画
+        console.log(`[Animation] AI质疑动画触发: ${playerId}, lastAction: ${lastAction}`);
         triggerCharacterAnimation(playerId, 'challenge', '质疑', 1500);
-        console.log(`[Animation] AI质疑动画已触发: ${playerId}`);
       }
     }
 
@@ -355,9 +355,11 @@ export const GameTable: React.FC<GameTableProps> = ({
 
       if (geassResult.isDodge) {
         // 闪避动画
+        console.log('[Animation] 闪避动画触发:', { victimId, geassResult });
         triggerCharacterAnimation(victimId, 'dodge', '闪避', 1500);
       } else if (geassResult.hit) {
         // 命中动画
+        console.log('[Animation] 命中动画触发:', { victimId, geassResult });
         triggerCharacterAnimation(victimId, 'hit', '命中', 1500);
       }
     }
