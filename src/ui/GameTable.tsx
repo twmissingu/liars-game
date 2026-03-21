@@ -15,7 +15,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChibiAvatar, AvatarPreloader } from '../components/characters';
 import type { Card, CardRank, CharacterId, FunnyAction, GameState } from '../types';
-import cardBack from '/assets/cards/card-back.svg';
+
+// 牌背图片路径（使用BASE_URL确保正确加载）
+const getCardBackSrc = () => `${import.meta.env.BASE_URL || '/'}assets/cards/card-back.svg`;
 
 // 导入新的动画系统
 import {
@@ -539,7 +541,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                       <div className="cg-cards">
                         {turnState.playedCards.actualCards.map((c: Card) => (
                           <div key={c.id} className="cg-card-small cg-card-back">
-                            <img src={cardBack} alt="牌背" />
+                            <img src={getCardBackSrc()} alt="牌背" />
                           </div>
                         ))}
                       </div>
