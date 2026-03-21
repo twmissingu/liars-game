@@ -148,6 +148,7 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
         };
 
         pngImg.onerror = () => {
+          console.error(`[OptimizedAvatar] Failed to load image: ${pngImg.src}`);
           setHasError(true);
         };
       }
