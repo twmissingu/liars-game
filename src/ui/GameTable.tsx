@@ -359,6 +359,9 @@ export const GameTable: React.FC<GameTableProps> = ({
   const playerName = playerCharacterId ? getCharacterDisplayName(playerCharacterId) : '玩家';
   const playerColor = getCharacterColorTheme(playerCharacterId);
 
+  // 计算最大出牌数量（卡莲可以出4张，其他角色3张）
+  const maxPlayCount = playerCharacterId === 'kallen' ? 4 : 3;
+
   /**
    * 渲染角色组件 - 使用新的动画系统
    */
@@ -646,8 +649,8 @@ export const GameTable: React.FC<GameTableProps> = ({
           {/* 过程提示文本 - 仅在非质疑阶段显示 */}
           {!isPlayerChallengeTurn && (
             <div className="cg-status-text">
-              {isPlayerTurn && selectedCards.length === 0 && '请选择要出的牌'}
-              {isPlayerTurn && selectedCards.length > 0 && `已选择 ${selectedCards.length} 张牌`}
+              {isPlayerTurn && selectedCards.length === 0 && `请选择要出的牌 (最多${maxPlayCount}张)`}
+              {isPlayerTurn && selectedCards.length > 0 && `已选择 ${selectedCards.length}/${maxPlayCount} 张牌`}
               {isChallengePhase && !isPlayerChallengeTurn && '等待其他玩家质疑...'}
               {!isPlayerTurn && !isChallengePhase && 'AI回合中...'}
             </div>
@@ -864,7 +867,7 @@ export const GameTable: React.FC<GameTableProps> = ({
         }
         .cg-played { text-align: center; }
         .cg-played-name { color: #d4af37; font-size: 13px; margin-bottom: 8px; }
-        .cg-cards { display: flex; justify-content: center; gap: 6px; }
+        .cg-cards { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; max-width: 100%; }
         .cg-card-small { 
           width: 32px; 
           height: 44px; 
