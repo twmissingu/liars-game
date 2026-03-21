@@ -8,45 +8,34 @@ import { playSound, playBGM, SFXType } from '../audio';
 import { FUNNY_ACTIONS, type GameState, type CharacterId } from '../types';
 import { getCharacterName } from '../data/characters';
 import type { GameEngine } from '../core/GameEngineV2';
-
-/** 获取玩家ID对应的索引 */
-const getPlayerIndex = (id: string): number => {
-  if (id === 'player') return 0;
-  if (id === 'ai') return 3;
-  if (id === 'ai2') return 2;
-  if (id === 'ai3') return 1;
-  return 0;
-};
-
-/** 从索引获取玩家ID */
-const getPlayerIdFromIndex = (idx: number): string => {
-  if (idx === 0) return 'player';
-  if (idx === 1) return 'ai3';
-  if (idx === 2) return 'ai2';
-  if (idx === 3) return 'ai';
-  return 'player';
-};
+import {
+  getAIPlayerByIndex,
+  getNextPlayerIndex,
+} from '../core/PlayerIndexMapper';
 
 /** 查找下一个存活的玩家索引 */
 const findNextActivePlayer = (
   startIndex: number,
   state: GameState
 ): number => {
-  for (let i = 0; i < 4; i++) {
-    const checkIndex = (startIndex + i) % 4;
-    const checkId = getPlayerIdFromIndex(checkIndex);
+  let currentIndex = startIndex;
+  let attempts = 0;
 
-    if (checkId === 'player') {
+  while (attempts < 4) {
+    if (currentIndex === 0) {
       if (state.playerStats.hp > 0) {
-        return checkIndex;
+        return currentIndex;
       }
     } else {
-      const ai = state.aiPlayers.find((a: { id: string }) => a.id === checkId);
+      const ai = getAIPlayerByIndex(currentIndex, state.aiPlayers);
       if (ai && ai.isActive && ai.stats.hp > 0) {
-        return checkIndex;
+        return currentIndex;
       }
     }
+    currentIndex = getNextPlayerIndex(currentIndex);
+    attempts++;
   }
+
   return startIndex;
 };
 
@@ -141,7 +130,7 @@ const handleGameOver = (
 /** 重置回合 */
 const resetGameRound = (
   engine: GameEngine,
-  loserId: 'player' | 'ai' | 'ai2' | 'ai3',
+  _loserId: 'player' | 'ai' | 'ai2' | 'ai3',
   state: GameState,
   selectedCharacter: CharacterId | null,
   addLog: (msg: string) => void,
@@ -150,8 +139,9 @@ const resetGameRound = (
   setIsProcessing: (processing: boolean) => void,
   aiTurnRef: { current: (() => void) | null }
 ): void => {
-  const loserIndex = getPlayerIndex(loserId);
-  let nextStarterIndex = (loserIndex + 1) % 4;
+  // 从上一回合先手角色的下家开始（顺时针轮转机制）
+  const currentFirstPlayerIndex = state.turnState.firstPlayerIndex;
+  let nextStarterIndex = getNextPlayerIndex(currentFirstPlayerIndex);
 
   // 查找下一个存活的玩家
   nextStarterIndex = findNextActivePlayer(nextStarterIndex, state);
@@ -161,10 +151,13 @@ const resetGameRound = (
   setSelectedCards([]);
 
   const isPlayerFirst = resetState.currentPlayerIndex === 0;
-  const aiArrayIndexMap: Record<number, number> = { 1: 2, 2: 1, 3: 0 };
+  // 使用统一的PlayerIndexMapper系统获取先手玩家名称
+  const firstPlayerAI = !isPlayerFirst
+    ? getAIPlayerByIndex(resetState.currentPlayerIndex, resetState.aiPlayers)
+    : null;
   const firstPlayerName = isPlayerFirst
     ? getCharacterName(selectedCharacter ?? undefined)
-    : resetState.aiPlayers[aiArrayIndexMap[resetState.currentPlayerIndex]]?.name;
+    : firstPlayerAI?.name;
 
   addLog(`【第${resetState.turnState.turnNumber}回合】骗子牌是${resetState.liarCard}`);
   addLog(`${firstPlayerName}先手！`);

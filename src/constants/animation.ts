@@ -64,8 +64,11 @@ export const AI_DELAY = {
   /** 新回合开始前的准备时间 */
   ROUND_START: 600,
 
-  /** AI不质疑动画展示时间 - 必须 >= 动画时长 */
-  NO_CHALLENGE_DISPLAY: 1500,
+  /** AI不质疑动画展示时间 - 必须 >= 动画时长 + 缓冲时间 */
+  NO_CHALLENGE_DISPLAY: 2000,
+
+  /** AI质疑动画展示时间 - 必须 >= 动画时长 + 缓冲时间 */
+  CHALLENGE_DISPLAY: 2000,
 
   /** AI质疑决策间隔 - 必须 >= 动画时长 */
   AI_CHALLENGE_INTERVAL: 1500,

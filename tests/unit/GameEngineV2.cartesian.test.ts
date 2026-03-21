@@ -128,7 +128,7 @@ describe('GameEngineV2 - 笛卡尔积测试', () => {
       expect(newState.geassResult?.activated).toBe(true);
     });
 
-    test('1.5 AI1出牌，玩家不质疑，下一玩家继续', () => {
+    test('1.5 AI1/C.C.出牌，玩家不质疑，下一玩家继续', () => {
       setupPlayCards('ai', true);
 
       // 玩家不质疑 - 这会直接结束质疑阶段并进入下一回合
@@ -136,7 +136,7 @@ describe('GameEngineV2 - 笛卡尔积测试', () => {
 
       // 验证：游戏继续，进入下一回合
       expect(nextState.turnState.turnNumber).toBeGreaterThan(1);
-      // AI1(3)的下家是玩家(0)
+      // 修正后的映射: C.C./ai(3)的下家是玩家(0)
       expect(nextState.currentPlayerIndex).toBe(0);
     });
   });
@@ -248,13 +248,13 @@ describe('GameEngineV2 - 笛卡尔积测试', () => {
       expect(newState.geassResult?.activated).toBe(true);
     });
 
-    test('3.5 AI1出牌，AI2不质疑，下一玩家继续', () => {
+    test('3.5 AI1/C.C.出牌，AI2/朱雀不质疑，下一玩家继续', () => {
       setupPlayCards('ai', true);
 
       // 不质疑，继续下一回合
       const nextState = engine.endChallengePhase();
 
-      // 验证：下一玩家是玩家(0)
+      // 修正后的映射: C.C./ai(3)的下家是玩家(0)
       expect(nextState.currentPlayerIndex).toBe(0);
     });
   });
@@ -378,12 +378,12 @@ describe('GameEngineV2 - 笛卡尔积测试', () => {
     });
 
     test('5.5 无人质疑后，回合正确流转', () => {
-      // AI1出牌
+      // AI1/C.C.出牌
       setupPlayCards('ai', false);
 
       const nextState = engine.endChallengePhase();
 
-      // AI1(3)的下家是玩家(0)
+      // 修正后的映射: C.C./ai(3)的下家是玩家(0)
       expect(nextState.currentPlayerIndex).toBe(0);
     });
   });

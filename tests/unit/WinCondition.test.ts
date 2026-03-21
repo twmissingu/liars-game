@@ -161,18 +161,28 @@ describe('胜利条件测试', () => {
     });
 
     test('3.3 回合流转应跳过死亡角色', () => {
-      // 设置AI2死亡
+      // 新映射: aiPlayers[0]=ai/C.C., aiPlayers[1]=ai2/朱雀, aiPlayers[2]=ai3/卡莲
+      // 设置朱雀/ai2死亡 (索引1)
       (engine as any).state.aiPlayers[1].stats.hp = 0;
       (engine as any).state.aiPlayers[1].isActive = false;
 
-      // 设置当前玩家为AI1
-      (engine as any).state.currentPlayerIndex = 3;
+      // 设置当前玩家为C.C./ai (索引2)
+      (engine as any).state.currentPlayerIndex = 2;
 
-      // 结束回合，下一个应该是AI3（跳过AI2）
+      // 模拟C.C./ai出牌
+      (engine as any).state.turnState.playedCards = {
+        cardIds: ['card1'],
+        claimedRank: 'Q',
+        actualCards: [{ id: 'card1', rank: 'Q', suit: 'spades', isJoker: false }],
+        playerId: 'ai',
+        isBluff: false,
+      };
+
+      // 结束回合，下一个应该是卡莲/ai3(3)（跳过朱雀/ai2(1)）
       const nextState = engine.endChallengePhase();
 
-      // 检查是否跳过了AI2
-      expect(nextState.currentPlayerIndex).not.toBe(2);
+      // 检查是否跳过了朱雀/ai2(1)，应该是卡莲/ai3(3)
+      expect(nextState.currentPlayerIndex).toBe(3);
     });
   });
 

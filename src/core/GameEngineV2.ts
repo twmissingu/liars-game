@@ -27,6 +27,14 @@ import {
   resetSkill,
   getMaxPlayCount,
 } from '../characters/state';
+import {
+  INDEX_TO_PLAYER_ID,
+  INDEX_TO_AI_ARRAY_INDEX,
+  getNextPlayerIndex as getNextIndex,
+  getIndexByPlayerId,
+  getAIPlayerById,
+  type PlayerId,
+} from './PlayerIndexMapper';
 
 // ============================================
 // 类型定义
@@ -75,6 +83,8 @@ export interface GameState {
     tableCards: Card[];
     lastPlayerId: 'player' | 'ai' | 'ai2' | 'ai3' | null;
     geassConsecutiveMisses: number;
+    /** 当前回合的先手角色索引（用于顺时针轮转） */
+    firstPlayerIndex: number;
   };
   lastAction: string;
   winner: 'player' | 'ai' | null;
@@ -146,6 +156,7 @@ export class GameEngine {
         tableCards: [],
         lastPlayerId: null,
         geassConsecutiveMisses: 0,
+        firstPlayerIndex: 0,
       },
       lastAction: '',
       winner: null,
@@ -242,6 +253,7 @@ export class GameEngine {
         tableCards: [],
         lastPlayerId: null,
         geassConsecutiveMisses: 0,
+        firstPlayerIndex: startingPlayerIndex,
       },
       characterStates,
     };
@@ -258,8 +270,7 @@ export class GameEngine {
    * @returns 当前玩家ID
    */
   getCurrentPlayerId(): 'player' | 'ai' | 'ai2' | 'ai3' {
-    if (this.state.currentPlayerIndex === 0) return 'player';
-    return this.state.aiPlayers[this.state.currentPlayerIndex - 1]?.id || 'ai';
+    return INDEX_TO_PLAYER_ID[this.state.currentPlayerIndex] || 'player';
   }
 
   /**
@@ -267,7 +278,7 @@ export class GameEngine {
    * @returns 下一个玩家的索引
    */
   private getNextPlayerIndex(): number {
-    let nextIndex = (this.state.currentPlayerIndex + 1) % 4;
+    let nextIndex = getNextIndex(this.state.currentPlayerIndex);
 
     // 跳过已淘汰的玩家
     let attempts = 0;
@@ -275,10 +286,14 @@ export class GameEngine {
       if (nextIndex === 0) {
         if (this.state.playerStats.hp > 0) return nextIndex;
       } else {
-        const ai = this.state.aiPlayers[nextIndex - 1];
-        if (ai && ai.isActive && ai.stats.hp > 0) return nextIndex;
+        // 使用统一的映射系统获取AI
+        const aiArrayIndex = INDEX_TO_AI_ARRAY_INDEX[nextIndex];
+        if (aiArrayIndex !== null && aiArrayIndex !== undefined) {
+          const ai = this.state.aiPlayers[aiArrayIndex];
+          if (ai && ai.isActive && ai.stats.hp > 0) return nextIndex;
+        }
       }
-      nextIndex = (nextIndex + 1) % 4;
+      nextIndex = getNextIndex(nextIndex);
       attempts++;
     }
 
@@ -409,13 +424,14 @@ export class GameEngine {
     // 确定谁受到Geass
     const victimId = isBluff ? targetId : challengerId;
 
-    // 设置lastAction用于动画触发
-    const challengerName = challengerId === 'player' ? '玩家' :
-      challengerId === 'ai' ? 'C.C.' :
-      challengerId === 'ai2' ? '朱雀' : '卡莲';
-    const targetName = targetId === 'player' ? '玩家' :
-      targetId === 'ai' ? 'C.C.' :
-      targetId === 'ai2' ? '朱雀' : '卡莲';
+    // 设置lastAction用于动画触发 - 使用PlayerIndexMapper获取名称
+    const getPlayerName = (playerId: PlayerId): string => {
+      if (playerId === 'player') return '玩家';
+      const ai = getAIPlayerById(playerId, this.state.aiPlayers);
+      return ai?.name || playerId;
+    };
+    const challengerName = getPlayerName(challengerId as PlayerId);
+    const targetName = getPlayerName(targetId as PlayerId);
     this.state.lastAction = `${challengerName}向${targetName}发起质疑！`;
 
     // 执行Geass判定，传入质疑者ID用于反击技能
@@ -456,37 +472,46 @@ export class GameEngine {
       hitChanceBoost = Math.min(0.8, charState.kallenCardCount * 0.2);
     }
 
-    // 使用GeassSystem执行判定，传入连续闪避次数
+    // 使用GeassSystem执行判定，传入连续闪避次数和攻击者ID（用于反击）
     const result = this.geassSystem.performGeass(
       targetId,
       targetStats,
       charState?.characterId || null,
       hitChanceBoost,
-      this.state.turnState.geassConsecutiveMisses
+      this.state.turnState.geassConsecutiveMisses,
+      challengerId  // 传递攻击者ID，用于朱雀反击
     );
 
     this.state.geassResult = result;
 
     // 处理朱雀反击技能
+    console.log(`[executeGeass] 检查反击条件: hit=${result.hit}, isCounter=${result.isCounter}, challengerId=${challengerId}`);
     if (!result.hit && result.isCounter && challengerId) {
       // 反击：让质疑者承受伤害
       const damage = 1;
+      console.log(`[executeGeass] 朱雀反击触发! targetId=${targetId}, challengerId=${challengerId}, damage=${damage}`);
+
       if (challengerId === 'player') {
+        const oldHp = this.state.playerStats.hp;
         this.state.playerStats = {
           ...this.state.playerStats,
           hp: Math.max(0, this.state.playerStats.hp - damage),
         };
+        console.log(`[executeGeass] 玩家受到反击伤害: ${oldHp} -> ${this.state.playerStats.hp}`);
         // 检查玩家是否被淘汰
         if (this.state.playerStats.hp <= 0) {
           this.checkGameOver();
         }
       } else {
         const challengerAI = this.state.aiPlayers.find(a => a.id === challengerId);
+        console.log(`[executeGeass] 查找质疑者AI: ${challengerId}, found=${!!challengerAI}`);
         if (challengerAI) {
+          const oldHp = challengerAI.stats.hp;
           challengerAI.stats = {
             ...challengerAI.stats,
             hp: Math.max(0, challengerAI.stats.hp - damage),
           };
+          console.log(`[executeGeass] AI ${challengerId} 受到反击伤害: ${oldHp} -> ${challengerAI.stats.hp}`);
           // 检查AI是否被淘汰
           if (challengerAI.stats.hp <= 0) {
             challengerAI.isActive = false;
@@ -495,6 +520,7 @@ export class GameEngine {
         }
       }
       this.state.lastAction = `${targetId === 'player' ? '玩家' : targetId}发动枢木剑术反击！${challengerId === 'player' ? '玩家' : challengerId}受到反弹伤害！`;
+      console.log(`[executeGeass] 反击完成, lastAction=${this.state.lastAction}`);
       return;
     }
 
@@ -648,6 +674,7 @@ export class GameEngine {
       tableCards: [],
       lastPlayerId: null,
       geassConsecutiveMisses: this.state.turnState.geassConsecutiveMisses,
+      firstPlayerIndex: nextStartingPlayerIndex, // 同步更新先手角色索引
     };
     this.state.geassResult = null;
     this.state.lastAction = '牌局重置，重新发牌';
@@ -701,30 +728,31 @@ export class GameEngine {
    */
   private getActivePlayerIndices(): number[] {
     const activeIndices: number[] = [];
-    
-    // 检查玩家
+
+    // 检查玩家 (currentPlayerIndex = 0)
     if (this.state.playerStats.hp > 0) {
       activeIndices.push(0);
     }
-    
-    // 检查AI3 (索引1)
-    const ai3 = this.state.aiPlayers.find(ai => ai.id === 'ai3');
-    if (ai3 && ai3.isActive && ai3.stats.hp > 0) {
+
+    // 使用PlayerIndexMapper系统检查AI
+    // ai2/朱雀 -> currentPlayerIndex = 1
+    const ai2 = getAIPlayerById('ai2', this.state.aiPlayers);
+    if (ai2 && ai2.isActive && ai2.stats.hp > 0) {
       activeIndices.push(1);
     }
-    
-    // 检查AI2 (索引2)
-    const ai2 = this.state.aiPlayers.find(ai => ai.id === 'ai2');
-    if (ai2 && ai2.isActive && ai2.stats.hp > 0) {
+
+    // ai3/卡莲 -> currentPlayerIndex = 2
+    const ai3 = getAIPlayerById('ai3', this.state.aiPlayers);
+    if (ai3 && ai3.isActive && ai3.stats.hp > 0) {
       activeIndices.push(2);
     }
-    
-    // 检查AI1 (索引3)
-    const ai1 = this.state.aiPlayers.find(ai => ai.id === 'ai');
+
+    // ai/C.C. -> currentPlayerIndex = 3
+    const ai1 = getAIPlayerById('ai', this.state.aiPlayers);
     if (ai1 && ai1.isActive && ai1.stats.hp > 0) {
       activeIndices.push(3);
     }
-    
+
     return activeIndices;
   }
 
@@ -1049,79 +1077,88 @@ export class GameEngine {
       this.state.turnState.playedCards = null;
       this.state.lastAction = '无人质疑，回合继续';
 
-      // 设置正确的阶段 - 如果是原出牌者是玩家则设为player_turn，否则为ai_turn
-      if (playedBy === 'player') {
-        this.state.phase = 'player_turn';
+      // 使用统一的PlayerIndexMapper系统设置currentPlayerIndex和phase
+      // 无人质疑时，先手角色保持不变（同一玩家继续出牌）
+      if (playedBy) {
+        const playerIndex = getIndexByPlayerId(playedBy as PlayerId);
+        if (playerIndex !== null) {
+          this.state.currentPlayerIndex = playerIndex;
+          this.state.phase = playerIndex === 0 ? 'player_turn' : 'ai_turn';
+          // 更新firstPlayerIndex为当前出牌者，确保下一回合轮转正确
+          this.state.turnState.firstPlayerIndex = playerIndex;
+        } else {
+          // 默认情况，使用当前索引
+          this.state.phase = this.state.currentPlayerIndex === 0 ? 'player_turn' : 'ai_turn';
+        }
       } else {
-        this.state.phase = 'ai_turn';
+        // 默认情况，使用当前索引
+        this.state.phase = this.state.currentPlayerIndex === 0 ? 'player_turn' : 'ai_turn';
       }
 
-      // 记录日志
-      const playedByName = playedBy === 'player' ? '玩家' :
-        playedBy === 'ai' ? 'C.C.' :
-        playedBy === 'ai2' ? '朱雀' :
-        playedBy === 'ai3' ? '卡莲' : playedBy;
-      console.log(`[endChallengePhase] 无人质疑，${playedByName}继续出牌`);
+      // 记录日志 - 使用PlayerIndexMapper获取名称
+      const getPlayerName = (playerId: PlayerId): string => {
+        if (playerId === 'player') return '玩家';
+        const ai = getAIPlayerById(playerId, this.state.aiPlayers);
+        return ai?.name || playerId;
+      };
+      const playedByName = playedBy ? getPlayerName(playedBy as PlayerId) : playedBy;
+      console.log(`[endChallengePhase] 无人质疑，${playedByName}继续出牌，currentPlayerIndex: ${this.state.currentPlayerIndex}`);
 
       return this.getState();
     }
 
     // 有质疑发生，正常进入下一回合
-    // UI布局顺序: 顶部=AI2, 左侧=AI3, 右侧=AI1, 底部=玩家
-      // 顺时针顺序: 玩家(0) -> AI3(1) -> AI2(2) -> AI1(3) -> 玩家(0)
-      // 映射关系: 0=玩家, 1=ai3, 2=ai2, 3=ai
-      const playedBy = this.state.turnState.playedCards?.playerId;
-      const playedByIndex =
-        playedBy === 'player'
-          ? 0
-          : playedBy === 'ai3'
-            ? 1
-            : playedBy === 'ai2'
-              ? 2
-              : playedBy === 'ai'
-                ? 3
-                : 0;
+    // 新机制：从上一回合先手角色的下家开始（顺时针轮转）
+    const currentFirstPlayerIndex = this.state.turnState.firstPlayerIndex;
 
-      // 计算下一个玩家（顺时针）
-      let nextPlayerIndex = (playedByIndex + 1) % 4;
+    // 计算下一回合的先手角色（当前先手角色的下家）
+    let nextFirstPlayerIndex = getNextIndex(currentFirstPlayerIndex);
 
-      // 跳过已淘汰的玩家
-      let attempts = 0;
-      while (attempts < 4) {
-        if (nextPlayerIndex === 0) {
-          if (this.state.playerStats.hp > 0) break;
-        } else {
-          // 根据UI顺序映射到aiPlayers数组索引
-          // UI顺序: 1=ai3, 2=ai2, 3=ai
-          // aiPlayers数组: 0=ai, 1=ai2, 2=ai3
-          const aiArrayIndex =
-            nextPlayerIndex === 1 ? 2 : nextPlayerIndex === 2 ? 1 : 0;
+    // 跳过已淘汰的玩家
+    let attempts = 0;
+    while (attempts < 4) {
+      if (nextFirstPlayerIndex === 0) {
+        if (this.state.playerStats.hp > 0) break;
+      } else {
+        // 使用统一的映射系统获取AI
+        const aiArrayIndex = INDEX_TO_AI_ARRAY_INDEX[nextFirstPlayerIndex];
+        if (aiArrayIndex !== null && aiArrayIndex !== undefined) {
           const ai = this.state.aiPlayers[aiArrayIndex];
           if (ai && ai.isActive && ai.stats.hp > 0) break;
         }
-        nextPlayerIndex = (nextPlayerIndex + 1) % 4;
-        attempts++;
       }
+      nextFirstPlayerIndex = getNextIndex(nextFirstPlayerIndex);
+      attempts++;
+    }
 
-    this.state.currentPlayerIndex = nextPlayerIndex;
-    this.state.phase = nextPlayerIndex === 0 ? 'player_turn' : 'ai_turn';
+    // 更新先手角色
+    this.state.currentPlayerIndex = nextFirstPlayerIndex;
+    this.state.phase = nextFirstPlayerIndex === 0 ? 'player_turn' : 'ai_turn';
+    this.state.turnState.firstPlayerIndex = nextFirstPlayerIndex;
 
-    // 无论谁先手，回合数都增加
+    // 回合数增加
     this.state.turnState.turnNumber++;
 
     this.state.turnState.playedCards = null;
 
     // 添加调试日志
-    const nextPlayerName = nextPlayerIndex === 0
+    const prevFirstPlayerName = currentFirstPlayerIndex === 0
       ? '玩家'
-      : nextPlayerIndex === 1
-        ? 'AI3(卡莲)'
-        : nextPlayerIndex === 2
-          ? 'AI2(朱雀)'
-          : 'AI1(C.C.)';
-    console.log(`[endChallengePhase] 出牌者: ${playedBy}, 下一个玩家: ${nextPlayerName}(索引${nextPlayerIndex})`);
+      : currentFirstPlayerIndex === 1
+        ? '卡莲'
+        : currentFirstPlayerIndex === 2
+          ? '朱雀'
+          : 'C.C.';
+    const nextFirstPlayerName = nextFirstPlayerIndex === 0
+      ? '玩家'
+      : nextFirstPlayerIndex === 1
+        ? '卡莲'
+        : nextFirstPlayerIndex === 2
+          ? '朱雀'
+          : 'C.C.';
+    console.log(`[endChallengePhase] 第${this.state.turnState.turnNumber}回合，先手角色: ${nextFirstPlayerName}(索引${nextFirstPlayerIndex})，上一回合先手: ${prevFirstPlayerName}(索引${currentFirstPlayerIndex})`);
 
-    this.state.lastAction = '质疑阶段结束，回合继续';
+    this.state.lastAction = `第${this.state.turnState.turnNumber}回合开始，${nextFirstPlayerName}先手`;
 
     return this.getState();
   }

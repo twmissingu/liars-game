@@ -77,14 +77,16 @@ export class GeassSystem {
    * @param character - 目标角色ID
    * @param hitChanceBoost - 命中率加成（如卡莲技能）
    * @param consecutiveMisses - 连续闪避次数
+   * @param attackerId - 攻击者ID（用于反击时确定目标）
    * @returns Geass判定结果
    */
   performGeass(
-    _target: 'player' | 'ai' | 'ai2' | 'ai3',
+    target: 'player' | 'ai' | 'ai2' | 'ai3',
     targetStats: PlayerStats,
     character: CharacterId | null = null,
     hitChanceBoost: number = 0,
-    consecutiveMisses: number = 0
+    consecutiveMisses: number = 0,
+    attackerId?: 'player' | 'ai' | 'ai2' | 'ai3'
   ): GeassResult {
     // 根据连续闪避次数获取基础命中率
     let hitChance = this.getBaseHitChance(consecutiveMisses);
@@ -113,6 +115,7 @@ export class GeassSystem {
             },
             message: 'C.C.发动Code之力！从死亡边缘复活并免疫本次Geass！',
             isRevived: true,
+            victimId: target,
           };
         }
       }
@@ -123,21 +126,32 @@ export class GeassSystem {
     if (character === 'suzaku') {
       // 独立闪避判定（15%）
       const dodgeRoll = Math.random();
+      console.log(`[GeassSystem] 朱雀闪避判定: roll=${dodgeRoll.toFixed(4)}, threshold=${SUZAKU_DODGE_CHANCE}`);
       if (dodgeRoll < SUZAKU_DODGE_CHANCE) {
         // 闪避成功后进行反击判定（25%）
         const counterRoll = Math.random();
+        console.log(`[GeassSystem] 朱雀反击判定: roll=${counterRoll.toFixed(4)}, threshold=${SUZAKU_COUNTER_CHANCE}`);
         if (counterRoll < SUZAKU_COUNTER_CHANCE) {
-          return {
+          console.log(`[GeassSystem] 朱雀反击成功触发! target=${target}, attacker=${attackerId}, counterDamage=1`);
+          const result: GeassResult = {
             activated: true,
             hit: false,
             damage: 0,
             newStats: targetStats,
-            message: '朱雀发动枢木剑术！完美闪避并准备反击！',
+            message: '朱雀发动枢木剑术！完美闪避并反击！',
             isCounter: true,
             isDodge: true,
+            victimId: target,
+            counterDamage: 1,  // 反击伤害为1
           };
+          // 只有在有攻击者ID时才设置反击目标
+          if (attackerId) {
+            result.counterTargetId = attackerId;
+          }
+          return result;
         }
         // 闪避成功但反击失败
+        console.log(`[GeassSystem] 朱雀闪避成功，但反击未触发`);
         return {
           activated: true,
           hit: false,
@@ -145,6 +159,7 @@ export class GeassSystem {
           newStats: targetStats,
           message: '朱雀发动枢木剑术！完美闪避！',
           isDodge: true,
+          victimId: target,
         };
       }
     }
@@ -177,6 +192,7 @@ export class GeassSystem {
         newStats,
         funnyAction: funnyAction.description,
         message: `Geass命中！${funnyAction.emoji} ${funnyAction.description}`,
+        victimId: target,
       };
     } else {
       // Geass未命中
@@ -189,6 +205,7 @@ export class GeassSystem {
           geassFailCount: targetStats.geassFailCount + 1,
         },
         message: 'Geass未命中！',
+        victimId: target,
       };
     }
   }

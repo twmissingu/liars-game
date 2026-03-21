@@ -187,6 +187,8 @@ export interface TurnState {
   lastPlayerId: 'player' | 'ai' | 'ai2' | 'ai3' | null;
   /** Geass连续闪避次数（有玩家扣血后重置） */
   geassConsecutiveMisses: number;
+  /** 当前回合的先手角色索引（用于顺时针轮转机制） */
+  firstPlayerIndex: number;
 }
 
 /**
@@ -203,6 +205,11 @@ export interface GeassResult {
   isRevived?: boolean;
   isCounter?: boolean;
   isDodge?: boolean;
+  victimId?: 'player' | 'ai' | 'ai2' | 'ai3';
+  /** 反击目标ID（当isCounter为true时使用） */
+  counterTargetId?: 'player' | 'ai' | 'ai2' | 'ai3';
+  /** 反击伤害值 */
+  counterDamage?: number;
 }
 
 /**

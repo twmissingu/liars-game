@@ -1,28 +1,60 @@
 /**
  * =============================================================================
- * Code Geass: Liar's Game - 游戏主界面（优化版）
+ * Code Geass: Liar's Game - 游戏主界面（重构版）
  * =============================================================================
  *
- * 游戏主界面组件，采用优化的紧凑布局：
- * - 左侧：游戏记录栏（纵向延伸至底部，带滚动）
- * - 中间：游戏区域（角色+圆桌）
- * - 底部：功能栏（左侧返回、中间操作、右侧信息）
- *
- * 优化特性：
- * - 一屏显示，无需滚动
- * - 布局紧凑，信息清晰
- * - 响应式设计
+ * 游戏主界面组件，采用新的动画系统架构：
+ * - 使用重构后的动画系统，消除硬编码
+ * - 角色与动画逻辑完全解耦
+ * - 支持灵活的角色配置
  *
  * @author Code Agent
- * @version 3.0.0 - UI优化版
+ * @version 4.0.0 - 动画系统重构版
  */
 
 import React, { useState, useEffect, useRef } from 'react';
 import { ChibiAvatar, AvatarPreloader } from '../components/characters';
-import { characters, getCharacterName } from '../data/characters';
 import type { Card, CardRank, CharacterId, FunnyAction, GameState } from '../types';
-import { ANIMATION_DURATION } from '../constants/animation';
 import cardBack from '/assets/cards/card-back.svg';
+
+// 导入新的动画系统
+import {
+  useAnimation,
+  parseGameStateForAnimation,
+  setPlayerCharacter,
+  type PlayerId,
+  type AnimationType,
+} from '../animation';
+
+// ============================================
+// 角色信息配置（从角色ID获取显示信息）
+// ============================================
+
+/** 角色基础信息映射 */
+const CHARACTER_BASE_INFO: Record<CharacterId, { displayName: string; colorTheme: string }> = {
+  lelouch: { displayName: '鲁鲁修', colorTheme: '#d4af37' },
+  cc: { displayName: 'C.C.', colorTheme: '#22c55e' },
+  suzaku: { displayName: '朱雀', colorTheme: '#3b82f6' },
+  kallen: { displayName: '卡莲', colorTheme: '#dc2626' },
+};
+
+/**
+ * 获取角色显示名称
+ * @param characterId 角色ID
+ */
+const getCharacterDisplayName = (characterId: CharacterId | null | undefined): string => {
+  if (!characterId) return '未知角色';
+  return CHARACTER_BASE_INFO[characterId]?.displayName || '未知角色';
+};
+
+/**
+ * 获取角色颜色主题
+ * @param characterId 角色ID
+ */
+const getCharacterColorTheme = (characterId: CharacterId | null | undefined): string => {
+  if (!characterId) return '#d4af37';
+  return CHARACTER_BASE_INFO[characterId]?.colorTheme || '#d4af37';
+};
 
 /**
  * GameTable组件属性接口
@@ -68,12 +100,28 @@ interface GameTableProps {
 }
 
 /**
- * 获取角色颜色
+ * 将动画类型映射到CSS类名
  */
-const getCharacterColor = (characterId: CharacterId | null): string => {
-  if (!characterId) return '#d4af37';
-  const char = characters.find(c => c.id === characterId);
-  return char?.color || '#d4af37';
+const getAnimationClassName = (type: AnimationType | null): string => {
+  if (!type) return '';
+  const classMap: Record<AnimationType, string> = {
+    play: 'cg-anim-play',
+    aiPlay: 'cg-anim-aiPlay',
+    challenge: 'cg-anim-challenge',
+    dodge: 'cg-anim-dodge',
+    hit: 'cg-anim-hit',
+    skip: '',
+    think: '',
+  };
+  return classMap[type] || '';
+};
+
+/**
+ * 获取动画文本样式类
+ */
+const getAnimationTextClassName = (type: AnimationType | null): string => {
+  if (!type) return '';
+  return `cg-action-${type}`;
 };
 
 /**
@@ -104,52 +152,30 @@ export const GameTable: React.FC<GameTableProps> = ({
   const prevLogLengthRef = useRef(gameLog.length);
   const autoCollapseTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+  const processedActionRef = useRef<string | null>(null);
 
-  // 动画状态
-  const [characterAnimations, setCharacterAnimations] = useState<Record<string, {
-    type: 'play' | 'aiPlay' | 'challenge' | 'dodge' | 'hit' | null;
-    showText: string;
-  }>>({
-    player: { type: null, showText: '' },
-    ai: { type: null, showText: '' },
-    ai2: { type: null, showText: '' },
-    ai3: { type: null, showText: '' },
-  });
+  // 使用新的动画系统
+  const {
+    animations,
+    persistentAnimation,
+    playerChallengeAnimation,
+    triggerAnimation,
+    triggerPersistentAnimation,
+    clearPersistentAnimation,
+    setPlayerChallengeAnimation,
+  } = useAnimation();
 
-  // 持续动画状态 - 用于出牌等需要持续显示的动画
-  const [persistentAnimation, setPersistentAnimation] = useState<{
-    playerId: string | null;
-    type: 'play' | 'aiPlay' | 'challenge' | null;
-    text: string;
-  }>({ playerId: null, type: null, text: '' });
-
-  // 玩家质疑动画状态
-  const [playerChallengeAnimation, setPlayerChallengeAnimation] = useState<{
-    show: boolean;
-    targetId: string | null;
-  }>({ show: false, targetId: null });
-
-  // 动画队列 - 用于处理连续动画
-  const [animationQueue, setAnimationQueue] = useState<Array<{
-    playerId: string;
-    type: 'play' | 'aiPlay' | 'challenge' | 'dodge' | 'hit' | 'skip';
-    text: string;
-    duration: number;
-  }>>([]);
-
-  // 等待动画完成的Promise resolve函数
-  const animationCompleteResolveRef = useRef<(() => void) | null>(null);
-
-  // 动画定时器引用
-  const animationTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const playerChallengeTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const animationProcessingRef = useRef(false);
+  // 初始化玩家角色到动画系统
+  useEffect(() => {
+    if (selectedCharacter) {
+      setPlayerCharacter(selectedCharacter);
+    }
+  }, [selectedCharacter]);
 
   // 自动滚动到最新日志
   useEffect(() => {
     if (logContentRef.current && gameLog.length > prevLogLengthRef.current) {
       const logContainer = logContentRef.current;
-      // 使用平滑滚动
       logContainer.scrollTo({
         top: logContainer.scrollHeight,
         behavior: 'smooth'
@@ -171,10 +197,8 @@ export const GameTable: React.FC<GameTableProps> = ({
       }, 3000);
     };
 
-    // 初始化计时器
     resetTimer();
 
-    // 监听日志栏内的交互事件
     const logPanel = logPanelRef.current;
     if (logPanel) {
       const events = ['click', 'touchstart', 'scroll'];
@@ -199,187 +223,95 @@ export const GameTable: React.FC<GameTableProps> = ({
     };
   }, [isLogExpanded, isMobile]);
 
-  // 处理动画队列 - 原子操作
-  useEffect(() => {
-    // 防止并发处理
-    if (animationProcessingRef.current) return;
-
-    // 队列为空，不处理
-    if (animationQueue.length === 0) return;
-
-    // 标记为处理中
-    animationProcessingRef.current = true;
-
-    // 获取并移除队列中的第一个动画
-    const nextAnimation = animationQueue[0];
-
-    // 立即处理动画
-    setCharacterAnimations(prev => ({
-      ...prev,
-      [nextAnimation.playerId]: { type: nextAnimation.type as any, showText: nextAnimation.text },
-    }));
-
-    // 清除队列中的已处理项
-    setAnimationQueue(prev => prev.slice(1));
-
-    // 设置定时器在指定时间后清除动画
-    if (animationTimerRef.current) {
-      clearTimeout(animationTimerRef.current);
-    }
-    animationTimerRef.current = setTimeout(() => {
-      // 清除动画状态
-      setCharacterAnimations(prev => ({
-        ...prev,
-        [nextAnimation.playerId]: { type: null, showText: '' },
-      }));
-      // 重置处理标志，允许处理下一个动画
-      animationProcessingRef.current = false;
-
-      // 如果队列已空且有等待者，通知等待者
-      if (animationQueue.length <= 1 && animationCompleteResolveRef.current) {
-        animationCompleteResolveRef.current();
-        animationCompleteResolveRef.current = null;
-      }
-    }, nextAnimation.duration);
-  }, [animationQueue]);
-
-  // 触发角色动画 - 使用统一的动画时间常量
-  const triggerCharacterAnimation = (
-    playerId: 'player' | 'ai' | 'ai2' | 'ai3',
-    type: 'play' | 'aiPlay' | 'challenge' | 'dodge' | 'hit' | 'skip',
-    text: string,
-    duration?: number
-  ) => {
-    // 如果没有指定持续时间，使用常量配置
-    const animationDuration = duration ??
-      (type === 'play' || type === 'aiPlay' ? ANIMATION_DURATION.PLAY :
-       type === 'challenge' ? ANIMATION_DURATION.CHALLENGE :
-       type === 'dodge' ? ANIMATION_DURATION.DODGE :
-       type === 'hit' ? ANIMATION_DURATION.HIT : 1000);
-
-    // 将动画添加到队列
-    setAnimationQueue(prev => {
-      const newQueue = [...prev, { playerId, type, text, duration: animationDuration }];
-      return newQueue;
-    });
-  };
-
-  // 监听游戏状态变化触发动画 - 使用独立的状态快照避免竞态条件
+  // 监听游戏状态变化触发动画 - 使用新的动画系统
   useEffect(() => {
     if (!gameState) return;
 
-    const { lastAction, turnState, phase } = gameState;
-    const currentPersistentPlayerId = persistentAnimation.playerId;
+    const { lastAction, phase, geassResult } = gameState;
 
-    // 出牌动画 - 持续播放直到质疑阶段开始
-    // 匹配 "出了X张牌" 或 "出牌" 格式的lastAction
-    if (turnState?.playedCards && (lastAction?.includes('出牌') || lastAction?.includes('出了'))) {
-      const playerId = turnState.playedCards.playerId;
-      console.log('[Animation] 出牌动画触发:', { playerId, lastAction });
-      // 清除之前的定时器
-      if (animationTimerRef.current) {
-        clearTimeout(animationTimerRef.current);
-      }
-      // 设置持续动画
-      setPersistentAnimation({
-        playerId,
-        type: playerId === 'player' ? 'play' : 'aiPlay',
-        text: '出牌中...'
-      });
-      // 同时触发普通动画
-      if (playerId === 'player') {
-        triggerCharacterAnimation(playerId, 'play', '出牌', 1500);
-      } else {
-        triggerCharacterAnimation(playerId, 'aiPlay', '出牌', 1500);
-      }
+    console.log('[GameTable Animation] useEffect triggered:', { lastAction, processedAction: processedActionRef.current, phase });
+
+    // 防止重复处理同一个动作
+    if (lastAction && lastAction === processedActionRef.current) {
+      console.log('[GameTable Animation] 跳过重复动作');
+      return;
     }
 
-    // 当进入质疑阶段时，清除持续动画
-    if (phase === 'challenge' && currentPersistentPlayerId) {
-      // 延迟清除，让玩家能看到最后的出牌状态
-      animationTimerRef.current = setTimeout(() => {
-        setPersistentAnimation({ playerId: null, type: null, text: '' });
-      }, 500);
-    }
-  }, [gameState?.lastAction, gameState?.phase, gameState?.turnState?.playedCards?.playerId, persistentAnimation.playerId]);
+    // 使用新的触发器系统解析动画
+    const animationEvent = parseGameStateForAnimation(gameState);
+    console.log('[GameTable Animation] parseGameStateForAnimation result:', animationEvent);
 
-  // 质疑动画 - 独立useEffect确保正确触发
-  useEffect(() => {
-    if (!gameState) return;
+    if (animationEvent) {
+      const { playerId, data } = animationEvent;
+      const animType = data?.animationType as AnimationType;
+      const text = (data?.text as string) || '';
 
-    const { lastAction, geassResult, turnState } = gameState;
+      console.log('[Animation] 触发:', { playerId, type: animType, text });
 
-    // 质疑动画 - 发起质疑者触发
-    if (lastAction?.includes('质疑') && lastAction?.includes('发起')) {
-      // 通过lastAction中的角色名识别
-      const playerId = lastAction.includes('玩家') ? 'player' :
-        lastAction.includes('朱雀') ? 'ai2' :
-        lastAction.includes('卡莲') ? 'ai3' :
-        lastAction.includes('C.C.') || lastAction.includes('C.C') ? 'ai' : 'ai';
+      // 记录已处理的动作
+      if (lastAction) {
+        processedActionRef.current = lastAction;
+      }
 
-      console.log('[Animation] 质疑动画触发:', { playerId, lastAction });
+      // 处理出牌动画 - 需要特殊处理持续动画
+      if (animType === 'play' || animType === 'aiPlay') {
+        // 设置持续动画
+        triggerPersistentAnimation(
+          playerId,
+          animType === 'play' ? 'play' : 'aiPlay',
+          '出牌中...'
+        );
+        // 触发普通动画
+        triggerAnimation(playerId, animType, text || '出牌');
+      }
+      // 处理质疑动画
+      else if (animType === 'challenge') {
+        // 获取被质疑者ID（从触发器数据中获取）
+        const targetId = data?.targetId as PlayerId | undefined;
+        const challengerId = data?.challengerId as PlayerId | undefined;
 
-      // 玩家质疑时设置持续动画
-      if (playerId === 'player' && turnState?.playedCards) {
-        // 清除之前的定时器
-        if (playerChallengeTimerRef.current) {
-          clearTimeout(playerChallengeTimerRef.current);
+        console.log('[Animation] 质疑动画:', { playerId, targetId, challengerId, isPlayer: playerId === 'player' });
+
+        if (playerId === 'player' && targetId) {
+          // 玩家质疑时设置持续动画
+          setPlayerChallengeAnimation({
+            show: true,
+            targetId: targetId
+          });
+          triggerAnimation(playerId, 'challenge', '质疑中...');
+        } else if (targetId) {
+          // AI质疑时，同时显示质疑者和被质疑者的动画
+          // 质疑者显示"质疑中..."
+          triggerAnimation(playerId, 'challenge', '质疑中...');
+          // 被质疑者显示"被质疑"
+          triggerAnimation(targetId, 'challenge', '被质疑');
+        } else {
+          // 如果没有targetId，只显示质疑者动画
+          triggerAnimation(playerId, 'challenge', text || '质疑');
         }
-        // 设置玩家质疑持续动画
-        setPlayerChallengeAnimation({
-          show: true,
-          targetId: turnState.playedCards.playerId
-        });
-        // 触发普通质疑动画
-        triggerCharacterAnimation(playerId, 'challenge', '质疑中...', 1500);
-      } else {
-        // AI质疑直接触发普通动画
-        console.log(`[Animation] AI质疑动画触发: ${playerId}, lastAction: ${lastAction}`);
-        triggerCharacterAnimation(playerId, 'challenge', '质疑', 1500);
       }
+      // 其他动画类型
+      else {
+        triggerAnimation(playerId, animType, text);
+      }
+    }
+
+    // 当进入质疑阶段时，清除出牌持续动画
+    if (phase === 'challenge' && persistentAnimation.playerId) {
+      setTimeout(() => {
+        clearPersistentAnimation();
+      }, 500);
     }
 
     // 当Geass结果出现时，清除玩家质疑动画
     if (geassResult?.activated && playerChallengeAnimation.show) {
-      playerChallengeTimerRef.current = setTimeout(() => {
+      setTimeout(() => {
         setPlayerChallengeAnimation({ show: false, targetId: null });
       }, 500);
     }
-  }, [gameState?.lastAction, gameState?.geassResult?.activated]);
+  }, [gameState, triggerAnimation, triggerPersistentAnimation, clearPersistentAnimation, setPlayerChallengeAnimation]);
 
-  // 不质疑和Geass动画 - 独立useEffect
-  useEffect(() => {
-    if (!gameState) return;
-
-    const { lastAction, geassResult, turnState } = gameState;
-
-    // 不质疑动画 - 显示"跳过"提示
-    if (lastAction?.includes('选择不质疑')) {
-      const playerId = lastAction.includes('玩家') ? 'player' :
-        lastAction.includes('朱雀') ? 'ai2' :
-        lastAction.includes('卡莲') ? 'ai3' :
-        lastAction.includes('C.C.') || lastAction.includes('C.C') ? 'ai' : 'ai';
-      console.log('[Animation] 不质疑动画触发:', { playerId, lastAction });
-      triggerCharacterAnimation(playerId, 'skip', '跳过', 1500);
-    }
-
-    // Geass动画 - 受质疑者（出牌者）触发
-    // 受害者是被质疑的那个人，即 playedCards.playerId
-    if (geassResult?.activated && turnState?.playedCards) {
-      const victimId = turnState.playedCards.playerId;
-
-      if (geassResult.isDodge) {
-        // 闪避动画
-        console.log('[Animation] 闪避动画触发:', { victimId, geassResult });
-        triggerCharacterAnimation(victimId, 'dodge', '闪避', 1500);
-      } else if (geassResult.hit) {
-        // 命中动画
-        console.log('[Animation] 命中动画触发:', { victimId, geassResult });
-        triggerCharacterAnimation(victimId, 'hit', '命中', 1500);
-      }
-    }
-  }, [gameState?.lastAction, gameState?.geassResult?.activated]);
-
+  // 预加载头像
   useEffect(() => {
     if (selectedCharacter) {
       AvatarPreloader.preloadAvatar(selectedCharacter, selectedAvatar);
@@ -420,9 +352,14 @@ export const GameTable: React.FC<GameTableProps> = ({
   const getSuitColor = (suit: string) =>
     suit === 'joker' ? '#d4af37' : suit === 'hearts' || suit === 'diamonds' ? '#dc2626' : '#1a1a24';
 
-  const playerName = getCharacterName(selectedCharacter ?? undefined);
-  const playerColor = getCharacterColor(selectedCharacter);
+  // 从gameState动态获取玩家角色信息
+  const playerCharacterId = selectedCharacter;
+  const playerName = playerCharacterId ? getCharacterDisplayName(playerCharacterId) : '玩家';
+  const playerColor = getCharacterColorTheme(playerCharacterId);
 
+  /**
+   * 渲染角色组件 - 使用新的动画系统
+   */
   const renderCharacter = (
     name: string,
     characterId: CharacterId | null,
@@ -432,34 +369,39 @@ export const GameTable: React.FC<GameTableProps> = ({
     avatarNum: number,
     isTop: boolean = false,
     isActive: boolean = true,
-    playerId: 'player' | 'ai' | 'ai2' | 'ai3' = 'player'
+    playerId: PlayerId = 'player'
   ) => {
-    const animation = characterAnimations[playerId];
-    const animationClass = animation.type ? `cg-anim-${animation.type}` : '';
+    // 从新的动画系统获取动画状态
+    const animation = animations[playerId];
+    const animationClass = getAnimationClassName(animation?.type || null);
 
     // 检查是否显示思考指示器
     const isThinking = aiThinkingState?.isThinking && aiThinkingState?.aiId === playerId;
 
     // 检查是否显示持续动画（出牌中）
     const isPersistentAnimating = persistentAnimation.playerId === playerId && persistentAnimation.type;
-    const persistentAnimationClass = isPersistentAnimating ? `cg-anim-${persistentAnimation.type}` : '';
+    const persistentAnimationClass = isPersistentAnimating ? getAnimationClassName(persistentAnimation.type) : '';
 
     // 检查是否显示玩家质疑动画
     const isPlayerChallenging = playerChallengeAnimation.show && playerId === 'player';
     const isBeingChallenged = playerChallengeAnimation.show && playerChallengeAnimation.targetId === playerId;
 
+    // 获取动画文本
+    const animationText = animation?.text || '';
+    const persistentText = isPersistentAnimating ? persistentAnimation.text : '';
+
     return (
       <div className={`cg-character ${isTop ? 'cg-character-top' : ''} ${!isActive ? 'cg-character-dead' : ''} ${animationClass} ${persistentAnimationClass} ${isThinking ? 'cg-character-thinking' : ''} ${isPlayerChallenging ? 'cg-player-challenging' : ''} ${isBeingChallenged ? 'cg-being-challenged' : ''}`}>
         {/* 动画文字提示 */}
-        {animation.showText && (
-          <div className={`cg-action-text cg-action-${animation.type}`}>
-            {animation.showText}
+        {animationText && (
+          <div className={`cg-action-text ${getAnimationTextClassName(animation.type)}`}>
+            {animationText}
           </div>
         )}
         {/* 持续动画提示（出牌中） */}
         {isPersistentAnimating && (
-          <div className={`cg-action-text cg-action-${persistentAnimation.type} cg-persistent-text`}>
-            {persistentAnimation.text}
+          <div className={`cg-action-text ${getAnimationTextClassName(persistentAnimation.type)} cg-persistent-text`}>
+            {persistentText}
           </div>
         )}
         {/* 玩家质疑动画提示 */}
@@ -546,35 +488,35 @@ export const GameTable: React.FC<GameTableProps> = ({
 
         {/* 中间游戏区域 */}
         <div className="cg-game-area">
-          {/* 顶部AI */}
+          {/* 顶部AI (ai3/卡莲) - 需求规格：上方AI角色 */}
           <div className="cg-ai-top">
             {renderCharacter(
-              getCharacterName(aiPlayers?.[1]?.character || aiCharacters[1]),
-              aiPlayers?.[1]?.character || aiCharacters[1],
-              aiPlayers?.[1]?.stats?.hp || 0,
-              aiPlayers?.[1]?.hand?.length || 0,
-              getCharacterColor(aiPlayers?.[1]?.character || aiCharacters[1]),
-              aiAvatars[aiPlayers?.[1]?.character || aiCharacters[1]] || 1,
+              getCharacterDisplayName(aiPlayers?.[2]?.character),
+              aiPlayers?.[2]?.character || aiCharacters[2],
+              aiPlayers?.[2]?.stats?.hp || 0,
+              aiPlayers?.[2]?.hand?.length || 0,
+              getCharacterColorTheme(aiPlayers?.[2]?.character),
+              aiAvatars[aiPlayers?.[2]?.character || aiCharacters[2]] || 1,
               true,
-              aiPlayers?.[1]?.isActive !== false && (aiPlayers?.[1]?.stats?.hp || 0) > 0,
-              'ai2'
+              aiPlayers?.[2]?.isActive !== false && (aiPlayers?.[2]?.stats?.hp || 0) > 0,
+              'ai3'
             )}
           </div>
 
           {/* 中间行：左侧AI + 圆桌 + 右侧AI */}
           <div className="cg-middle-section">
-            {/* 左侧AI */}
+            {/* 左侧AI (ai/C.C.) - 需求规格：左方AI角色 */}
             <div className="cg-ai-left">
               {renderCharacter(
-                getCharacterName(aiPlayers?.[2]?.character || aiCharacters[2]),
-                aiPlayers?.[2]?.character || aiCharacters[2],
-                aiPlayers?.[2]?.stats?.hp || 0,
-                aiPlayers?.[2]?.hand?.length || 0,
-                getCharacterColor(aiPlayers?.[2]?.character || aiCharacters[2]),
-                aiAvatars[aiPlayers?.[2]?.character || aiCharacters[2]] || 1,
+                getCharacterDisplayName(aiPlayers?.[0]?.character),
+                aiPlayers?.[0]?.character || aiCharacters[0],
+                aiPlayers?.[0]?.stats?.hp || 0,
+                aiPlayers?.[0]?.hand?.length || 0,
+                getCharacterColorTheme(aiPlayers?.[0]?.character),
+                aiAvatars[aiPlayers?.[0]?.character || aiCharacters[0]] || 1,
                 false,
-                aiPlayers?.[2]?.isActive !== false && (aiPlayers?.[2]?.stats?.hp || 0) > 0,
-                'ai3'
+                aiPlayers?.[0]?.isActive !== false && (aiPlayers?.[0]?.stats?.hp || 0) > 0,
+                'ai'
               )}
             </div>
 
@@ -588,10 +530,8 @@ export const GameTable: React.FC<GameTableProps> = ({
                         {turnState.playedCards.playerId === 'player'
                           ? playerName
                           : turnState.playedCards.playerId.startsWith('ai')
-                            ? getCharacterName(
-                                aiPlayers?.find(
-                                  (ai: { id: string }) => ai.id === turnState.playedCards?.playerId
-                                )?.character || 'cc'
+                            ? getCharacterDisplayName(
+                                aiPlayers?.find(ai => ai.id === turnState.playedCards?.playerId)?.character
                               )
                             : '未知玩家'}{' '}
                         出牌
@@ -614,18 +554,18 @@ export const GameTable: React.FC<GameTableProps> = ({
               </div>
             </div>
 
-            {/* 右侧AI */}
+            {/* 右侧AI (ai2/朱雀) - 需求规格：右方AI角色 */}
             <div className="cg-ai-right">
               {renderCharacter(
-                getCharacterName(aiPlayers?.[0]?.character || aiCharacters[0]),
-                aiPlayers?.[0]?.character || aiCharacters[0],
-                aiPlayers?.[0]?.stats?.hp || 0,
-                aiPlayers?.[0]?.hand?.length || 0,
-                getCharacterColor(aiPlayers?.[0]?.character || aiCharacters[0]),
-                aiAvatars[aiPlayers?.[0]?.character || aiCharacters[0]] || 1,
+                getCharacterDisplayName(aiPlayers?.[1]?.character),
+                aiPlayers?.[1]?.character || aiCharacters[1],
+                aiPlayers?.[1]?.stats?.hp || 0,
+                aiPlayers?.[1]?.hand?.length || 0,
+                getCharacterColorTheme(aiPlayers?.[1]?.character),
+                aiAvatars[aiPlayers?.[1]?.character || aiCharacters[1]] || 1,
                 false,
-                aiPlayers?.[0]?.isActive !== false && (aiPlayers?.[0]?.stats?.hp || 0) > 0,
-                'ai'
+                aiPlayers?.[1]?.isActive !== false && (aiPlayers?.[1]?.stats?.hp || 0) > 0,
+                'ai2'
               )}
             </div>
           </div>
@@ -1592,6 +1532,14 @@ export const GameTable: React.FC<GameTableProps> = ({
           background: rgba(255,255,255,0.1); 
           color: #fff; 
           border: 1px solid rgba(255,255,255,0.3); 
+        }
+        .cg-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          filter: grayscale(0.5);
+        }
+        .cg-btn:disabled:hover {
+          transform: none;
         }
         .cg-bottom-right { 
           width: 140px;

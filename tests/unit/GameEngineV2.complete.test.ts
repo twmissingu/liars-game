@@ -494,8 +494,7 @@ describe('GameEngineV2 - 完整逻辑测试', () => {
     });
 
     test('9.2 无人质疑后应该正确流转到下一个玩家', () => {
-      // 新的UI顺序: 玩家(0) -> AI3(1) -> AI2(2) -> AI1(3) -> 玩家(0)
-      // 模拟AI1(索引3)出牌
+      // 模拟AI1/C.C.出牌
       (engine as any).state.turnState.playedCards = {
         cardIds: ['card1'],
         claimedRank: 'Q',
@@ -506,12 +505,12 @@ describe('GameEngineV2 - 完整逻辑测试', () => {
 
       const nextState = engine.endChallengePhase();
 
-      // 下一个应该是玩家 (index 0)
+      // 修正后的映射: C.C./ai(3)的下家是玩家(0)
       expect(nextState.currentPlayerIndex).toBe(0);
       expect(nextState.phase).toBe('player_turn');
     });
 
-    test('9.3 无人质疑后AI3先手应该正确流转', () => {
+    test('9.3 无人质疑后玩家出牌应该正确流转到朱雀', () => {
       // 模拟玩家出牌
       (engine as any).state.turnState.playedCards = {
         cardIds: ['card1'],
@@ -523,7 +522,7 @@ describe('GameEngineV2 - 完整逻辑测试', () => {
 
       const nextState = engine.endChallengePhase();
 
-      // 下一个应该是AI3 (index 1)
+      // 新映射: 玩家(0)的下家是朱雀/ai2(1)
       expect(nextState.currentPlayerIndex).toBe(1);
       expect(nextState.phase).toBe('ai_turn');
     });
@@ -602,9 +601,9 @@ describe('GameEngineV2 - 完整逻辑测试', () => {
     });
 
     test('11.1 AI被淘汰后应该跳过该AI的回合', () => {
-      // 新的UI顺序: 玩家(0) -> AI3(1) -> AI2(2) -> AI1(3) -> 玩家(0)
-      // aiPlayers数组: 0=AI1, 1=AI2, 2=AI3
-      // 淘汰AI3 (aiPlayers[2])
+      // 修正后的UI顺序: 玩家(0) -> 朱雀/ai2(1) -> 卡莲/ai3(2) -> C.C./ai(3) -> 玩家(0)
+      // aiPlayers数组: [0]=ai/C.C., [1]=ai2/朱雀, [2]=ai3/卡莲
+      // 淘汰卡莲/ai3 (aiPlayers[2], currentPlayerIndex=2)
       (engine as any).state.aiPlayers[2].isActive = false;
       (engine as any).state.aiPlayers[2].stats.hp = 0;
 
@@ -619,12 +618,17 @@ describe('GameEngineV2 - 完整逻辑测试', () => {
 
       const nextState = engine.endChallengePhase();
 
-      // 下一个应该是AI2 (index 2)，跳过AI3
-      expect(nextState.currentPlayerIndex).toBe(2);
+      // 修正后的映射: 玩家(0) -> 朱雀/ai2(1) -> 卡莲/ai3(2) -> C.C./ai(3)
+      // 玩家(0)出牌，下家是朱雀(1)，朱雀存活，所以应该是朱雀(1)
+      expect(nextState.currentPlayerIndex).toBe(1);
     });
 
     test('11.2 多个AI被淘汰后应该正确流转', () => {
-      // 淘汰AI3和AI2
+      // 修正后的映射:
+      // aiPlayers[0]=ai/C.C. -> currentPlayerIndex=3
+      // aiPlayers[1]=ai2/朱雀 -> currentPlayerIndex=1
+      // aiPlayers[2]=ai3/卡莲 -> currentPlayerIndex=2
+      // 淘汰卡莲/ai3 (aiPlayers[2]) 和 朱雀/ai2 (aiPlayers[1])
       (engine as any).state.aiPlayers[2].isActive = false;
       (engine as any).state.aiPlayers[2].stats.hp = 0;
       (engine as any).state.aiPlayers[1].isActive = false;
@@ -641,7 +645,8 @@ describe('GameEngineV2 - 完整逻辑测试', () => {
 
       const nextState = engine.endChallengePhase();
 
-      // 下一个应该是AI1 (index 3)
+      // 修正后的映射: 玩家(0) -> 朱雀/ai2(1) -> 卡莲/ai3(2) -> C.C./ai(3)
+      // 朱雀(1)和卡莲(2)被淘汰，下一个应该是C.C./ai (currentPlayerIndex=3)
       expect(nextState.currentPlayerIndex).toBe(3);
     });
 
