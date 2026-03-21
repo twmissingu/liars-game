@@ -826,7 +826,7 @@ const App: React.FC = () => {
             turnNumber={turnNumber}
             onRestart={handleRestart}
             onMainMenu={handleMainMenu}
-            {...(selectedCharacter ? { playerCharacter: selectedCharacter } : {})}
+            playerCharacter={selectedCharacter || undefined}
           />
         );
       }

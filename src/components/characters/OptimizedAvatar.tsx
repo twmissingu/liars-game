@@ -75,7 +75,8 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
   // 构建图片URL（优先WebP，回退PNG）
   const getImageSrc = useCallback(
     (useWebPFormat: boolean = true): string => {
-      const basePath = `avatars/${characterId}/${num}`;
+      const baseUrl = import.meta.env.BASE_URL || '/';
+      const basePath = `${baseUrl}avatars/${characterId}/${num}`;
       const ext = useWebPFormat ? 'webp' : 'png';
       // 使用对应尺寸的图片
       return `${basePath}-${sizeName}.${ext}`;
@@ -254,12 +255,13 @@ export class AvatarPreloader {
   static preloadCharacter(characterId: 'lelouch' | 'cc' | 'suzaku' | 'kallen'): void {
     const sizes = ['small', 'medium', 'large'];
     const webpSupported = checkWebPSupport();
+    const baseUrl = '/liars-game/';
 
     for (let i = 1; i <= 4; i++) {
       // 预加载所有尺寸的WebP和PNG
       sizes.forEach(size => {
-        const webpSrc = `avatars/${characterId}/${i}-${size}.webp`;
-        const pngSrc = `avatars/${characterId}/${i}-${size}.png`;
+        const webpSrc = `${baseUrl}avatars/${characterId}/${i}-${size}.webp`;
+        const pngSrc = `${baseUrl}avatars/${characterId}/${i}-${size}.png`;
 
         // 预加载WebP（如果支持）
         if (webpSupported && !this.preloadedAvatars.has(webpSrc)) {
@@ -300,9 +302,10 @@ export class AvatarPreloader {
     size: 'small' | 'medium' | 'large' = 'medium'
   ): void {
     const webpSupported = checkWebPSupport();
+    const baseUrl = '/liars-game/';
 
     if (webpSupported) {
-      const webpSrc = `avatars/${characterId}/${avatarNumber}-${size}.webp`;
+      const webpSrc = `${baseUrl}avatars/${characterId}/${avatarNumber}-${size}.webp`;
       if (!this.preloadedAvatars.has(webpSrc)) {
         const img = new Image();
         img.src = webpSrc;
@@ -310,7 +313,7 @@ export class AvatarPreloader {
       }
     }
 
-    const pngSrc = `avatars/${characterId}/${avatarNumber}-${size}.png`;
+    const pngSrc = `${baseUrl}avatars/${characterId}/${avatarNumber}-${size}.png`;
     if (!this.preloadedAvatars.has(pngSrc)) {
       const img = new Image();
       img.src = pngSrc;

@@ -5,6 +5,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { ChibiAvatar } from '../components/characters';
+import { playBGM } from '../audio';
 import type { ResultScreenProps, CharacterId } from '../types';
 
 export const ResultScreen: React.FC<ResultScreenProps> = ({
@@ -18,8 +19,12 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   const [animationComplete, setAnimationComplete] = useState(false);
 
   useEffect(() => {
+    // 确保播放正确的BGM
     if (isWin) {
+      playBGM('victory');
       setShowConfetti(true);
+    } else {
+      playBGM('defeat');
     }
     const timer = setTimeout(() => setAnimationComplete(true), 1000);
     return () => clearTimeout(timer);
