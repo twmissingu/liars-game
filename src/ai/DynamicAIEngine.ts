@@ -312,8 +312,8 @@ export class DynamicAIEngine {
       // 质疑成功：对方扣血
       return 10 + (playerHP <= 1 ? 20 : 0); // 如果玩家快死了，价值更高
     } else {
-      // 质疑失败：自己扣血
-      return -10 - (aiHP <= 1 ? -20 : 0); // 如果自己快死了，损失更大
+      // 质疑失败：自己扣血（自己快死时损失更大）
+      return aiHP <= 1 ? -20 : -10;
     }
   }
 

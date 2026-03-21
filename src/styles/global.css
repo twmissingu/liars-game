@@ -482,3 +482,104 @@ body {
   opacity: 0.6;
   animation: cg-pulse-geass 2s ease-in-out infinite;
 }
+
+/* ============================================
+   占位屏幕样式（设置/帮助页面）
+   原位于 App.tsx 内联 <style> 标签
+   ============================================ */
+
+.cg-app {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.cg-placeholder-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #0a0a0f 0%, #1a1a24 100%);
+  color: #f5f5f5;
+  gap: 1rem;
+  padding: 2rem;
+}
+
+.cg-placeholder-screen h2 {
+  font-family: 'Cinzel', serif;
+  font-size: 2rem;
+  color: #d4af37;
+  margin-bottom: 1rem;
+}
+
+.cg-menu-button {
+  padding: 0.75rem 1.5rem;
+  font-family: 'Noto Sans SC', sans-serif;
+  font-size: 1rem;
+  color: #0a0a0f;
+  background: linear-gradient(135deg, #b8941f 0%, #d4af37 100%);
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 1rem;
+}
+
+.cg-menu-button:hover {
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+  transform: translateY(-2px);
+}
+
+.cg-settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 300px;
+}
+
+.cg-help-content {
+  max-width: 600px;
+  text-align: left;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 1rem;
+}
+
+.cg-help-section {
+  margin-bottom: 2rem;
+}
+
+.cg-help-section h3 {
+  color: #d4af37;
+  font-family: 'Cinzel', serif;
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+}
+
+.cg-help-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.cg-help-section li {
+  color: #a1a1aa;
+  font-family: 'Noto Sans SC', sans-serif;
+  margin-bottom: 0.5rem;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.cg-help-section li::before {
+  content: '◆';
+  position: absolute;
+  left: 0;
+  color: #dc2626;
+  font-size: 0.5rem;
+  top: 0.4rem;
+}
+
+.cg-help-section strong {
+  color: #f5f5f5;
+}

@@ -9,5 +9,4 @@ export * from './characters';
 export * from './animations';
 
 // UI组件
-export { CharacterSelect } from './CharacterSelect';
 export { SkillButton, SkillEffect } from './SkillEffects';

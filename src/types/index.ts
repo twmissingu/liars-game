@@ -86,6 +86,8 @@ export interface PlayedCards {
   claimedRank: CardRank;
   actualCards: Card[];
   playerId: 'player' | 'ai' | 'ai2' | 'ai3';
+  /** 是否为虚张声势（声称的点数与实际牌不符且非Joker） */
+  isBluff?: boolean;
 }
 
 // ============================================
@@ -276,7 +278,7 @@ export interface StrategyContext {
   gameState: GameState;
   aiPlayer: AIPlayer;
   liarCard: CardRank;
-  history: AIDecision[];
+  history?: AIDecision[];
 }
 
 // ============================================

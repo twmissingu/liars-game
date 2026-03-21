@@ -14,7 +14,7 @@
  *    - 游戏界面和日志记录一致
  */
 
-import { GameEngine } from '../src/core/GameEngine';
+import { GameEngine } from '../src/core/GameEngineV2';
 import type { CharacterId, GameState } from '../src/types';
 
 // 测试统计

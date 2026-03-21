@@ -426,9 +426,8 @@ export function validateIndexMappings(): { valid: boolean; errors: string[] } {
 // 模块加载时自动验证
 const validation = validateIndexMappings();
 if (!validation.valid) {
+  // 验证失败是严重的配置错误，始终输出
   console.error('[PlayerIndexMapper] 索引映射验证失败:', validation.errors);
-} else {
-  console.log('[PlayerIndexMapper] 索引映射验证通过 - 版本3.1.0');
-  console.log('[PlayerIndexMapper] UI布局: 上方=卡莲, 右方=朱雀, 下方=玩家, 左方=C.C.');
-  console.log('[PlayerIndexMapper] 顺时针顺序: 卡莲(上) → 朱雀(右) → 玩家(下) → C.C.(左) → 卡莲(上)');
+} else if (process.env.NODE_ENV !== 'production') {
+  console.log('[PlayerIndexMapper] 索引映射验证通过');
 }
