@@ -369,8 +369,9 @@ export class DynamicAIEngine {
       });
     }
 
-    // 选项3：出多张牌（如果有）
-    if (liarCards.length >= 2) {
+    // 选项3：出多张牌（如果有且概率允许）
+    // 只有30%概率选择出多张牌
+    if (liarCards.length >= 2 && Math.random() < 0.3) {
       const cards = liarCards.slice(0, 2);
       const risk = this.calculatePlayRisk(true, false, aiHP, playerHP) * 1.5;
       options.push({
@@ -448,14 +449,21 @@ export class DynamicAIEngine {
     probabilities: ProbabilityAnalysis
   ): AIDecision {
     const { currentClaim } = situation;
-    const { challengeExpectedValue, playOptions } = probabilities;
+    const { challengeExpectedValue, playOptions, truthProbability } = probabilities;
 
     // 决策阈值（根据AI性格调整）
-    const challengeThreshold = -2 + this.personality.challengeTendency * 4;
+    // 只有当期望值较高且真实概率较低时才质疑
+    const challengeThreshold = 2 + this.personality.challengeTendency * 3;
     const playThreshold = 0;
 
-    // 如果有可质疑的牌
-    if (currentClaim && challengeExpectedValue > challengeThreshold) {
+    // 如果有可质疑的牌，且满足质疑条件
+    // 增加随机因素，避免AI每次都质疑
+    const shouldConsiderChallenge = currentClaim 
+      && challengeExpectedValue > challengeThreshold 
+      && truthProbability < 0.6  // 只有当真实概率低于60%时才考虑质疑
+      && Math.random() < this.personality.challengeTendency;  // 根据性格随机决定
+
+    if (shouldConsiderChallenge) {
       const confidence = Math.min(0.95, 0.5 + challengeExpectedValue / 20);
       return {
         action: 'challenge',

@@ -12,6 +12,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   turnNumber,
   onRestart,
   onMainMenu,
+  playerCharacter,
 }) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [animationComplete, setAnimationComplete] = useState(false);
@@ -24,8 +25,8 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
     return () => clearTimeout(timer);
   }, [isWin]);
 
-  // 根据胜负选择显示的角色
-  const resultCharacter: CharacterId = isWin ? 'lelouch' : 'cc';
+  // 使用玩家实际选择的角色，如果没有传入则根据胜负选择默认角色
+  const resultCharacter: CharacterId = playerCharacter || (isWin ? 'lelouch' : 'cc');
 
   return (
     <div className={`cg-result-screen ${isWin ? 'cg-result-win' : 'cg-result-lose'}`}>

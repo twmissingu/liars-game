@@ -166,8 +166,8 @@ describe('胜利条件测试', () => {
       (engine as any).state.aiPlayers[1].stats.hp = 0;
       (engine as any).state.aiPlayers[1].isActive = false;
 
-      // 设置当前玩家为C.C./ai (索引2)
-      (engine as any).state.currentPlayerIndex = 2;
+      // 设置当前先手为C.C./ai (索引3)
+      (engine as any).state.turnState.firstPlayerIndex = 3;
 
       // 模拟C.C./ai出牌
       (engine as any).state.turnState.playedCards = {
@@ -178,11 +178,12 @@ describe('胜利条件测试', () => {
         isBluff: false,
       };
 
-      // 结束回合，下一个应该是卡莲/ai3(3)（跳过朱雀/ai2(1)）
+      // 结束回合，下一个应该是卡莲/ai3(索引1)（跳过朱雀/ai2(索引2)）
+      // 顺时针: C.C.(3) -> 卡莲(1) -> 朱雀(2-死亡跳过) -> 玩家(0)
       const nextState = engine.endChallengePhase();
 
-      // 检查是否跳过了朱雀/ai2(1)，应该是卡莲/ai3(3)
-      expect(nextState.currentPlayerIndex).toBe(3);
+      // 检查是否跳过了朱雀/ai2(索引2)，应该是卡莲/ai3(索引1)
+      expect(nextState.currentPlayerIndex).toBe(1);
     });
   });
 
@@ -302,6 +303,69 @@ describe('胜利条件测试', () => {
       expect(state.turnState.turnNumber).not.toBe(
         state.playerStats.geassSuccessCount
       );
+    });
+  });
+
+  describe('【场景7】玩家出完最后一张牌且无AI质疑', () => {
+    test('7.1 玩家出完最后一张牌，无AI质疑时应判定玩家胜利', () => {
+      // 设置玩家只有1张牌
+      (engine as any).state.playerHand = [
+        { id: 'card1', rank: 'Q', suit: 'spades', isJoker: false }
+      ];
+      (engine as any).state.phase = 'player_turn';
+      (engine as any).state.liarCard = 'Q';
+
+      // 玩家出牌
+      engine.playCards(['card1'], 'Q');
+
+      // 检查玩家手牌为空
+      const stateAfterPlay = engine.getState();
+      expect(stateAfterPlay.playerHand.length).toBe(0);
+
+      // 模拟无人质疑，调用endChallengePhase(true)
+      const finalState = engine.endChallengePhase(true);
+
+      // 验证玩家获得胜利
+      expect(finalState.winner).toBe('player');
+      expect(finalState.phase).toBe('game_over');
+      expect(finalState.lastAction).toContain('手牌耗尽');
+    });
+
+    test('7.2 AI出完最后一张牌，无质疑时应判定AI胜利', () => {
+      // 设置AI1只有1张牌
+      (engine as any).state.aiPlayers[0].hand = [
+        { id: 'ai_card1', rank: 'K', suit: 'hearts', isJoker: false }
+      ];
+      (engine as any).state.phase = 'ai_turn';
+      (engine as any).state.currentPlayerIndex = 3; // AI1的索引
+      (engine as any).state.liarCard = 'K';
+
+      // AI出牌
+      engine.aiPlayCards('ai');
+
+      // 检查AI手牌为空
+      const stateAfterPlay = engine.getState();
+      expect(stateAfterPlay.aiPlayers[0].hand.length).toBe(0);
+
+      // 模拟无人质疑
+      const finalState = engine.endChallengePhase(true);
+
+      // 验证AI获得胜利
+      expect(finalState.winner).toBe('ai');
+      expect(finalState.phase).toBe('game_over');
+    });
+
+    test('7.3 游戏已结束时endChallengePhase不应改变状态', () => {
+      // 设置游戏已结束
+      (engine as any).state.phase = 'game_over';
+      (engine as any).state.winner = 'player';
+
+      // 调用endChallengePhase
+      const state = engine.endChallengePhase(true);
+
+      // 验证状态未改变
+      expect(state.phase).toBe('game_over');
+      expect(state.winner).toBe('player');
     });
   });
 });

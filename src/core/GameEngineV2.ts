@@ -416,6 +416,11 @@ export class GameEngine {
 
     // 确定谁受到Geass
     const victimId = isBluff ? targetId : challengerId;
+    
+    // 确定攻击者ID（用于反击技能）
+    // 当质疑失败时，攻击者是出牌者（targetId）
+    // 当质疑成功时，攻击者是质疑者（challengerId）
+    const attackerId = isBluff ? challengerId : targetId;
 
     // 设置lastAction用于动画触发 - 使用PlayerIndexMapper获取名称
     const getPlayerName = (playerId: PlayerId): string => {
@@ -427,8 +432,8 @@ export class GameEngine {
     const targetName = getPlayerName(targetId as PlayerId);
     this.state.lastAction = `${challengerName}向${targetName}发起质疑！`;
 
-    // 执行Geass判定，传入质疑者ID用于反击技能
-    this.executeGeass(victimId, challengerId);
+    // 执行Geass判定，传入攻击者ID用于反击技能
+    this.executeGeass(victimId, attackerId);
 
     return {
       success: true,
@@ -1046,10 +1051,32 @@ export class GameEngine {
   endChallengePhase(continueWithSamePlayer: boolean = false): GameState {
     // 注意：tableCards 在 playCards/aiPlayCardsInternal 出牌时已添加，此处不再重复添加
 
+    // 检查游戏是否已经结束（手牌耗尽等情况）
+    if (this.state.phase === 'game_over') {
+      return this.getState();
+    }
+
     if (continueWithSamePlayer) {
       // 无人质疑，同一出牌者继续出牌
       // 维持当前回合状态不变，先保存出牌者信息
       const playedBy = this.state.turnState.lastPlayerId || this.state.turnState.playedCards?.playerId;
+      
+      // 检查出牌者手牌是否为空（手牌耗尽胜利条件）
+      if (playedBy === 'player' && this.state.playerHand.length === 0) {
+        this.state.lastAction = '玩家手牌耗尽，获得胜利！';
+        this.state.winner = 'player';
+        this.state.phase = 'game_over';
+        return this.getState();
+      } else if (playedBy && playedBy !== 'player') {
+        const ai = this.state.aiPlayers.find(a => a.id === playedBy);
+        if (ai && ai.hand.length === 0) {
+          this.state.lastAction = `${ai.name}手牌耗尽，获得胜利！`;
+          this.state.winner = 'ai';
+          this.state.phase = 'game_over';
+          return this.getState();
+        }
+      }
+      
       this.state.turnState.playedCards = null;
       this.state.lastAction = '无人质疑，回合继续';
 

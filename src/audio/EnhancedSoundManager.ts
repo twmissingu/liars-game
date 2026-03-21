@@ -89,100 +89,157 @@ interface AudioConfig {
   volume: number;
   loop: boolean;
   preload?: boolean;
+  /** 音效类别 - 用于混音分组 */
+  category?: 'bgm' | 'sfx' | 'ui' | 'voice';
+  /** 优先级 - 高优先级音效不会被低优先级覆盖 */
+  priority?: 'low' | 'normal' | 'high' | 'critical';
 }
 
-/** BGM配置 */
+/** 混音器配置 - Code Geass风格音量平衡
+ * BGM: 30-40%不干扰对话
+ * SFX: 60-80%突出反馈
+ * UI: 40-50%清晰但不突兀
+ * Voice: 80-100%优先清晰
+ */
+export const MIXER_CONFIG = {
+  bgm: { volume: 0.35, maxVolume: 0.45 },
+  sfx: { volume: 0.75, maxVolume: 0.90 },
+  ui: { volume: 0.45, maxVolume: 0.55 },
+  voice: { volume: 0.90, maxVolume: 1.0 },
+};
+
+/** 音频质量配置 */
+export const AUDIO_QUALITY = {
+  bgm: { bitrate: 192, sampleRate: 44100, format: 'mp3' },
+  sfx: { bitrate: 128, sampleRate: 44100, format: 'mp3' },
+  ui: { bitrate: 128, sampleRate: 44100, format: 'mp3' },
+};
+
+/** BGM配置 - 按照Code Geass风格优化 */
 const BGM_CONFIG: Record<BGMType, AudioConfig> = {
-  'main-menu': { volume: 0.4, loop: true, preload: true },
-  'character-select': { volume: 0.35, loop: true, preload: true },
-  'game-normal': { volume: 0.3, loop: true, preload: true },
+  // 主菜单: 管弦乐+电子，庄重神秘，30-40%音量不干扰
+  'main-menu': { volume: 0.35, loop: true, preload: true },
+  // 角色选择: 优雅氛围，略低于主菜单
+  'character-select': { volume: 0.32, loop: true, preload: true },
+  // 游戏进行: 紧张悬疑，保持30-40%范围
+  'game-normal': { volume: 0.30, loop: true, preload: true },
+  // 激烈战斗: 稍高但不喧宾夺主
   'game-intense': { volume: 0.35, loop: true, preload: false },
-  'geass-activate': { volume: 0.5, loop: false, preload: false },
-  'victory': { volume: 0.5, loop: false, preload: true },
-  'defeat': { volume: 0.4, loop: false, preload: true },
-  'game-over': { volume: 0.35, loop: false, preload: true },
+  // Geass激活: 特殊事件，音量突出
+  'geass-activate': { volume: 0.55, loop: false, preload: false },
+  // 胜利: triumphant orchestral，50-60%
+  'victory': { volume: 0.55, loop: false, preload: true },
+  // 失败: 哀伤钢琴，40-50%
+  'defeat': { volume: 0.45, loop: false, preload: true },
+  // 游戏结束: 同失败音乐
+  'game-over': { volume: 0.45, loop: false, preload: true },
 };
 
-/** SFX配置 */
+/** SFX配置 - 按照Code Geass风格和混音建议优化 */
 const SFX_CONFIG: Record<SFXType, AudioConfig> = {
-  // 卡牌
-  'card-play': { volume: 0.6, loop: false },
-  'card-shuffle': { volume: 0.5, loop: false },
-  'card-draw': { volume: 0.4, loop: false },
-  'card-flip': { volume: 0.5, loop: false },
-  // 游戏事件
-  'challenge': { volume: 0.7, loop: false },
-  'challenge-success': { volume: 0.8, loop: false },
-  'challenge-fail': { volume: 0.6, loop: false },
-  'turn-start': { volume: 0.4, loop: false },
-  'turn-end': { volume: 0.3, loop: false },
-  // Geass
-  'geass-activate': { volume: 0.8, loop: false },
-  'geass-hit': { volume: 0.9, loop: false },
-  'geass-miss': { volume: 0.5, loop: false },
-  'geass-immunity': { volume: 0.7, loop: false },
-  // UI
-  'button-click': { volume: 0.4, loop: false },
-  'button-hover': { volume: 0.2, loop: false },
-  'menu-open': { volume: 0.3, loop: false },
-  'menu-close': { volume: 0.3, loop: false },
-  // 角色
-  'character-select': { volume: 0.5, loop: false },
-  'character-skill': { volume: 0.7, loop: false },
-  'damage-taken': { volume: 0.8, loop: false },
-  'heal': { volume: 0.6, loop: false },
-  // 结果
-  'win': { volume: 0.8, loop: false },
-  'lose': { volume: 0.6, loop: false },
-  'round-win': { volume: 0.7, loop: false },
-  'round-lose': { volume: 0.5, loop: false },
+  // ========== 卡牌音效 (P0优先级) ==========
+  // 卡牌放置: 清脆纸质声，60-80%突出反馈
+  'card-play': { volume: 0.70, loop: false, category: 'sfx', priority: 'high' },
+  // 卡牌洗牌: 连续摩擦声，略低避免刺耳
+  'card-shuffle': { volume: 0.55, loop: false, category: 'sfx', priority: 'normal' },
+  // 卡牌抽取: 快速滑动声
+  'card-draw': { volume: 0.50, loop: false, category: 'sfx', priority: 'normal' },
+  // 卡牌翻转: 短促清晰
+  'card-flip': { volume: 0.55, loop: false, category: 'sfx', priority: 'normal' },
+
+  // ========== 质疑音效 (P0优先级) ==========
+  // 质疑触发: 低沉boom+高频shimmer，戏剧化，高音量
+  'challenge': { volume: 0.85, loop: false, category: 'sfx', priority: 'critical' },
+  // 质疑成功: triumphant，高音量
+  'challenge-success': { volume: 0.80, loop: false, category: 'sfx', priority: 'high' },
+  // 质疑失败: 较低音量表示挫败
+  'challenge-fail': { volume: 0.65, loop: false, category: 'sfx', priority: 'normal' },
+
+  // ========== 回合音效 ==========
+  'turn-start': { volume: 0.45, loop: false, category: 'ui', priority: 'normal' },
+  'turn-end': { volume: 0.35, loop: false, category: 'ui', priority: 'low' },
+
+  // ========== Geass音效 (P1优先级) ==========
+  // Geass激活: 神秘合成器音，80-90%高优先级
+  'geass-activate': { volume: 0.85, loop: false, category: 'sfx', priority: 'critical' },
+  // Geass命中: 冲击感
+  'geass-hit': { volume: 0.90, loop: false, category: 'sfx', priority: 'critical' },
+  // Geass闪避: 快速whoosh
+  'geass-miss': { volume: 0.55, loop: false, category: 'sfx', priority: 'normal' },
+  // Geass免疫: 防御感
+  'geass-immunity': { volume: 0.75, loop: false, category: 'sfx', priority: 'high' },
+
+  // ========== UI音效 (P0优先级) ==========
+  // 按钮点击: 清脆tech click，40-50%
+  'button-click': { volume: 0.45, loop: false, category: 'ui', priority: 'normal' },
+  // 按钮悬停: 轻柔，20-30%
+  'button-hover': { volume: 0.25, loop: false, category: 'ui', priority: 'low' },
+  // 菜单打开: 滑动whoosh
+  'menu-open': { volume: 0.40, loop: false, category: 'ui', priority: 'normal' },
+  // 菜单关闭: 同上
+  'menu-close': { volume: 0.40, loop: false, category: 'ui', priority: 'normal' },
+
+  // ========== 角色音效 ==========
+  'character-select': { volume: 0.55, loop: false, category: 'ui', priority: 'normal' },
+  'character-skill': { volume: 0.75, loop: false, category: 'sfx', priority: 'high' },
+  'damage-taken': { volume: 0.85, loop: false, category: 'sfx', priority: 'high' },
+  'heal': { volume: 0.65, loop: false, category: 'sfx', priority: 'normal' },
+
+  // ========== 结算音效 (P1优先级) ==========
+  'win': { volume: 0.80, loop: false, category: 'sfx', priority: 'high' },
+  'lose': { volume: 0.65, loop: false, category: 'sfx', priority: 'normal' },
+  'round-win': { volume: 0.75, loop: false, category: 'sfx', priority: 'high' },
+  'round-lose': { volume: 0.55, loop: false, category: 'sfx', priority: 'normal' },
 };
 
-/** BGM音频URL映射（使用免费在线资源） */
+/** 基础URL */
+const BASE_URL = import.meta.env.BASE_URL || '/';
+
+/** BGM音频URL映射（使用本地资源） */
 const BGM_URLS: Record<BGMType, string> = {
-  'main-menu': 'https://assets.mixkit.co/music/preview/mixkit-epic-orchestra-689.mp3',
-  'character-select': 'https://assets.mixkit.co/music/preview/mixkit-tech-house-vibes-130.mp3',
-  'game-normal': 'https://assets.mixkit.co/music/preview/mixkit-intense-puzzle-game-1122.mp3',
-  'game-intense': 'https://assets.mixkit.co/music/preview/mixkit-driving-ambition-32.mp3',
-  'geass-activate': 'https://assets.mixkit.co/music/preview/mixkit-magical-coin-win-193.mp3',
-  'victory': 'https://assets.mixkit.co/music/preview/mixkit-winning-chimes-2015.mp3',
-  'defeat': 'https://assets.mixkit.co/music/preview/mixkit-sad-piano-553.mp3',
-  'game-over': 'https://assets.mixkit.co/music/preview/mixkit-sad-trombone-471.mp3',
+  'main-menu': `${BASE_URL}audio/bgm-menu.mp3`,
+  'character-select': `${BASE_URL}audio/bgm-menu.mp3`,
+  'game-normal': `${BASE_URL}audio/bgm-game.mp3`,
+  'game-intense': `${BASE_URL}audio/bgm-game.mp3`,
+  'geass-activate': `${BASE_URL}audio/sfx-geass-activate.mp3`,
+  'victory': `${BASE_URL}audio/bgm-victory.mp3`,
+  'defeat': `${BASE_URL}audio/bgm-defeat.mp3`,
+  'game-over': `${BASE_URL}audio/bgm-defeat.mp3`,
 };
 
-/** SFX音频URL映射 */
+/** SFX音频URL映射（使用本地资源） */
 const SFX_URLS: Record<SFXType, string> = {
   // 卡牌
-  'card-play': 'https://assets.mixkit.co/sfx/preview/mixkit-card-flip-1535.mp3',
-  'card-shuffle': 'https://assets.mixkit.co/sfx/preview/mixkit-shuffling-cards-1698.mp3',
-  'card-draw': 'https://assets.mixkit.co/sfx/preview/mixkit-paper-slide-1533.mp3',
-  'card-flip': 'https://assets.mixkit.co/sfx/preview/mixkit-page-turn-single-1104.mp3',
+  'card-play': `${BASE_URL}audio/sfx-play-card.mp3`,
+  'card-shuffle': `${BASE_URL}audio/sfx-card-shuffle.mp3`,
+  'card-draw': `${BASE_URL}audio/sfx-play-card.mp3`,
+  'card-flip': `${BASE_URL}audio/sfx-play-card.mp3`,
   // 游戏事件
-  'challenge': 'https://assets.mixkit.co/sfx/preview/mixkit-dramatic-boom-991.mp3',
-  'challenge-success': 'https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3',
-  'challenge-fail': 'https://assets.mixkit.co/sfx/preview/mixkit-fail-drum-and-bells-571.mp3',
-  'turn-start': 'https://assets.mixkit.co/sfx/preview/mixkit-game-notification-wave-alarm-987.mp3',
-  'turn-end': 'https://assets.mixkit.co/sfx/preview/mixkit-modern-technology-select-3124.mp3',
+  'challenge': `${BASE_URL}audio/sfx-challenge.mp3`,
+  'challenge-success': `${BASE_URL}audio/sfx-win.mp3`,
+  'challenge-fail': `${BASE_URL}audio/sfx-lose.mp3`,
+  'turn-start': `${BASE_URL}audio/sfx-turn-start.mp3`,
+  'turn-end': `${BASE_URL}audio/sfx-button-click.mp3`,
   // Geass
-  'geass-activate': 'https://assets.mixkit.co/sfx/preview/mixkit-magical-coin-win-193.mp3',
-  'geass-hit': 'https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-explosion-2759.mp3',
-  'geass-miss': 'https://assets.mixkit.co/sfx/preview/mixkit-falling-into-mud-391.mp3',
-  'geass-immunity': 'https://assets.mixkit.co/sfx/preview/mixkit-magic-flute-sound-2428.mp3',
+  'geass-activate': `${BASE_URL}audio/sfx-geass-activate.mp3`,
+  'geass-hit': `${BASE_URL}audio/sfx-geass-hit.mp3`,
+  'geass-miss': `${BASE_URL}audio/sfx-geass-miss.mp3`,
+  'geass-immunity': `${BASE_URL}audio/sfx-geass-miss.mp3`,
   // UI
-  'button-click': 'https://assets.mixkit.co/sfx/preview/mixkit-modern-technology-select-3124.mp3',
-  'button-hover': 'https://assets.mixkit.co/sfx/preview/mixkit-mouse-click-close-1113.mp3',
-  'menu-open': 'https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3',
-  'menu-close': 'https://assets.mixkit.co/sfx/preview/mixkit-software-interface-back-2575.mp3',
+  'button-click': `${BASE_URL}audio/sfx-button-click.mp3`,
+  'button-hover': `${BASE_URL}audio/sfx-button-click.mp3`,
+  'menu-open': `${BASE_URL}audio/sfx-button-click.mp3`,
+  'menu-close': `${BASE_URL}audio/sfx-button-click.mp3`,
   // 角色
-  'character-select': 'https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3',
-  'character-skill': 'https://assets.mixkit.co/sfx/preview/mixkit-magical-coin-win-193.mp3',
-  'damage-taken': 'https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-explosion-2759.mp3',
-  'heal': 'https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3',
+  'character-select': `${BASE_URL}audio/sfx-character-select.mp3`,
+  'character-skill': `${BASE_URL}audio/sfx-geass-activate.mp3`,
+  'damage-taken': `${BASE_URL}audio/sfx-geass-hit.mp3`,
+  'heal': `${BASE_URL}audio/sfx-win.mp3`,
   // 结果
-  'win': 'https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3',
-  'lose': 'https://assets.mixkit.co/sfx/preview/mixkit-sad-trombone-471.mp3',
-  'round-win': 'https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3',
-  'round-lose': 'https://assets.mixkit.co/sfx/preview/mixkit-fail-drum-and-bells-571.mp3',
+  'win': `${BASE_URL}audio/sfx-win.mp3`,
+  'lose': `${BASE_URL}audio/sfx-lose.mp3`,
+  'round-win': `${BASE_URL}audio/sfx-win.mp3`,
+  'round-lose': `${BASE_URL}audio/sfx-lose.mp3`,
 };
 
 /** 角色语音配置（使用占位符URL，实际项目中应替换为真实语音文件） */
@@ -291,19 +348,37 @@ export class EnhancedSoundManager {
   }
 
   /**
-   * 初始化音效管理器
+   * 初始化音效管理器 - 按照P0优先级预加载
    */
   init(): void {
     if (this.initialized) return;
 
-    // 预加载常用BGM
-    this.preloadBGM(['main-menu', 'victory', 'defeat']);
+    // P0优先级: 预加载主菜单BGM
+    this.preloadBGM(['main-menu']);
 
-    // 预加载常用SFX
-    this.preloadSFX(['button-click', 'card-play', 'challenge']);
+    // P0优先级: 预加载核心音效
+    const p0SFX: SFXType[] = [
+      'button-click',  // UI交互
+      'card-play',     // 卡牌放置
+      'challenge',     // 质疑触发
+    ];
+    this.preloadSFX(p0SFX);
+
+    // P1优先级: 延迟预加载其他重要音效
+    setTimeout(() => {
+      const p1SFX: SFXType[] = [
+        'geass-activate',
+        'geass-hit',
+        'win',
+        'lose',
+        'card-shuffle',
+      ];
+      this.preloadSFX(p1SFX);
+      console.log('[EnhancedSoundManager] P1音效预加载完成');
+    }, 2000);
 
     this.initialized = true;
-    console.log('[EnhancedSoundManager] 初始化完成');
+    console.log('[EnhancedSoundManager] 初始化完成 (P0资源已加载)');
   }
 
   /**

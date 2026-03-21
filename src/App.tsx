@@ -328,6 +328,22 @@ const App: React.FC = () => {
     const nextState = engine.endChallengePhase(true);
     setGameState(nextState);
 
+    // 检查游戏是否已经结束
+    if (nextState.phase === 'game_over') {
+      addLog(nextState.lastAction || '游戏结束！');
+      setIsProcessing(false);
+      // 跳转到结果页面
+      setTimeout(() => {
+        if (nextState.winner === 'player') {
+          playBGM('victory');
+        } else {
+          playBGM('defeat');
+        }
+        setCurrentScreen('result');
+      }, 1500);
+      return;
+    }
+
     const currentPlayerId = nextState.turnState.lastPlayerId || nextState.turnState.playedCards?.playerId;
     if (currentPlayerId === 'player' || !currentPlayerId) {
       setIsProcessing(false);
@@ -685,6 +701,23 @@ const App: React.FC = () => {
     const nextState = engine.endChallengePhase(true);
     setGameState(nextState);
 
+    // 检查游戏是否已经结束
+    if (nextState.phase === 'game_over') {
+      addLog(nextState.lastAction || '游戏结束！');
+      setIsProcessing(false);
+      buttonLockRef.current.pass = false;
+      // 跳转到结果页面
+      setTimeout(() => {
+        if (nextState.winner === 'player') {
+          playBGM('victory');
+        } else {
+          playBGM('defeat');
+        }
+        setCurrentScreen('result');
+      }, 1500);
+      return;
+    }
+
     const currentPlayerId = nextState.turnState.lastPlayerId;
     isDev && console.log(`[handlePass] 无人质疑，原出牌者 ${currentPlayerId} 继续出牌`);
 
@@ -793,6 +826,7 @@ const App: React.FC = () => {
             turnNumber={turnNumber}
             onRestart={handleRestart}
             onMainMenu={handleMainMenu}
+            {...(selectedCharacter ? { playerCharacter: selectedCharacter } : {})}
           />
         );
       }

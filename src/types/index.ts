@@ -321,6 +321,7 @@ export interface ResultScreenProps {
   turnNumber: number;
   onRestart: () => void;
   onMainMenu: () => void;
+  playerCharacter?: CharacterId;
 }
 
 // ============================================
