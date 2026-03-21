@@ -340,7 +340,7 @@ export class GameEngine {
 
     // 检查出牌数量限制（卡莲技能）
     const playerCharState = this.state.characterStates.get('player');
-    const maxCards = playerCharState ? getMaxPlayCount(playerCharState) : 1;
+    const maxCards = playerCharState ? getMaxPlayCount(playerCharState) : 3;
     if (cardIds.length > maxCards) return false;
 
     // 从手牌中移除
@@ -840,7 +840,7 @@ export class GameEngine {
     } else {
       // 检查出牌数量限制（统一使用 characters/state.ts 中的 getMaxPlayCount）
       const charState = this.state.characterStates.get('player');
-      const maxCards = charState ? getMaxPlayCount(charState) : 1;
+      const maxCards = charState ? getMaxPlayCount(charState) : 3;
       if (this.state.playerSelectedCards.length < maxCards) {
         this.state.playerSelectedCards.push(cardId);
       }
@@ -931,7 +931,7 @@ export class GameEngine {
 
     // 检查出牌数量限制
     const charState = this.state.characterStates.get(aiId);
-    const maxCards = charState ? getMaxPlayCount(charState) : 1;
+    const maxCards = charState ? getMaxPlayCount(charState) : 3;
     if (cardIds.length > maxCards) return false;
 
     // 从手牌中移除

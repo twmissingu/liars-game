@@ -130,7 +130,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
         {/* 角色展示 */}
         <div className="cg-result-character">
           <div className="cg-character-showcase">
-            <ChibiAvatar characterId={resultCharacter} size={200} />
+            <ChibiAvatar characterId={resultCharacter} size={200} priority />
 
             {/* 角色光环效果 */}
             <div className={`cg-character-aura ${isWin ? 'cg-aura-win' : 'cg-aura-lose'}`} />

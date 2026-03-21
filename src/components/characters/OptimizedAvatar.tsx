@@ -255,7 +255,7 @@ export class AvatarPreloader {
   static preloadCharacter(characterId: 'lelouch' | 'cc' | 'suzaku' | 'kallen'): void {
     const sizes = ['small', 'medium', 'large'];
     const webpSupported = checkWebPSupport();
-    const baseUrl = '/liars-game/';
+    const baseUrl = import.meta.env.BASE_URL || '/';
 
     for (let i = 1; i <= 4; i++) {
       // 预加载所有尺寸的WebP和PNG
@@ -302,7 +302,7 @@ export class AvatarPreloader {
     size: 'small' | 'medium' | 'large' = 'medium'
   ): void {
     const webpSupported = checkWebPSupport();
-    const baseUrl = '/liars-game/';
+    const baseUrl = import.meta.env.BASE_URL || '/';
 
     if (webpSupported) {
       const webpSrc = `${baseUrl}avatars/${characterId}/${avatarNumber}-${size}.webp`;
