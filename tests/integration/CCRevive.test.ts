@@ -88,10 +88,17 @@ describe('C.C. - Code之力复活技能边界测试', () => {
         ccReviveUsed: false,
       };
 
-      // 使用-1命中率确保不会命中（绕过复活判定）
-      const result = geassSystem.performGeass('player', stats, 'cc', -1, 0);
-      // 未命中时不会触发复活
-      expect(result.isRevived).toBeFalsy();
+      // 模拟Math.random确保Geass未命中（返回1.0，大于任何命中率）
+      const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(1.0);
+
+      try {
+        const result = geassSystem.performGeass('player', stats, 'cc', 0, 0);
+        // 未命中时不会触发复活
+        expect(result.hit).toBe(false);
+        expect(result.isRevived).toBeFalsy();
+      } finally {
+        randomSpy.mockRestore();
+      }
     });
   });
 

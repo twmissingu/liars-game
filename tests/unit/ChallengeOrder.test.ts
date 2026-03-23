@@ -13,7 +13,7 @@
  * 4. 玩家出牌后，质疑顺序应为 朱雀 → C.C. → 卡莲
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from '@jest/globals';
 import { GameEngine } from '../../src/core/GameEngineV2';
 import type { GameState } from '../../src/core/GameEngineV2';
 

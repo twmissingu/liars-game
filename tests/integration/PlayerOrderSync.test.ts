@@ -210,7 +210,8 @@ describe('【集成测试】角色顺序前后端同步验证', () => {
 
     test('3.3 回合流转应该遵循顺时针顺序', () => {
       // 设置出牌状态
-      const setupPlayCards = (playerId: PlayerId) => {
+      const setupPlayCards = (playerId: PlayerId, firstPlayerIndex: number) => {
+        (engine as any).state.turnState.firstPlayerIndex = firstPlayerIndex;
         (engine as any).state.turnState.playedCards = {
           cardIds: ['card1'],
           claimedRank: 'Q',
@@ -221,16 +222,17 @@ describe('【集成测试】角色顺序前后端同步验证', () => {
       };
 
       // 测试所有可能的流转: 卡莲(1) → 朱雀(2) → 玩家(0) → C.C.(3) → 卡莲(1)
+      // 有质疑发生时，从当前先手的下家开始
       const testCases = [
-        { playerId: 'ai3' as const, expectedNext: 2, description: '卡莲 -> 朱雀' },
-        { playerId: 'ai2' as const, expectedNext: 0, description: '朱雀 -> 玩家' },
-        { playerId: 'player' as const, expectedNext: 3, description: '玩家 -> C.C.' },
-        { playerId: 'ai' as const, expectedNext: 1, description: 'C.C. -> 卡莲' },
+        { playerId: 'ai3' as const, firstPlayerIndex: 1, expectedNext: 2, description: '卡莲 -> 朱雀' },
+        { playerId: 'ai2' as const, firstPlayerIndex: 2, expectedNext: 0, description: '朱雀 -> 玩家' },
+        { playerId: 'player' as const, firstPlayerIndex: 0, expectedNext: 3, description: '玩家 -> C.C.' },
+        { playerId: 'ai' as const, firstPlayerIndex: 3, expectedNext: 1, description: 'C.C. -> 卡莲' },
       ];
 
       for (const testCase of testCases) {
-        setupPlayCards(testCase.playerId);
-        const nextState = engine.endChallengePhase();
+        setupPlayCards(testCase.playerId, testCase.firstPlayerIndex);
+        const nextState = engine.endChallengePhase(false);
         expect(nextState.currentPlayerIndex).toBe(testCase.expectedNext);
       }
     });

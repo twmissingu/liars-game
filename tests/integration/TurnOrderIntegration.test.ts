@@ -16,7 +16,7 @@
  * @version 1.0.0
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from '@jest/globals';
 import { TurnOrderSystem } from '../../src/core/TurnOrderSystem';
 import { GameEngine } from '../../src/core/GameEngineV2';
 

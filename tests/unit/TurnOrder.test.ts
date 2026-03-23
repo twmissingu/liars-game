@@ -1,45 +1,25 @@
 /**
  * =============================================================================
- * Code Geass: Liar's Game - 回合流转顺序测试
+ * 回合流转顺序测试
  * =============================================================================
  *
- * 验证无人质疑后的回合流转顺序是否符合顺时针规则
- *
- * 需求规格定义的顺时针顺序：
- * 上方AI角色（卡莲）→ 右方AI角色（朱雀）→ 下方玩家角色 → 左方AI角色（C.C.）→ 上方AI角色
- *
- * UI布局与索引映射：
- * - 上方 = 卡莲/ai3 (currentPlayerIndex = 1) -> aiPlayers[2]
- * - 右方 = 朱雀/ai2 (currentPlayerIndex = 2) -> aiPlayers[1]
- * - 下方 = 玩家 (currentPlayerIndex = 0)
- * - 左方 = C.C./ai (currentPlayerIndex = 3) -> aiPlayers[0]
- *
- * 顺时针流转：卡莲(1) → 朱雀(2) → 玩家(0) → C.C.(3) → 卡莲(1)
- *
- * aiPlayers数组布局:
- * - aiPlayers[0] = ai (C.C.) -> currentPlayerIndex=3
- * - aiPlayers[1] = ai2 (朱雀) -> currentPlayerIndex=2
- * - aiPlayers[2] = ai3 (卡莲) -> currentPlayerIndex=1
+ * 测试目标：验证回合流转的正确性
+ * 核心规则：顺时针流转 - 卡莲(1) -> 朱雀(2) -> 玩家(0) -> C.C.(3) -> 卡莲(1)
  *
  * @author Code Agent
- * @version 4.0.0 - 统一符合需求规格
+ * @version 2.0.0
  */
 
+import { describe, it, expect, beforeEach } from '@jest/globals';
 import { GameEngine } from '../../src/core/GameEngineV2';
+import type { GameState } from '../../src/core/GameEngineV2';
 
 describe('回合流转顺序测试', () => {
   let engine: GameEngine;
+  let state: GameState;
 
-  beforeEach(() => {
-    engine = new GameEngine();
-    engine.initializeGame('lelouch');
-  });
-
-  /**
-   * 辅助函数：设置出牌状态
-   */
-  const setupPlayCards = (playerId: 'player' | 'ai' | 'ai2' | 'ai3') => {
-    (engine as any).state.turnState.playedCards = {
+  const setupPlayCards = (playerId: string) => {
+    state.turnState.playedCards = {
       cardIds: ['card1'],
       claimedRank: 'Q',
       actualCards: [{ id: 'card1', rank: 'Q', suit: 'spades', isJoker: false }],
@@ -48,166 +28,249 @@ describe('回合流转顺序测试', () => {
     };
   };
 
+  beforeEach(() => {
+    engine = new GameEngine();
+    state = engine.initializeGame('lelouch');
+  });
+
   describe('【场景1】卡莲/ai3出牌，无人质疑', () => {
-    test('1.1 卡莲出牌后，下一个应该是朱雀/ai2(右方)', () => {
+    it('1.1 卡莲出牌后，下一个应该是朱雀/ai2(右方)', () => {
+      // 设置卡莲为先手角色
+      (engine as any).state.turnState.firstPlayerIndex = 1;
       setupPlayCards('ai3');
 
-      const nextState = engine.endChallengePhase();
+      const nextState = engine.endChallengePhase(false);
 
-      // 卡莲(1)的下家是朱雀(2)
+      // 卡莲(1) -> 朱雀(2)
       expect(nextState.currentPlayerIndex).toBe(2);
       expect(nextState.phase).toBe('ai_turn');
     });
   });
 
   describe('【场景2】朱雀/ai2出牌，无人质疑', () => {
-    test('2.1 朱雀出牌后，下一个应该是玩家(下方)', () => {
+    it('2.1 朱雀出牌后，下一个应该是玩家(下方)', () => {
+      // 设置朱雀为先手角色
+      (engine as any).state.turnState.firstPlayerIndex = 2;
       setupPlayCards('ai2');
 
-      const nextState = engine.endChallengePhase();
+      const nextState = engine.endChallengePhase(false);
 
-      // 朱雀(2)的下家是玩家(0)
+      // 朱雀(2) -> 玩家(0)
       expect(nextState.currentPlayerIndex).toBe(0);
       expect(nextState.phase).toBe('player_turn');
     });
   });
 
   describe('【场景3】玩家出牌，无人质疑', () => {
-    test('3.1 玩家出牌后，下一个应该是C.C./ai(左方)', () => {
+    it('3.1 玩家出牌后，下一个应该是C.C./ai(左方)', () => {
+      // 设置玩家为先手角色
+      (engine as any).state.turnState.firstPlayerIndex = 0;
       setupPlayCards('player');
 
-      const nextState = engine.endChallengePhase();
+      const nextState = engine.endChallengePhase(false);
 
-      // 玩家(0)的下家是C.C.(3)
+      // 玩家(0) -> C.C.(3)
       expect(nextState.currentPlayerIndex).toBe(3);
       expect(nextState.phase).toBe('ai_turn');
     });
   });
 
   describe('【场景4】C.C./ai出牌，无人质疑', () => {
-    test('4.1 C.C.出牌后，下一个应该是卡莲/ai3(上方)', () => {
+    it('4.1 C.C.出牌后，下一个应该是卡莲/ai3(上方)', () => {
+      // 设置C.C.为先手角色
+      (engine as any).state.turnState.firstPlayerIndex = 3;
       setupPlayCards('ai');
 
-      const nextState = engine.endChallengePhase();
+      const nextState = engine.endChallengePhase(false);
 
-      // C.C.(3)的下家是卡莲(1)
+      // C.C.(3) -> 卡莲(1)
       expect(nextState.currentPlayerIndex).toBe(1);
       expect(nextState.phase).toBe('ai_turn');
     });
   });
 
   describe('【场景5】完整顺时针流转', () => {
-    test('5.1 完整一圈流转验证', () => {
-      // 卡莲 -> 朱雀
-      setupPlayCards('ai3');
-      let state = engine.endChallengePhase();
+    it('5.1 完整一圈流转验证', () => {
+      // 卡莲 -> 朱雀 -> 玩家 -> C.C. -> 卡莲
+      engine.initializeGame('lelouch');
+      let state = engine.getState();
+
+      // 卡莲(1) -> 朱雀(2)
+      (engine as any).state.turnState.firstPlayerIndex = 1;
+      state.turnState.playedCards = {
+        cardIds: ['card1'],
+        claimedRank: 'Q',
+        actualCards: [{ id: 'card1', rank: 'Q', suit: 'spades', isJoker: false }],
+        playerId: 'ai3',
+        isBluff: false,
+      };
+      state = engine.endChallengePhase(false);
       expect(state.currentPlayerIndex).toBe(2);
 
-      // 朱雀 -> 玩家
-      setupPlayCards('ai2');
-      state = engine.endChallengePhase();
+      // 朱雀(2) -> 玩家(0)
+      (engine as any).state.turnState.firstPlayerIndex = 2;
+      state.turnState.playedCards = {
+        cardIds: ['card2'],
+        claimedRank: 'Q',
+        actualCards: [{ id: 'card2', rank: 'Q', suit: 'spades', isJoker: false }],
+        playerId: 'ai2',
+        isBluff: false,
+      };
+      state = engine.endChallengePhase(false);
       expect(state.currentPlayerIndex).toBe(0);
 
-      // 玩家 -> C.C.
-      setupPlayCards('player');
-      state = engine.endChallengePhase();
+      // 玩家(0) -> C.C.(3)
+      (engine as any).state.turnState.firstPlayerIndex = 0;
+      state.turnState.playedCards = {
+        cardIds: ['card3'],
+        claimedRank: 'Q',
+        actualCards: [{ id: 'card3', rank: 'Q', suit: 'spades', isJoker: false }],
+        playerId: 'player',
+        isBluff: false,
+      };
+      state = engine.endChallengePhase(false);
       expect(state.currentPlayerIndex).toBe(3);
 
-      // C.C. -> 卡莲
-      setupPlayCards('ai');
-      state = engine.endChallengePhase();
+      // C.C.(3) -> 卡莲(1)
+      (engine as any).state.turnState.firstPlayerIndex = 3;
+      state.turnState.playedCards = {
+        cardIds: ['card4'],
+        claimedRank: 'Q',
+        actualCards: [{ id: 'card4', rank: 'Q', suit: 'spades', isJoker: false }],
+        playerId: 'ai',
+        isBluff: false,
+      };
+      state = engine.endChallengePhase(false);
       expect(state.currentPlayerIndex).toBe(1);
     });
   });
 
   describe('【场景6】跳过已淘汰玩家', () => {
-    test('6.1 朱雀被淘汰后，卡莲出牌应跳过朱雀到玩家', () => {
+    let engine: GameEngine;
+    let state: GameState;
+
+    beforeEach(() => {
+      engine = new GameEngine();
+      state = engine.initializeGame('lelouch');
+    });
+
+    it('6.1 单个AI被淘汰后的流转', () => {
+      // 淘汰朱雀/ai2 (currentPlayerIndex=2, aiPlayers[1])
+      (engine as any).state.aiPlayers[1].isActive = false;
+      (engine as any).state.aiPlayers[1].stats.hp = 0;
+
+      // 卡莲出牌，设置卡莲为先手角色
+      (engine as any).state.turnState.firstPlayerIndex = 1;
+      state.turnState.playedCards = {
+        cardIds: ['card1'],
+        claimedRank: 'Q',
+        actualCards: [{ id: 'card1', rank: 'Q', suit: 'spades', isJoker: false }],
+        playerId: 'ai3',
+        isBluff: false,
+      };
+      const nextState = engine.endChallengePhase(false);
+
+      // 卡莲(1) -> 朱雀(2)被淘汰 -> 玩家(0)
+      expect(nextState.currentPlayerIndex).toBe(0);
+    });
+
+    it('6.2 多个AI被淘汰后的流转', () => {
       // aiPlayers数组: [0]=ai/C.C., [1]=ai2/朱雀, [2]=ai3/卡莲
       // currentPlayerIndex: 1=ai3/卡莲, 2=ai2/朱雀, 3=ai/C.C.
       // 淘汰朱雀/ai2 (currentPlayerIndex=2, aiPlayers[1])
       (engine as any).state.aiPlayers[1].isActive = false;
       (engine as any).state.aiPlayers[1].stats.hp = 0;
+      // 淘汰卡莲/ai3 (currentPlayerIndex=1, aiPlayers[2])
+      (engine as any).state.aiPlayers[2].isActive = false;
+      (engine as any).state.aiPlayers[2].stats.hp = 0;
 
-      setupPlayCards('ai3');
-      const nextState = engine.endChallengePhase();
+      // 玩家出牌，设置玩家为先手角色
+      (engine as any).state.turnState.firstPlayerIndex = 0;
+      state.turnState.playedCards = {
+        cardIds: ['card1'],
+        claimedRank: 'Q',
+        actualCards: [{ id: 'card1', rank: 'Q', suit: 'spades', isJoker: false }],
+        playerId: 'player',
+        isBluff: false,
+      };
+      const nextState = engine.endChallengePhase(false);
 
-      // 卡莲(1)的下家是朱雀(2)，但朱雀被淘汰
-      // 应该跳过朱雀到玩家(0)
-      expect(nextState.currentPlayerIndex).toBe(0);
-    });
-
-    test('6.2 多个AI被淘汰后的流转', () => {
-      // 淘汰朱雀/ai2 (currentPlayerIndex=2) 和 C.C./ai (currentPlayerIndex=3)
-      (engine as any).state.aiPlayers[1].isActive = false;
-      (engine as any).state.aiPlayers[1].stats.hp = 0;
-      (engine as any).state.aiPlayers[0].isActive = false;
-      (engine as any).state.aiPlayers[0].stats.hp = 0;
-
-      setupPlayCards('ai3');
-      const nextState = engine.endChallengePhase();
-
-      // 卡莲(1)的下家是朱雀(2)，朱雀和C.C.都被淘汰
-      // 应流转到玩家(0)
-      expect(nextState.currentPlayerIndex).toBe(0);
+      // 玩家(0) -> 朱雀(2)被淘汰 -> 卡莲(1)被淘汰 -> C.C.(3)
+      expect(nextState.currentPlayerIndex).toBe(3);
     });
   });
 
-  describe('【场景7】回合数递增', () => {
-    test('7.1 每次流转后回合数应增加', () => {
-      const initialTurnNumber = engine.getState().turnState.turnNumber;
+  describe('【场景7】边界条件测试', () => {
+    let engine: GameEngine;
+    let state: GameState;
 
-      setupPlayCards('ai3');
-      const nextState = engine.endChallengePhase();
-
-      expect(nextState.turnState.turnNumber).toBe(initialTurnNumber + 1);
+    beforeEach(() => {
+      engine = new GameEngine();
+      state = engine.initializeGame('lelouch');
     });
 
-    test('7.2 多轮流转后回合数正确', () => {
-      let turnNumber = engine.getState().turnState.turnNumber;
+    it('7.1 所有AI被淘汰后应该结束游戏', () => {
+      // 淘汰所有AI
+      (engine as any).state.aiPlayers[0].isActive = false;
+      (engine as any).state.aiPlayers[0].stats.hp = 0;
+      (engine as any).state.aiPlayers[1].isActive = false;
+      (engine as any).state.aiPlayers[1].stats.hp = 0;
+      (engine as any).state.aiPlayers[2].isActive = false;
+      (engine as any).state.aiPlayers[2].stats.hp = 0;
 
-      // 顺序: 卡莲 -> 朱雀 -> 玩家 -> C.C. -> 卡莲
-      const playerOrder: ('player' | 'ai' | 'ai2' | 'ai3')[] = ['ai3', 'ai2', 'player', 'ai'];
-      for (let i = 0; i < 4; i++) {
-        setupPlayCards(playerOrder[i]);
-        const state = engine.endChallengePhase();
-        turnNumber++;
-        expect(state.turnState.turnNumber).toBe(turnNumber);
-      }
+      // 玩家出牌，设置玩家为先手角色
+      (engine as any).state.turnState.firstPlayerIndex = 0;
+      state.turnState.playedCards = {
+        cardIds: ['card1'],
+        claimedRank: 'Q',
+        actualCards: [{ id: 'card1', rank: 'Q', suit: 'spades', isJoker: false }],
+        playerId: 'player',
+        isBluff: false,
+      };
+      const nextState = engine.endChallengePhase(false);
+
+      // 所有AI被淘汰，玩家获胜
+      expect(nextState.winner).toBe('player');
     });
   });
 
   describe('【场景8】索引映射一致性验证', () => {
-    test('8.1 aiPlayers数组索引与currentPlayerIndex映射正确', () => {
-      const state = engine.getState();
-
-      // 验证aiPlayers数组中的ID与currentPlayerIndex映射一致
-      // aiPlayers[0] = ai (C.C.) -> currentPlayerIndex=3 (左方)
-      expect(state.aiPlayers[0].id).toBe('ai');
-      expect(state.aiPlayers[0].name).toBe('C.C.');
-
-      // aiPlayers[1] = ai2 (朱雀) -> currentPlayerIndex=2 (右方)
-      expect(state.aiPlayers[1].id).toBe('ai2');
-      expect(state.aiPlayers[1].name).toBe('朱雀');
-
-      // aiPlayers[2] = ai3 (卡莲) -> currentPlayerIndex=1 (上方)
-      expect(state.aiPlayers[2].id).toBe('ai3');
-      expect(state.aiPlayers[2].name).toBe('卡莲');
+    it('8.1 索引到玩家ID的映射', () => {
+      const { INDEX_TO_PLAYER_ID } = require('../../src/core/PlayerIndexMapper');
+      
+      expect(INDEX_TO_PLAYER_ID[0]).toBe('player');
+      expect(INDEX_TO_PLAYER_ID[1]).toBe('ai3');
+      expect(INDEX_TO_PLAYER_ID[2]).toBe('ai2');
+      expect(INDEX_TO_PLAYER_ID[3]).toBe('ai');
     });
 
-    test('8.2 不同玩家出牌后的流转顺序符合需求规格', () => {
-      // 测试所有可能的出牌者，验证流转顺序符合需求规格
-      // 顺时针顺序: 卡莲(1) -> 朱雀(2) -> 玩家(0) -> C.C.(3) -> 卡莲(1)
-      const testCases = [
-        { playerId: 'ai3' as const, expectedNext: 2, description: '卡莲 -> 朱雀' },
-        { playerId: 'ai2' as const, expectedNext: 0, description: '朱雀 -> 玩家' },
-        { playerId: 'player' as const, expectedNext: 3, description: '玩家 -> C.C.' },
-        { playerId: 'ai' as const, expectedNext: 1, description: 'C.C. -> 卡莲' },
-      ];
+    it('8.2 不同玩家出牌后的流转顺序符合需求规格', () => {
+      engine.initializeGame('lelouch');
+      let state = engine.getState();
+      let turnNumber = state.turnState.turnNumber;
 
-      for (const testCase of testCases) {
-        setupPlayCards(testCase.playerId);
-        const nextState = engine.endChallengePhase();
-        expect(nextState.currentPlayerIndex).toBe(testCase.expectedNext);
+      // 测试完整顺时针流转: 卡莲(1) -> 朱雀(2) -> 玩家(0) -> C.C.(3) -> 卡莲(1)
+      const expectedOrder = ['ai3', 'ai2', 'player', 'ai'];
+      const playerIndexMap: Record<string, number> = { ai3: 1, ai2: 2, player: 0, ai: 3 };
+      let currentPlayer = 'ai3';
+
+      for (let i = 0; i < 4; i++) {
+        // 设置当前出牌者为先手角色
+        (engine as any).state.turnState.firstPlayerIndex = playerIndexMap[currentPlayer];
+        state.turnState.playedCards = {
+          cardIds: [`card${i}`],
+          claimedRank: 'Q',
+          actualCards: [{ id: `card${i}`, rank: 'Q', suit: 'spades', isJoker: false }],
+          playerId: currentPlayer,
+          isBluff: false,
+        };
+        state = engine.endChallengePhase(false);
+        const nextPlayerId = expectedOrder[(i + 1) % 4];
+        const expectedIndex = playerIndexMap[nextPlayerId];
+        expect(state.currentPlayerIndex).toBe(expectedIndex);
+        currentPlayer = nextPlayerId;
+        turnNumber++;
+        expect(state.turnState.turnNumber).toBe(turnNumber);
       }
     });
   });

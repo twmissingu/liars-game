@@ -50,13 +50,19 @@ describe('GameEngineV2 - 笛卡尔积测试', () => {
   };
 
   /**
-   * 获取下一个出牌者索引
-   * 新的UI顺序: 玩家(0) -> AI3(1) -> AI2(2) -> AI1(3) -> 玩家(0)
+   * 获取下一个出牌者索引（顺时针方向）
+   * 顺时针顺序: 卡莲(1) -> 朱雀(2) -> 玩家(0) -> C.C.(3) -> 卡莲(1)
    * @param currentIndex 当前出牌者索引
    */
   const getNextPlayerIndex = (currentIndex: number): number => {
-    // 映射关系: 0=玩家, 1=AI3, 2=AI2, 3=AI1
-    return (currentIndex + 1) % 4;
+    // 映射关系: 0=玩家, 1=ai3/卡莲, 2=ai2/朱雀, 3=ai/C.C.
+    const nextMap: Record<number, number> = {
+      0: 3,  // 玩家(下方) -> C.C.(左方)
+      1: 2,  // 卡莲(上方) -> 朱雀(右方)
+      2: 0,  // 朱雀(右方) -> 玩家(下方)
+      3: 1,  // C.C.(左方) -> 卡莲(上方)
+    };
+    return nextMap[currentIndex] ?? 0;
   };
 
   /**
@@ -131,13 +137,16 @@ describe('GameEngineV2 - 笛卡尔积测试', () => {
     test('1.5 AI1/C.C.出牌，玩家不质疑，下一玩家继续', () => {
       setupPlayCards('ai', true);
 
+      // 设置C.C.为先手角色
+      (engine as any).state.turnState.firstPlayerIndex = 3;
+
       // 玩家不质疑 - 这会直接结束质疑阶段并进入下一回合
       const nextState = engine.playerChallengeDecision(false);
 
       // 验证：游戏继续，进入下一回合
       expect(nextState.turnState.turnNumber).toBeGreaterThan(1);
-      // 修正后的映射: C.C./ai(3)的下家是玩家(0)
-      expect(nextState.currentPlayerIndex).toBe(0);
+      // 修正后的映射: C.C./ai(3)的下家是卡莲(1)
+      expect(nextState.currentPlayerIndex).toBe(1);
     });
   });
 
@@ -194,10 +203,13 @@ describe('GameEngineV2 - 笛卡尔积测试', () => {
     test('2.5 玩家出牌，AI不质疑，下一玩家继续', () => {
       setupPlayCards('player', true);
 
-      // AI不质疑（通过endChallengePhase模拟）
-      const nextState = engine.endChallengePhase();
+      // 设置玩家为先手角色
+      (engine as any).state.turnState.firstPlayerIndex = 0;
 
-      // 验证：下一玩家是AI1
+      // AI不质疑（通过endChallengePhase模拟）
+      const nextState = engine.endChallengePhase(false);
+
+      // 验证：下一玩家是C.C. (玩家0的下家是3)
       expect(nextState.currentPlayerIndex).toBe(getNextPlayerIndex(playedByIndex));
     });
   });
@@ -251,11 +263,14 @@ describe('GameEngineV2 - 笛卡尔积测试', () => {
     test('3.5 AI1/C.C.出牌，AI2/朱雀不质疑，下一玩家继续', () => {
       setupPlayCards('ai', true);
 
-      // 不质疑，继续下一回合
-      const nextState = engine.endChallengePhase();
+      // 设置C.C.为先手角色
+      (engine as any).state.turnState.firstPlayerIndex = 3;
 
-      // 修正后的映射: C.C./ai(3)的下家是玩家(0)
-      expect(nextState.currentPlayerIndex).toBe(0);
+      // 不质疑，继续下一回合
+      const nextState = engine.endChallengePhase(false);
+
+      // 修正后的映射: C.C./ai(3)的下家是卡莲(1)
+      expect(nextState.currentPlayerIndex).toBe(1);
     });
   });
 
@@ -381,10 +396,13 @@ describe('GameEngineV2 - 笛卡尔积测试', () => {
       // AI1/C.C.出牌
       setupPlayCards('ai', false);
 
-      const nextState = engine.endChallengePhase();
+      // 设置C.C.为先手角色
+      (engine as any).state.turnState.firstPlayerIndex = 3;
 
-      // 修正后的映射: C.C./ai(3)的下家是玩家(0)
-      expect(nextState.currentPlayerIndex).toBe(0);
+      const nextState = engine.endChallengePhase(false);
+
+      // 修正后的映射: C.C./ai(3)的下家是卡莲(1)
+      expect(nextState.currentPlayerIndex).toBe(1);
     });
   });
 

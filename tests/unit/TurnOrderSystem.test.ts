@@ -16,7 +16,7 @@
  * @version 1.0.0
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from '@jest/globals';
 import {
   TurnOrderSystem,
   createDefaultTurnOrder,
@@ -281,7 +281,7 @@ describe('角色轮替系统测试', () => {
 
   describe('事件系统', () => {
     it('应该触发rotate事件', () => {
-      const listener = vi.fn();
+      const listener = jest.fn();
       system.on(listener);
 
       system.next();
@@ -294,7 +294,7 @@ describe('角色轮替系统测试', () => {
     });
 
     it('应该触发activate/deactivate事件', () => {
-      const listener = vi.fn();
+      const listener = jest.fn();
       system.on(listener);
 
       system.setActive(1, false);
@@ -305,7 +305,7 @@ describe('角色轮替系统测试', () => {
     });
 
     it('应该正确移除监听器', () => {
-      const listener = vi.fn();
+      const listener = jest.fn();
       system.on(listener);
       system.off(listener);
 
@@ -315,7 +315,7 @@ describe('角色轮替系统测试', () => {
     });
 
     it('应该触发pause/resume事件', () => {
-      const listener = vi.fn();
+      const listener = jest.fn();
       system.on(listener);
 
       system.pause();

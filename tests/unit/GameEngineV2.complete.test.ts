@@ -283,17 +283,19 @@ describe('GameEngineV2 - 完整逻辑测试', () => {
     test('5.1 玩家出牌后应该流转到AI回合', () => {
       (engine as any).state.phase = 'player_turn';
       (engine as any).state.currentPlayerIndex = 0;
+      // 设置玩家为先手角色
+      (engine as any).state.turnState.firstPlayerIndex = 0;
 
       const state = engine.getState();
       const cardId = state.playerHand[0].id;
       engine.toggleCardSelection(cardId);
       engine.playerPlayCards();
 
-      // 结束质疑阶段
-      const nextState = engine.endChallengePhase();
+      // 结束质疑阶段（有质疑发生，进入下一回合）
+      const nextState = engine.endChallengePhase(false);
 
-      // 下一个玩家应该是AI
-      expect(nextState.currentPlayerIndex).not.toBe(0);
+      // 玩家(0) -> C.C.(3)，下一个玩家应该是AI
+      expect(nextState.currentPlayerIndex).toBe(3);
       expect(nextState.phase).toBe('ai_turn');
     });
 
@@ -488,12 +490,14 @@ describe('GameEngineV2 - 完整逻辑测试', () => {
         isBluff: false,
       };
 
-      const nextState = engine.endChallengePhase();
+      // 无人质疑，同一出牌者继续出牌
+      const nextState = engine.endChallengePhase(true);
 
-      expect(nextState.turnState.turnNumber).toBe(initialTurnNumber + 1);
+      // 无人质疑时，回合数不变（同一玩家继续出牌）
+      expect(nextState.turnState.turnNumber).toBe(initialTurnNumber);
     });
 
-    test('9.2 无人质疑后应该正确流转到下一个玩家', () => {
+    test('9.2 无人质疑后同一玩家继续出牌', () => {
       // 模拟AI1/C.C.出牌
       (engine as any).state.turnState.playedCards = {
         cardIds: ['card1'],
@@ -503,14 +507,15 @@ describe('GameEngineV2 - 完整逻辑测试', () => {
         isBluff: false,
       };
 
-      const nextState = engine.endChallengePhase();
+      // 无人质疑，同一出牌者继续出牌
+      const nextState = engine.endChallengePhase(true);
 
-      // 修正后的映射: C.C./ai(3)的下家是玩家(0)
-      expect(nextState.currentPlayerIndex).toBe(0);
-      expect(nextState.phase).toBe('player_turn');
+      // C.C.(3)继续出牌
+      expect(nextState.currentPlayerIndex).toBe(3);
+      expect(nextState.phase).toBe('ai_turn');
     });
 
-    test('9.3 无人质疑后玩家出牌应该正确流转到朱雀', () => {
+    test('9.3 无人质疑后玩家继续出牌', () => {
       // 模拟玩家出牌
       (engine as any).state.turnState.playedCards = {
         cardIds: ['card1'],
@@ -520,10 +525,32 @@ describe('GameEngineV2 - 完整逻辑测试', () => {
         isBluff: false,
       };
 
-      const nextState = engine.endChallengePhase();
+      // 无人质疑，同一出牌者继续出牌
+      const nextState = engine.endChallengePhase(true);
 
-      // 新映射: 玩家(0)的下家是朱雀/ai2(1)
-      expect(nextState.currentPlayerIndex).toBe(1);
+      // 玩家(0)继续出牌
+      expect(nextState.currentPlayerIndex).toBe(0);
+      expect(nextState.phase).toBe('player_turn');
+    });
+
+    test('9.4 有质疑后流转到下一个玩家', () => {
+      // 设置firstPlayerIndex
+      (engine as any).state.turnState.firstPlayerIndex = 0; // 玩家先手
+
+      // 模拟玩家出牌
+      (engine as any).state.turnState.playedCards = {
+        cardIds: ['card1'],
+        claimedRank: 'Q',
+        actualCards: [{ id: 'card1', rank: 'Q', suit: 'spades', isJoker: false }],
+        playerId: 'player',
+        isBluff: false,
+      };
+
+      // 有质疑发生，进入下一回合
+      const nextState = engine.endChallengePhase(false);
+
+      // 玩家(0)的下家是C.C.(3)
+      expect(nextState.currentPlayerIndex).toBe(3);
       expect(nextState.phase).toBe('ai_turn');
     });
   });
@@ -601,11 +628,14 @@ describe('GameEngineV2 - 完整逻辑测试', () => {
     });
 
     test('11.1 AI被淘汰后应该跳过该AI的回合', () => {
-      // 修正后的UI顺序: 玩家(0) -> 朱雀/ai2(1) -> 卡莲/ai3(2) -> C.C./ai(3) -> 玩家(0)
+      // 设置firstPlayerIndex
+      (engine as any).state.turnState.firstPlayerIndex = 0; // 玩家先手
+
       // aiPlayers数组: [0]=ai/C.C., [1]=ai2/朱雀, [2]=ai3/卡莲
-      // 淘汰卡莲/ai3 (aiPlayers[2], currentPlayerIndex=2)
-      (engine as any).state.aiPlayers[2].isActive = false;
-      (engine as any).state.aiPlayers[2].stats.hp = 0;
+      // currentPlayerIndex: 0=玩家, 1=卡莲/ai3, 2=朱雀/ai2, 3=C.C./ai
+      // 淘汰朱雀/ai2 (aiPlayers[1], currentPlayerIndex=2)
+      (engine as any).state.aiPlayers[1].isActive = false;
+      (engine as any).state.aiPlayers[1].stats.hp = 0;
 
       // 模拟玩家出牌
       (engine as any).state.turnState.playedCards = {
@@ -616,18 +646,21 @@ describe('GameEngineV2 - 完整逻辑测试', () => {
         isBluff: false,
       };
 
-      const nextState = engine.endChallengePhase();
+      // 有质疑发生，进入下一回合
+      const nextState = engine.endChallengePhase(false);
 
-      // 修正后的映射: 玩家(0) -> 朱雀/ai2(1) -> 卡莲/ai3(2) -> C.C./ai(3)
-      // 玩家(0)出牌，下家是朱雀(1)，朱雀存活，所以应该是朱雀(1)
-      expect(nextState.currentPlayerIndex).toBe(1);
+      // 玩家(0) -> C.C.(3) -> 卡莲(1) -> 朱雀(2)被淘汰 -> 玩家(0)
+      // 所以下一个应该是 C.C.(3)
+      expect(nextState.currentPlayerIndex).toBe(3);
     });
 
     test('11.2 多个AI被淘汰后应该正确流转', () => {
-      // 修正后的映射:
+      // 设置firstPlayerIndex
+      (engine as any).state.turnState.firstPlayerIndex = 0; // 玩家先手
+
       // aiPlayers[0]=ai/C.C. -> currentPlayerIndex=3
-      // aiPlayers[1]=ai2/朱雀 -> currentPlayerIndex=1
-      // aiPlayers[2]=ai3/卡莲 -> currentPlayerIndex=2
+      // aiPlayers[1]=ai2/朱雀 -> currentPlayerIndex=2
+      // aiPlayers[2]=ai3/卡莲 -> currentPlayerIndex=1
       // 淘汰卡莲/ai3 (aiPlayers[2]) 和 朱雀/ai2 (aiPlayers[1])
       (engine as any).state.aiPlayers[2].isActive = false;
       (engine as any).state.aiPlayers[2].stats.hp = 0;
@@ -643,10 +676,11 @@ describe('GameEngineV2 - 完整逻辑测试', () => {
         isBluff: false,
       };
 
-      const nextState = engine.endChallengePhase();
+      // 有质疑发生，进入下一回合
+      const nextState = engine.endChallengePhase(false);
 
-      // 修正后的映射: 玩家(0) -> 朱雀/ai2(1) -> 卡莲/ai3(2) -> C.C./ai(3)
-      // 朱雀(1)和卡莲(2)被淘汰，下一个应该是C.C./ai (currentPlayerIndex=3)
+      // 玩家(0) -> C.C.(3) -> 卡莲(1)被淘汰 -> 朱雀(2)被淘汰 -> 玩家(0)
+      // 所以下一个应该是 C.C.(3)
       expect(nextState.currentPlayerIndex).toBe(3);
     });
 

@@ -96,30 +96,7 @@ export class GeassSystem {
 
     // ========== C.C.技能：Code之力（复活） ==========
     // 第一次受到致命伤害时（HP会减少到0），有50%概率复活并免疫本次伤害
-    if (character === 'cc' && !targetStats.ccReviveUsed) {
-      const roll = Math.random();
-      const willHit = roll < hitChance;
-
-      // 如果会命中且会导致HP归零，触发复活
-      if (willHit && targetStats.hp <= 1) {
-        const reviveRoll = Math.random();
-        if (reviveRoll < CC_REVIVE_CHANCE) {
-          return {
-            activated: true,
-            hit: false,
-            damage: 0,
-            newStats: {
-              ...targetStats,
-              hp: 1,  // 显式设置HP为1
-              ccReviveUsed: true,
-            },
-            message: 'C.C.发动Code之力！从死亡边缘复活并免疫本次Geass！',
-            isRevived: true,
-            victimId: target,
-          };
-        }
-      }
-    }
+    // 注意：复活判定在命中判定之后，需要先确定是否命中
 
     // ========== 朱雀技能：枢木剑术（闪避+反击） ==========
     // 受到Geass时有15%概率完全闪避，闪避成功后25%概率反击
@@ -176,6 +153,28 @@ export class GeassSystem {
     if (hit) {
       // Geass命中
       const damage = 1;
+
+      // ========== C.C.技能：Code之力（复活） ==========
+      // 第一次受到致命伤害时（HP会减少到0），有50%概率复活并免疫本次伤害
+      if (character === 'cc' && !targetStats.ccReviveUsed && targetStats.hp <= 1) {
+        const reviveRoll = Math.random();
+        if (reviveRoll < CC_REVIVE_CHANCE) {
+          return {
+            activated: true,
+            hit: false,  // 复活后视为未命中
+            damage: 0,
+            newStats: {
+              ...targetStats,
+              hp: 1,  // 显式设置HP为1
+              ccReviveUsed: true,
+            },
+            message: 'C.C.发动Code之力！从死亡边缘复活并免疫本次Geass！',
+            isRevived: true,
+            victimId: target,
+          };
+        }
+      }
+
       const newStats = {
         ...targetStats,
         hp: Math.max(0, targetStats.hp - damage),

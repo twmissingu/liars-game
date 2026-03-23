@@ -1056,6 +1056,11 @@ export class GameEngine {
       return this.getState();
     }
 
+    // 检查游戏结束条件（所有AI被淘汰或玩家被淘汰）
+    if (this.checkGameOver()) {
+      return this.getState();
+    }
+
     if (continueWithSamePlayer) {
       // 无人质疑，同一出牌者继续出牌
       // 维持当前回合状态不变，先保存出牌者信息

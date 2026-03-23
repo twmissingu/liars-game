@@ -14,7 +14,7 @@
  * @version 1.0.0
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from '@jest/globals';
 import { GeassSystem } from '../../src/core/GeassSystem';
 import { GameEngine } from '../../src/core/GameEngineV2';
 import type { PlayerStats } from '../../src/types';
@@ -182,7 +182,7 @@ describe('朱雀反击技能测试', () => {
 
   describe('反击日志输出', () => {
     it('反击触发时应该有正确的日志输出', () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
 
       const targetStats: PlayerStats = {
         hp: 4,

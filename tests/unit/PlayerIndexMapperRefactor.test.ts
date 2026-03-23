@@ -44,22 +44,22 @@ describe('PlayerIndexMapper 重构验证', () => {
     });
 
     test('1.2 部分AI淘汰后返回正确的索引列表', () => {
-      // 淘汰卡莲 (ai3) - 对应索引 2
+      // 淘汰卡莲 (ai3) - 对应索引 1 (aiPlayers[2])
       (engine as any).state.aiPlayers[2].isActive = false;
       (engine as any).state.aiPlayers[2].stats.hp = 0;
 
       const activeIndices = (engine as any).getActivePlayerIndices();
 
-      // 应该返回 [0, 1, 3] - 不包含卡莲(2)
-      expect(activeIndices).toContain(0);
-      expect(activeIndices).toContain(1);
-      expect(activeIndices).not.toContain(2);
-      expect(activeIndices).toContain(3);
+      // 应该返回 [0, 2, 3] - 不包含卡莲(1)
+      expect(activeIndices).toContain(0); // 玩家
+      expect(activeIndices).not.toContain(1); // 卡莲被淘汰
+      expect(activeIndices).toContain(2); // 朱雀
+      expect(activeIndices).toContain(3); // C.C.
       expect(activeIndices.length).toBe(3);
     });
 
     test('1.3 多个AI淘汰后返回正确的索引列表', () => {
-      // 淘汰朱雀 (ai2) - 索引 1 和 C.C. (ai) - 索引 3
+      // 淘汰朱雀 (ai2) - 索引 2 (aiPlayers[1]) 和 C.C. (ai) - 索引 3 (aiPlayers[0])
       (engine as any).state.aiPlayers[1].isActive = false;
       (engine as any).state.aiPlayers[1].stats.hp = 0;
       (engine as any).state.aiPlayers[0].isActive = false;
@@ -67,10 +67,10 @@ describe('PlayerIndexMapper 重构验证', () => {
 
       const activeIndices = (engine as any).getActivePlayerIndices();
 
-      // 应该返回 [0, 2] - 只有玩家和卡莲
+      // 应该返回 [0, 1] - 只有玩家和卡莲
       expect(activeIndices).toContain(0);
-      expect(activeIndices).not.toContain(1);
-      expect(activeIndices).toContain(2);
+      expect(activeIndices).toContain(1);
+      expect(activeIndices).not.toContain(2);
       expect(activeIndices).not.toContain(3);
       expect(activeIndices.length).toBe(2);
     });
@@ -78,7 +78,7 @@ describe('PlayerIndexMapper 重构验证', () => {
 
   describe('【场景2】endChallengePhase 重构验证', () => {
     test('2.1 无人质疑时正确设置currentPlayerIndex', () => {
-      // 设置出牌者为朱雀
+      // 设置出牌者为朱雀 (ai2, 索引2)
       (engine as any).state.turnState.playedCards = {
         cardIds: ['card1'],
         claimedRank: 'Q',
@@ -90,16 +90,17 @@ describe('PlayerIndexMapper 重构验证', () => {
 
       const nextState = engine.endChallengePhase(true);
 
-      // 朱雀继续出牌，currentPlayerIndex 应该是 1
-      expect(nextState.currentPlayerIndex).toBe(1);
+      // 朱雀继续出牌，currentPlayerIndex 应该是 2
+      expect(nextState.currentPlayerIndex).toBe(2);
       expect(nextState.phase).toBe('ai_turn');
     });
 
     test('2.2 不同玩家出牌后正确流转', () => {
+      // 正确的索引映射: player=0, ai3/卡莲=1, ai2/朱雀=2, ai/C.C.=3
       const testCases = [
         { playerId: 'player', expectedIndex: 0, expectedPhase: 'player_turn' },
-        { playerId: 'ai2', expectedIndex: 1, expectedPhase: 'ai_turn' },
-        { playerId: 'ai3', expectedIndex: 2, expectedPhase: 'ai_turn' },
+        { playerId: 'ai3', expectedIndex: 1, expectedPhase: 'ai_turn' },
+        { playerId: 'ai2', expectedIndex: 2, expectedPhase: 'ai_turn' },
         { playerId: 'ai', expectedIndex: 3, expectedPhase: 'ai_turn' },
       ];
 
@@ -181,7 +182,8 @@ describe('PlayerIndexMapper 重构验证', () => {
 
   describe('【场景4】完整游戏流程重构验证', () => {
     test('4.1 完整回合流转流程', () => {
-      // 玩家出牌
+      // 玩家出牌，设置玩家为先手角色
+      (engine as any).state.turnState.firstPlayerIndex = 0;
       (engine as any).state.turnState.playedCards = {
         cardIds: ['card1'],
         claimedRank: 'Q',
@@ -193,22 +195,23 @@ describe('PlayerIndexMapper 重构验证', () => {
       // 无人质疑，进入下一回合
       const nextState = engine.endChallengePhase(false);
 
-      // 下一个应该是朱雀 (索引 1)
-      expect(nextState.currentPlayerIndex).toBe(1);
+      // 玩家(0) -> C.C.(3)，下一个应该是 C.C. (索引 3)
+      expect(nextState.currentPlayerIndex).toBe(3);
 
-      // 朱雀出牌
+      // C.C.出牌
+      (engine as any).state.turnState.firstPlayerIndex = 3;
       (engine as any).state.turnState.playedCards = {
         cardIds: ['card2'],
         claimedRank: 'K',
         actualCards: [{ id: 'card2', rank: 'K', suit: 'hearts', isJoker: false }],
-        playerId: 'ai2',
+        playerId: 'ai',
         isBluff: false,
       };
 
       const nextState2 = engine.endChallengePhase(false);
 
-      // 下一个应该是卡莲 (索引 2)
-      expect(nextState2.currentPlayerIndex).toBe(2);
+      // C.C.(3) -> 卡莲(1)，下一个应该是卡莲 (索引 1)
+      expect(nextState2.currentPlayerIndex).toBe(1);
     });
 
     test('4.2 质疑后的回合流转', () => {
@@ -254,21 +257,22 @@ describe('PlayerIndexMapper 重构验证', () => {
       const state = engine.getState();
 
       // 测试 getPlayerIdByIndex
+      // 顺时针顺序: 玩家(0) -> 卡莲(1) -> 朱雀(2) -> C.C.(3)
       expect(getPlayerIdByIndex(0)).toBe('player');
-      expect(getPlayerIdByIndex(1)).toBe('ai2');
-      expect(getPlayerIdByIndex(2)).toBe('ai3');
-      expect(getPlayerIdByIndex(3)).toBe('ai');
+      expect(getPlayerIdByIndex(1)).toBe('ai3');  // 卡莲
+      expect(getPlayerIdByIndex(2)).toBe('ai2');  // 朱雀
+      expect(getPlayerIdByIndex(3)).toBe('ai');   // C.C.
 
       // 测试 getIndexByPlayerId
       expect(getIndexByPlayerId('player')).toBe(0);
-      expect(getIndexByPlayerId('ai2')).toBe(1);
-      expect(getIndexByPlayerId('ai3')).toBe(2);
-      expect(getIndexByPlayerId('ai')).toBe(3);
+      expect(getIndexByPlayerId('ai3')).toBe(1);  // 卡莲
+      expect(getIndexByPlayerId('ai2')).toBe(2);  // 朱雀
+      expect(getIndexByPlayerId('ai')).toBe(3);   // C.C.
 
       // 测试 getAIPlayerByIndex
-      expect(getAIPlayerByIndex(1, state.aiPlayers)?.id).toBe('ai2');
-      expect(getAIPlayerByIndex(2, state.aiPlayers)?.id).toBe('ai3');
-      expect(getAIPlayerByIndex(3, state.aiPlayers)?.id).toBe('ai');
+      expect(getAIPlayerByIndex(1, state.aiPlayers)?.id).toBe('ai3');  // 卡莲
+      expect(getAIPlayerByIndex(2, state.aiPlayers)?.id).toBe('ai2');  // 朱雀
+      expect(getAIPlayerByIndex(3, state.aiPlayers)?.id).toBe('ai');   // C.C.
 
       // 测试 getAIPlayerById
       expect(getAIPlayerById('ai2', state.aiPlayers)?.id).toBe('ai2');

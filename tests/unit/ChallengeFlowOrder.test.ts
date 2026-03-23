@@ -15,7 +15,7 @@
  * 顺时针顺序：玩家(0) → 朱雀(1) → C.C.(2) → 卡莲(3) → 玩家(0)
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from '@jest/globals';
 
 describe('质疑流程索引映射一致性测试', () => {
   /**
