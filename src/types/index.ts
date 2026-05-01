@@ -228,7 +228,7 @@ export interface GameState {
   aiPlayers: AIPlayer[];
   turnState: TurnState;
   lastAction: string;
-  winner: 'player' | 'ai' | null;
+  winner: 'player' | 'ai' | 'ai2' | 'ai3' | null;
   geassResult: GeassResult | null;
 }
 

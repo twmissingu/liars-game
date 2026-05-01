@@ -8,16 +8,10 @@ import { playSound, playBGM, SFXType } from '../audio';
 import { FUNNY_ACTIONS, type GameState, type CharacterId } from '../types';
 import { getCharacterName } from '../data/characters';
 import type { GameEngine } from '../core/GameEngineV2';
-import {
-  getAIPlayerByIndex,
-  getNextPlayerIndex,
-} from '../core/PlayerIndexMapper';
+import { getAIPlayerByIndex, getNextPlayerIndex } from '../core/PlayerIndexMapper';
 
 /** 查找下一个存活的玩家索引 */
-const findNextActivePlayer = (
-  startIndex: number,
-  state: GameState
-): number => {
+const findNextActivePlayer = (startIndex: number, state: GameState): number => {
   let currentIndex = startIndex;
   let attempts = 0;
 
@@ -80,7 +74,7 @@ const handleGeassHit = (
   _geassResult: NonNullable<GameState['geassResult']>,
   loser: string,
   addLog: (msg: string) => void,
-  setCurrentFunnyAction: (action: typeof FUNNY_ACTIONS[number] | null) => void
+  setCurrentFunnyAction: (action: (typeof FUNNY_ACTIONS)[number] | null) => void
 ): void => {
   playSound('geass-hit');
   const funnyAction = FUNNY_ACTIONS[Math.floor(Math.random() * FUNNY_ACTIONS.length)];
@@ -114,7 +108,7 @@ const handleGeassMiss = (
 
 /** 处理游戏结束 */
 const handleGameOver = (
-  winner: 'player' | 'ai' | null,
+  winner: 'player' | 'ai' | 'ai2' | 'ai3' | null,
   setCurrentScreen: (screen: 'result') => void
 ): void => {
   setTimeout(() => {
@@ -178,7 +172,7 @@ interface UseGeassResultParams {
   selectedCharacter: CharacterId | null;
   addLog: (msg: string) => void;
   setGameState: (state: GameState) => void;
-  setCurrentFunnyAction: (action: typeof FUNNY_ACTIONS[number] | null) => void;
+  setCurrentFunnyAction: (action: (typeof FUNNY_ACTIONS)[number] | null) => void;
   setSelectedCards: (cards: string[]) => void;
   setIsProcessing: (processing: boolean) => void;
   setCurrentScreen: (screen: 'result') => void;

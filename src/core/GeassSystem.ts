@@ -49,7 +49,7 @@ export const FUNNY_ACTIONS: FunnyAction[] = [
 /**
  * Geass系统类
  * 处理所有Geass判定和角色技能效果
- * 
+ *
  * 新的命中率机制：
  * - 第一次命中率：1/3 (33.3%)
  * - 如果闪避成功且其他玩家扣血前，下次命中率：1/2 (50%)
@@ -103,13 +103,25 @@ export class GeassSystem {
     if (character === 'suzaku') {
       // 独立闪避判定（15%）
       const dodgeRoll = Math.random();
-      console.log(`[GeassSystem] 朱雀闪避判定: roll=${dodgeRoll.toFixed(4)}, threshold=${SUZAKU_DODGE_CHANCE}`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(
+          `[GeassSystem] 朱雀闪避判定: roll=${dodgeRoll.toFixed(4)}, threshold=${SUZAKU_DODGE_CHANCE}`
+        );
+      }
       if (dodgeRoll < SUZAKU_DODGE_CHANCE) {
         // 闪避成功后进行反击判定（25%）
         const counterRoll = Math.random();
-        console.log(`[GeassSystem] 朱雀反击判定: roll=${counterRoll.toFixed(4)}, threshold=${SUZAKU_COUNTER_CHANCE}`);
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(
+            `[GeassSystem] 朱雀反击判定: roll=${counterRoll.toFixed(4)}, threshold=${SUZAKU_COUNTER_CHANCE}`
+          );
+        }
         if (counterRoll < SUZAKU_COUNTER_CHANCE) {
-          console.log(`[GeassSystem] 朱雀反击成功触发! target=${target}, attacker=${attackerId}, counterDamage=1`);
+          if (process.env.NODE_ENV !== 'production') {
+            console.log(
+              `[GeassSystem] 朱雀反击成功触发! target=${target}, attacker=${attackerId}, counterDamage=1`
+            );
+          }
           const result: GeassResult = {
             activated: true,
             hit: false,
@@ -119,7 +131,7 @@ export class GeassSystem {
             isCounter: true,
             isDodge: true,
             victimId: target,
-            counterDamage: 1,  // 反击伤害为1
+            counterDamage: 1, // 反击伤害为1
           };
           // 只有在有攻击者ID时才设置反击目标
           if (attackerId) {
@@ -128,7 +140,9 @@ export class GeassSystem {
           return result;
         }
         // 闪避成功但反击失败
-        console.log(`[GeassSystem] 朱雀闪避成功，但反击未触发`);
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`[GeassSystem] 朱雀闪避成功，但反击未触发`);
+        }
         return {
           activated: true,
           hit: false,
@@ -161,11 +175,11 @@ export class GeassSystem {
         if (reviveRoll < CC_REVIVE_CHANCE) {
           return {
             activated: true,
-            hit: false,  // 复活后视为未命中
+            hit: false, // 复活后视为未命中
             damage: 0,
             newStats: {
               ...targetStats,
-              hp: 1,  // 显式设置HP为1
+              hp: 1, // 显式设置HP为1
               ccReviveUsed: true,
             },
             message: 'C.C.发动Code之力！从死亡边缘复活并免疫本次Geass！',

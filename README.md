@@ -1,417 +1,378 @@
-# Code Geass: Liar's Game - 项目文档
+# Code Geass: Liar's Game
 
-> **Code Geass: Liar's Game** 是一款基于《Code Geass》世界观的卡牌对战游戏，融合了经典动画角色与《骗子酒吧》的核心玩法。
+> A card battle game based on the Code Geass universe, featuring classic anime characters with the core mechanics from "Liars Bar".
 
 [![Deploy to GitHub Pages](https://github.com/twmissingu/liars-game/actions/workflows/deploy.yml/badge.svg)](https://github.com/twmissingu/liars-game/actions/workflows/deploy.yml)
-[![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-4.0.0-blue.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
+[![Test Coverage](https://img.shields.io/badge/coverage-80%25-brightgreen)](./coverage)
 
 ---
 
-## 🎮 在线体验
+## Play Online
 
-**[点击开始游戏 →](https://twmissingu.github.io/liars-game/)**
-
----
-
-## 📖 目录
-
-- [项目概述](#-项目概述)
-- [技术栈](#-技术栈)
-- [快速开始](#-快速开始)
-- [项目结构](#-项目结构)
-- [开发指南](#-开发指南)
-- [文档索引](#-文档索引)
-- [贡献指南](#-贡献指南)
-- [许可证](#-许可证)
+**[Click to Play →](https://twmissingu.github.io/liars-game/)**
 
 ---
 
-## 🎯 项目概述
+## Table of Contents
 
-### 游戏简介
+- [Overview](#-overview)
+- [Tech Stack](#-tech-stack)
+- [Quick Start](#-quick-start)
+- [Project Structure](#-project-structure)
+- [Development Guide](#-development-guide)
+- [Documentation](#-documentation)
+- [Contributing](#-contributing)
+- [License](#-license)
 
-《Code Geass: Liar's Game》是一款结合了策略、欺骗和Geass能力的卡牌对战游戏。玩家将扮演《Code Geass》中的经典角色，与3个AI对手进行激烈的谎言对决。
-
-### 核心特色
-
-| 特色 | 说明 |
-|------|------|
-| 🎭 **4个可玩角色** | 鲁鲁修、C.C.、朱雀、卡莲，每个角色都有独特的Geass技能 |
-| 🃏 **骗子牌机制** | 每回合随机指定骗子牌，玩家可选择诚实出牌或撒谎 |
-| ⚡ **Geass判定** | 质疑成功触发Geass判定，有概率造成1点伤害 |
-| 🤖 **智能AI对手** | 3个AI对手各具特色，提供富有挑战性的对战体验 |
-| 🎵 **完整音效** | BGM背景音乐 + 角色技能音效 + 搞笑动作音效 |
-
-### 游戏规则速览
-
-1. **角色选择** - 选择你想扮演的角色
-2. **初始发牌** - 每人5张牌（Q/K/A + 小丑牌）
-3. **骗子牌** - 每回合随机指定一张骗子牌（Q/K/A）
-4. **出牌** - 轮流出牌，声称是骗子牌（可能撒谎）
-5. **质疑** - 其他玩家可以质疑出牌
-6. **Geass判定** - 质疑成功触发Geass判定
-7. **胜利条件** - 淘汰所有对手，成为最后幸存者
+> **Tip**: Developers, see [AGENTS.md](./AGENTS.md) for quick reference on dev commands.
 
 ---
 
-## 🛠️ 技术栈
+## 🎯 Overview
 
-### 核心技术
+### Game Introduction
 
-| 技术 | 版本 | 用途 |
-|------|------|------|
-| [React](https://react.dev/) | 18.2.0 | UI框架 |
-| [TypeScript](https://www.typescriptlang.org/) | 5.2.2 | 类型安全 |
-| [Vite](https://vitejs.dev/) | 5.0.8 | 构建工具 |
-| [Howler.js](https://howlerjs.com/) | 2.2.4 | 音效管理 |
+Code Geass: Liar's Game is a card battle game combining strategy, deception, and Geass abilities. Players take on classic Code Geass characters and face off against 3 AI opponents in intense liar battles.
 
-### 开发工具
+### Key Features
 
-| 工具 | 用途 |
-|------|------|
-| [ESLint](https://eslint.org/) | 代码检查 |
-| [Prettier](https://prettier.io/) | 代码格式化 |
-| [Jest](https://jestjs.io/) | 单元测试 |
-| [Playwright](https://playwright.dev/) | E2E测试 |
+| Feature | Description |
+|---------|-------------|
+| 🎭 **4 Playable Characters** | Lelouch, C.C., Suzaku, Kallen - each with unique Geass abilities |
+| 🃏 **Liar's Bar Mechanic** | Each round randomly assigns a liar card; players can play honestly or bluff |
+| ⚡ **Geass Judgment** | Successful challenges trigger Geass judgment with 1 damage |
+| 🤖 **Smart AI Opponents** | 3 AI opponents with unique personalities for challenging battles |
+| 🎵 **Complete Audio** | BGM, character skill SFX, funny action SFX |
 
-### 部署
+### Quick Rules
 
-- **平台**: [GitHub Pages](https://pages.github.com/)
+1. **Choose Character** - Select your character
+2. **Initial Deal** - Each player gets 5 cards (Q/K/A + Joker)
+3. **Liar Card** - Each round randomly assigns a liar card (Q/K/A)
+4. **Play Cards** - Take turns playing cards, claiming to be the liar (may bluff)
+5. **Challenge** - Other players can challenge the play
+6. **Geass Judgment** - Successful challenge triggers Geass judgment
+7. **Win Condition** - Eliminate all opponents, be the last survivor
+
+---
+
+## 🛠️ Tech Stack
+
+### Core Technologies
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| [React](https://react.dev/) | 18.2.0 | UI Framework |
+| [TypeScript](https://www.typescriptlang.org/) | 5.2.2 | Type Safety |
+| [Vite](https://vitejs.dev/) | 5.0.8 | Build Tool |
+| [Howler.js](https://howlerjs.com/) | 2.2.4 | Audio Management |
+
+### Development Tools
+
+| Tool | Purpose |
+|------|---------|
+| [ESLint](https://eslint.org/) | Code Linting |
+| [Prettier](https://prettier.io/) | Code Formatting |
+| [Jest](https://jestjs.io/) | Unit Testing |
+| [Playwright](https://playwright.dev/) | E2E Testing |
+
+### Deployment
+
+- **Platform**: [GitHub Pages](https://pages.github.com/)
 - **CI/CD**: GitHub Actions
-- **自动化**: 推送到main分支自动部署
+- **Auto-deploy**: Push to main branch triggers automatic deployment
 
 ---
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-### 环境要求
+### Prerequisites
 
 - **Node.js** >= 16.0.0
 - **npm** >= 8.0.0
 - **Git**
 
-### 安装步骤
+### Installation
 
 ```bash
-# 1. 克隆仓库
+# 1. Clone the repository
 git clone https://github.com/twmissingu/liars-game.git
 cd liars-game
 
-# 2. 安装依赖
+# 2. Install dependencies
 npm install
 
-# 3. 启动开发服务器
+# 3. Start development server
 npm run dev
 
-# 4. 打开浏览器访问
-open http://localhost:5173
+# 4. Open browser
+open http://localhost:3000
 ```
 
-### 常用命令
+### Common Commands
 
 ```bash
-# 开发
-npm run dev              # 启动开发服务器
-npm run build            # 构建生产版本
-npm run preview          # 预览生产构建
+# Development
+npm run dev              # Start dev server on port 3000
+npm run build            # Build for production
+npm run preview          # Preview production build
 
-# 代码质量
-npm run lint             # 运行ESLint检查
-npm run lint:fix         # 自动修复ESLint问题
-npm run format           # 格式化代码
-npm run type-check       # TypeScript类型检查
+# Code Quality
+npm run lint             # Run ESLint
+npm run lint:fix        # Auto-fix ESLint issues
+npm run format          # Format code
+npm run type-check      # TypeScript type check
 
-# 测试
-npm run test             # 运行所有测试
-npm run test:unit        # 运行单元测试
-npm run test:integration # 运行集成测试
-npm run test:e2e         # 运行E2E测试
-npm run test:coverage    # 生成测试覆盖率报告
+# Testing
+npm run test             # Run all tests
+npm run test:unit       # Run unit tests
+npm run test:integration # Run integration tests
+npm run test:e2e        # Run E2E tests
+npm run test:coverage   # Generate coverage report
 
-# 部署
-npm run deploy           # 部署到GitHub Pages
+# Deployment
+npm run deploy           # Deploy to GitHub Pages
 ```
 
 ---
 
-## 📁 项目结构
+## 📁 Project Structure
 
 ```
 liars-game/
-├── 📂 public/                    # 静态资源
-│   ├── 📂 assets/                # 游戏资源
-│   │   ├── 📂 audio/             # 音效文件
-│   │   │   ├── 📂 bgm/           # 背景音乐
-│   │   │   └── 📂 sfx/           # 音效
-│   │   └── 📂 images/            # 图片资源
-│   └── index.html                # HTML模板
+├── public/                    # Static assets
+│   ├── assets/
+│   │   ├── audio/             # Audio files
+│   │   │   ├── bgm/          # Background music
+│   │   │   └── sfx/          # Sound effects
+│   │   └── images/           # Image assets
+│   └── index.html            # HTML template
 │
-├── 📂 src/                       # 源代码
-│   ├── 📂 ai/                    # AI系统
-│   │   ├── AIEngine.ts           # AI引擎
-│   │   └── strategies/           # AI策略实现
+├── src/                       # Source code
+│   ├── ai/                    # AI system
+│   │   ├── AIEngine.ts       # AI engine
+│   │   └── strategies/       # AI strategies
 │   │
-│   ├── 📂 audio/                 # 音效管理
-│   │   └── SoundManager.ts       # 音效管理器
+│   ├── audio/                 # Audio management
+│   │   └── SoundManager.ts   # Sound manager
 │   │
-│   ├── 📂 characters/            # 角色系统
-│   │   ├── types.ts              # 角色类型定义
-│   │   ├── data.ts               # 角色数据
-│   │   └── state.ts              # 角色状态管理
+│   ├── characters/           # Character system
+│   │   ├── types.ts          # Character types
+│   │   ├── data.ts          # Character data
+│   │   └── state.ts         # Character state
 │   │
-│   ├── 📂 components/            # React组件
-│   │   ├── 📂 animations/        # 动画组件
-│   │   ├── 📂 characters/        # 角色组件
-│   │   ├── 📂 effects/           # 特效组件
-│   │   ├── CharacterSelect.tsx   # 角色选择界面
-│   │   ├── GameBoard.tsx         # 游戏主界面
+│   ├── components/           # React components
+│   │   ├── animations/      # Animation components
+│   │   ├── characters/     # Character components
+│   │   ├── effects/        # Effect components
+│   │   ├── CharacterSelect.tsx # Character selection
+│   │   ├── GameBoard.tsx   # Game board
 │   │   └── ...
 │   │
-│   ├── 📂 core/                  # 游戏核心逻辑 ⭐
-│   │   ├── GameEngine.ts         # 游戏引擎
-│   │   ├── GameEngineV2.ts       # 优化版游戏引擎
-│   │   ├── CardSystem.ts         # 卡牌系统
-│   │   ├── GeassSystem.ts        # Geass判定系统
-│   │   └── index.ts              # 模块导出
+│   ├── core/                 # Game core logic ⭐
+│   │   ├── GameEngine.ts    # Game engine
+│   │   ├── GameEngineV2.ts # Optimized engine
+│   │   ├── CardSystem.ts   # Card system
+│   │   ├── GeassSystem.ts  # Geass system
+│   │   └── index.ts       # Module exports
 │   │
-│   ├── 📂 data/                  # 游戏数据
-│   │   └── characters.ts         # 角色配置数据
+│   ├── data/                # Game data
+│   │   └── characters.ts   # Character config
 │   │
-│   ├── 📂 effects/               # 特效系统
-│   │   └── EffectManager.ts      # 特效管理器
+│   ├── effects/            # Effect system
+│   │   └── EffectManager.ts # Effect manager
 │   │
-│   ├── 📂 store/                 # 状态管理
-│   │   └── ...
+│   ├── store/              # State management
 │   │
-│   ├── 📂 styles/                # 样式文件
-│   │   ├── theme.ts              # 主题配置
-│   │   └── global.css            # 全局样式
+│   ├── styles/            # Styles
+│   │   ├── theme.ts     # Theme config
+│   │   └── global.css   # Global styles
 │   │
-│   ├── 📂 types/                 # TypeScript类型定义 ⭐
-│   │   ├── unified.ts            # 统一类型定义
-│   │   ├── game.types.ts         # 游戏类型
-│   │   ├── ai.types.ts           # AI类型
-│   │   └── index.ts              # 类型导出
+│   ├── types/             # TypeScript types ⭐
+│   │   ├── unified.ts   # Unified types
+│   │   ├── game.types.ts # Game types
+│   │   ├── ai.types.ts # AI types
+│   │   └── index.ts   # Type exports
 │   │
-│   ├── 📂 ui/                    # 页面UI组件
-│   │   ├── MainMenu.tsx          # 主菜单
-│   │   ├── CharacterSelect.tsx   # 角色选择
-│   │   ├── GameTable.tsx         # 游戏桌
-│   │   └── ResultScreen.tsx      # 结果界面
+│   ├── ui/               # UI components
+│   │   ├── MainMenu.tsx # Main menu
+│   │   ├── CharacterSelect.tsx # Character select
+│   │   ├── GameTable.tsx # Game table
+│   │   └── ResultScreen.tsx # Result screen
 │   │
-│   ├── 📂 utils/                 # 工具函数 ⭐
-│   │   └── index.ts              # 工具函数库
+│   ├── utils/             # Utilities ⭐
+│   │   └── index.ts    # Utility functions
 │   │
-│   ├── App.tsx                   # 主应用组件
-│   └── main.tsx                  # 应用入口
+│   ├── App.tsx            # Main component
+│   └── main.tsx          # Entry point
 │
-├── 📂 docs/                      # 项目文档 ⭐
-│   ├── PRD.md                    # 产品需求文档
-│   ├── SRS.md                    # 软件需求规格书
-│   ├── ARCHITECTURE.md           # 架构设计文档
-│   ├── API.md                    # API接口文档
-│   ├── CONTRIBUTING.md           # 贡献指南
-│   ├── USER_GUIDE.md             # 用户手册
-│   └── DEV_GUIDE.md              # 开发维护手册
+├── docs/                  # Documentation ⭐
+│   ├── PRD.md            # Product requirements
+│   ├── SRS.md            # Software requirements
+│   ├── ARCHITECTURE.md   # Architecture design
+│   ├── API.md           # API documentation
+│   ├── CONTRIBUTING.md  # Contributing guide
+│   ├── USER_GUIDE.md    # User manual
+│   └── DEV_GUIDE.md     # Development guide
 │
-├── 📂 tests/                     # 测试文件
-│   ├── 📂 unit/                  # 单元测试
-│   ├── 📂 integration/           # 集成测试
-│   └── 📂 e2e/                   # E2E测试
+├── tests/                 # Test files
+│   ├── unit/            # Unit tests
+│   ├── integration/     # Integration tests
+│   └── e2e/            # E2E tests
 │
-├── package.json                  # 项目配置
-├── tsconfig.json                 # TypeScript配置
-├── vite.config.ts                # Vite配置
-├── jest.config.cjs               # Jest配置
-├── playwright.config.ts          # Playwright配置
-├── eslint.config.js              # ESLint配置
-├── .prettierrc                   # Prettier配置
-└── README.md                     # 本文件
+├── package.json          # Project config
+├── tsconfig.json        # TypeScript config
+├── vite.config.ts        # Vite config
+├── jest.config.cjs      # Jest config
+├── playwright.config.ts  # Playwright config
+├── eslint.config.js     # ESLint config
+├── .prettierrc         # Prettier config
+└── README.md           # This file
 ```
 
-### 关键目录说明
+### Key Directories
 
-| 目录 | 说明 |
-|------|------|
-| `src/core/` | 游戏核心逻辑，包含引擎、卡牌系统、Geass系统 |
-| `src/types/` | 统一类型定义，是整个项目的类型基础 |
-| `src/utils/` | 工具函数库，包含卡牌、角色、动画、存储等工具 |
-| `src/ai/` | AI引擎和策略实现 |
-| `docs/` | 完整的项目文档 |
-| `tests/` | 测试代码 |
+| Directory | Description |
+|-----------|-------------|
+| `src/core/` | Game engine, card system, Geass system |
+| `src/types/` | Unified type definitions |
+| `src/utils/` | Utility functions |
+| `src/ai/` | AI engine and strategies |
+| `docs/` | Complete project documentation |
+| `tests/` | Test code |
 
 ---
 
-## 💻 开发指南
+## 💻 Development Guide
 
-### 开发流程
+### Development Workflow
 
 ```
-1. 创建功能分支
+1. Create feature branch
    git checkout -b feature/your-feature-name
 
-2. 编写代码
-   - 遵循TypeScript类型规范
-   - 添加必要的JSDoc注释
-   - 保持代码风格一致
+2. Write code
+   - Follow TypeScript type conventions
+   - Add necessary JSDoc comments
+   - Keep code style consistent
 
-3. 运行测试
+3. Run tests
    npm run test
    npm run test:e2e
 
-4. 提交代码
+4. Commit changes
    git add .
-   git commit -m "feat: 描述你的更改"
+   git commit -m "feat: describe your change"
 
-5. 推送到远程
+5. Push to remote
    git push origin feature/your-feature-name
 
-6. 创建Pull Request
+6. Create Pull Request
 ```
 
-### 代码规范
+### Code Conventions
 
-#### TypeScript规范
+#### TypeScript Conventions
 
 ```typescript
-// ✅ 使用明确的类型定义
+// ✅ Use explicit type definitions
 function playCards(cards: Card[]): GameState {
   // ...
 }
 
-// ✅ 使用接口定义对象结构
+// ✅ Use interfaces for object structures
 interface PlayerStats {
   hp: number;
   maxHp: number;
 }
 
-// ✅ 使用JSDoc注释
+// ✅ Use JSDoc comments
 /**
- * 执行Geass判定
- * @param target - 目标玩家ID
- * @param stats - 目标玩家状态
- * @returns Geass判定结果
+ * Perform Geass judgment
+ * @param target - Target player ID
+ * @param stats - Target player stats
+ * @returns Geass judgment result
  */
 function performGeass(target: PlayerId, stats: PlayerStats): GeassResult {
   // ...
 }
 ```
 
-#### 命名规范
+#### Naming Conventions
 
-| 类型 | 规范 | 示例 |
-|------|------|------|
-| 组件 | PascalCase | `GameBoard.tsx` |
-| 类 | PascalCase | `GameEngine` |
-| 接口 | PascalCase | `GameState` |
-| 函数 | camelCase | `playCards` |
-| 常量 | UPPER_SNAKE_CASE | `MAX_HP` |
-| 变量 | camelCase | `currentPlayer` |
-| 类型 | PascalCase | `CardRank` |
-
-### 调试技巧
-
-```typescript
-// 使用console.log进行调试
-console.log('[GameEngine] Current state:', this.state);
-
-// 使用debugger断点
-debugger;
-
-// 使用React DevTools检查组件状态
-// 使用浏览器DevTools检查网络请求
-```
-
-### 性能优化
-
-```typescript
-// ✅ 使用React.memo避免不必要的重渲染
-const GameBoard = React.memo(({ gameState }: Props) => {
-  // ...
-});
-
-// ✅ 使用useMemo缓存计算结果
-const sortedPlayers = useMemo(() => 
-  players.sort((a, b) => b.hp - a.hp),
-  [players]
-);
-
-// ✅ 使用useCallback缓存回调
-const handlePlayCard = useCallback((cardId: string) => {
-  // ...
-}, [gameState]);
-```
+| Type | Convention | Example |
+|------|------------|---------|
+| Component | PascalCase | `GameBoard.tsx` |
+| Class | PascalCase | `GameEngine` |
+| Interface | PascalCase | `GameState` |
+| Function | camelCase | `playCards` |
+| Constant | UPPER_SNAKE_CASE | `MAX_HP` |
+| Variable | camelCase | `currentPlayer` |
+| Type | PascalCase | `CardRank` |
 
 ---
 
-## 📚 文档索引
+## 📚 Documentation
 
-### 核心文档
-
-| 文档 | 说明 | 路径 |
-|------|------|------|
-| **PRD** | 产品需求文档 - 游戏规则、角色技能、UI规范 | [`docs/PRD.md`](./docs/PRD.md) |
-| **SRS** | 软件需求规格书 - 功能需求、非功能需求 | [`docs/SRS.md`](./docs/SRS.md) |
-| **ARCHITECTURE** | 架构设计文档 - 系统架构、模块设计 | [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) |
-| **API** | API接口文档 - 类型定义、接口说明 | [`docs/API.md`](./docs/API.md) |
-| **CONTRIBUTING** | 贡献指南 - 开发规范、提交流程 | [`docs/CONTRIBUTING.md`](./docs/CONTRIBUTING.md) |
-
-### 其他文档
-
-| 文档 | 说明 | 路径 |
-|------|------|------|
-| USER_GUIDE | 用户手册 - 游戏玩法说明 | [`docs/USER_GUIDE.md`](./docs/USER_GUIDE.md) |
-| DEV_GUIDE | 开发维护手册 - 开发细节 | [`docs/DEV_GUIDE.md`](./docs/DEV_GUIDE.md) |
-| TECH_STACK | 技术栈文档 - 技术选型说明 | [`docs/TECH_STACK.md`](./docs/TECH_STACK.md) |
+| Document | Description | Path |
+|----------|-------------|------|
+| **AGENTS.md** | Dev commands quick reference | [`./AGENTS.md`](./AGENTS.md) |
+| **PRD** | Product requirements | [`docs/PRD.md`](./docs/PRD.md) |
+| **ARCHITECTURE** | Architecture design | [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) |
+| **API** | API documentation | [`docs/API.md`](./docs/API.md) |
+| **USER_GUIDE** | User manual | [`docs/USER_GUIDE.md`](./docs/USER_GUIDE.md) |
+| **DEV_GUIDE** | Development guide | [`docs/DEV_GUIDE.md`](./docs/DEV_GUIDE.md) |
+| **CONTRIBUTING** | Contributing guide | [`docs/CONTRIBUTING.md`](./docs/CONTRIBUTING.md) |
 
 ---
 
-## 🤝 贡献指南
+## 🤝 Contributing
 
-我们欢迎所有形式的贡献！详见 [`CONTRIBUTING.md`](./docs/CONTRIBUTING.md)。
+We welcome all forms of contributions! See [`CONTRIBUTING.md`](./docs/CONTRIBUTING.md) for details.
 
-### 快速贡献流程
+### Quick Contribution Flow
 
-1. **Fork** 本仓库
-2. **创建** 你的特性分支 (`git checkout -b feature/AmazingFeature`)
-3. **提交** 你的更改 (`git commit -m 'feat: Add some AmazingFeature'`)
-4. **推送** 到分支 (`git push origin feature/AmazingFeature`)
-5. **创建** Pull Request
+1. **Fork** this repository
+2. **Create** your feature branch (`git checkout -b feature/AmazingFeature`)
+3. **Commit** your changes (`git commit -m 'feat: Add some AmazingFeature'`)
+4. **Push** to the branch (`git push origin feature/AmazingFeature`)
+5. **Create** a Pull Request
 
-### 报告Bug
+### Report Bugs
 
-如果你发现了Bug，请通过 [GitHub Issues](https://github.com/twmissingu/liars-game/issues) 报告，并包含以下信息：
+If you find a bug, please report it via [GitHub Issues](https://github.com/twmissingu/liars-game/issues) with:
 
-- 问题描述
-- 复现步骤
-- 期望行为
-- 实际行为
-- 浏览器/环境信息
-
----
-
-## 📄 许可证
-
-本项目采用 [MIT License](./LICENSE) 许可证。
+- Problem description
+- Steps to reproduce
+- Expected behavior
+- Actual behavior
+- Browser/environment info
 
 ---
 
-## ⚠️ 免责声明
+## 📄 License
 
-本项目是基于《Code Geass》的同人作品，仅供学习和娱乐使用。《Code Geass》的所有权利归其原始版权所有者所有。
-
----
-
-## 🙏 致谢
-
-- 《Code Geass》制作团队 - 创造了这个伟大的作品
-- 开源社区 - 提供了优秀的工具和库
-- 所有测试玩家 - 帮助改进游戏体验
+This project is licensed under the [MIT License](./LICENSE).
 
 ---
 
-**享受游戏，愿Geass与你同在！** 🎮✨
+## ⚠️ Disclaimer
+
+This project is a Code Geass fan work, for educational and entertainment purposes only. All rights to Code Geass belong to its original copyright holders.
+
+---
+
+## 🙏 Acknowledgments
+
+- Code Geass production team - for creating this amazing work
+- Open source community - for providing excellent tools and libraries
+- All test players - for helping improve the game experience
+
+---
+
+**Enjoy the game, may Geass be with you!** 🎮✨
 
 ---
 

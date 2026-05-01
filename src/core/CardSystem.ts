@@ -22,6 +22,14 @@ export class CardSystem {
   /** 牌组中的所有牌 */
   private cards: Card[] = [];
 
+  /** 生成唯一的卡牌ID */
+  private generateCardId(rank: string, index: number): string {
+    // 使用时间戳+随机数+索引确保唯一性
+    const timestamp = Date.now().toString(36);
+    const randomPart = Math.random().toString(36).substring(2, 11);
+    return `${rank}-${index}-${timestamp}-${randomPart}`;
+  }
+
   /** 当前骗子牌 */
   private liarCard: CardRank | null = null;
 
@@ -40,7 +48,7 @@ export class CardSystem {
       for (let i = 0; i < 6; i++) {
         const suit = suits[i % 4];
         this.cards.push({
-          id: `${rank}-${i}-${Math.random().toString(36).substr(2, 9)}`,
+          id: this.generateCardId(rank, i),
           suit: suit,
           rank: rank,
           value: rank === 'Q' ? 1 : rank === 'K' ? 2 : 3,
@@ -54,7 +62,7 @@ export class CardSystem {
     // 添加2张小丑牌
     for (let i = 0; i < 2; i++) {
       this.cards.push({
-        id: `JOKER-${i}-${Math.random().toString(36).substr(2, 9)}`,
+        id: this.generateCardId('JOKER', i),
         suit: 'joker',
         rank: 'JOKER',
         value: 0,
