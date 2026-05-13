@@ -13,332 +13,92 @@
  * @version 3.0.0
  */
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useRef } from 'react';
 
 interface OptimizedAvatarProps {
   characterId: 'lelouch' | 'cc' | 'suzaku' | 'kallen';
   size?: number;
   avatarNumber?: number;
-  priority?: boolean; // 是否优先加载（预加载）
+  priority?: boolean;
   onLoad?: () => void;
 }
 
-// 检测浏览器是否支持WebP
-const supportsWebP = (): boolean => {
-  const canvas = document.createElement('canvas');
-  if (canvas.getContext && canvas.getContext('2d')) {
-    return canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
-  }
-  return false;
-};
-
-// 根据设备像素比和显示尺寸获取合适的图片尺寸名称
-const getOptimalSizeName = (displaySize: number): 'small' | 'medium' | 'large' => {
-  const dpr = window.devicePixelRatio || 1;
-  const actualSize = displaySize * dpr;
-
-  if (actualSize <= 50) return 'small';
-  if (actualSize <= 100) return 'medium';
-  return 'large';
-};
-
-// 缓存WebP支持检测结果
-let webpSupportedCache: boolean | null = null;
-const checkWebPSupport = (): boolean => {
-  if (webpSupportedCache === null) {
-    webpSupportedCache = supportsWebP();
-  }
-  return webpSupportedCache;
+const getAvatarUrl = (characterId: string, num: number): string => {
+  const baseUrl = import.meta.env.BASE_URL || '/';
+  return `${baseUrl}avatars/${characterId}/${num}.png`;
 };
 
 export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
   characterId,
   size = 160,
   avatarNumber,
-  priority = false,
   onLoad,
 }) => {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(priority);
-  const [hasError, setHasError] = useState(false);
-  const [useWebP, setUseWebP] = useState(true);
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
-  // 使用传入的头像编号，如果没有则只随机一次并保存到state
-  const [randomNum] = useState(() => Math.floor(Math.random() * 4) + 1);
-  const num = avatarNumber || randomNum;
-
-  // 获取最优尺寸名称
-  const sizeName = useMemo(() => getOptimalSizeName(size), [size]);
-
-  // 构建图片URL（优先WebP，回退PNG）
-  const getImageSrc = useCallback(
-    (useWebPFormat: boolean = true): string => {
-      const baseUrl = import.meta.env.BASE_URL || '/';
-      const basePath = `${baseUrl}avatars/${characterId}/${num}`;
-      const ext = useWebPFormat ? 'webp' : 'png';
-      // 使用对应尺寸的图片
-      return `${basePath}-${sizeName}.${ext}`;
-    },
-    [characterId, num, sizeName]
-  );
-
-  // Intersection Observer实现懒加载
-  useEffect(() => {
-    if (priority || isInView) return;
-
-    const observer = new IntersectionObserver(
-      entries => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            setIsInView(true);
-          }
-        });
-      },
-      {
-        rootMargin: '50px', // 提前50px开始加载
-        threshold: 0.1,
-      }
-    );
-
-    const currentContainer = containerRef.current;
-    if (currentContainer) {
-      observer.observe(currentContainer);
-    }
-
-    return () => {
-      if (currentContainer) {
-        observer.unobserve(currentContainer);
-      }
-      observer.disconnect();
-    };
-  }, [priority, isInView]);
-
-  // 预加载图片，支持WebP/PNG回退
-  useEffect(() => {
-    if (!isInView) return;
-
-    const webpSupported = checkWebPSupport();
-    let cancelled = false;
-
-    if (webpSupported && useWebP) {
-      const webpImg = new Image();
-      webpImg.onload = () => {
-        if (!cancelled) {
-          setIsLoaded(true);
-          onLoad?.();
-        }
-      };
-      webpImg.onerror = () => {
-        if (!cancelled) setUseWebP(false);
-      };
-      webpImg.src = getImageSrc(true);
-    } else {
-      const pngImg = new Image();
-      pngImg.onload = () => {
-        if (!cancelled) {
-          setIsLoaded(true);
-          onLoad?.();
-        }
-      };
-      pngImg.onerror = () => {
-        if (!cancelled) {
-          console.error(`[OptimizedAvatar] Failed to load image: ${pngImg.src}`);
-          setHasError(true);
-        }
-      };
-      pngImg.src = getImageSrc(false);
-    }
-
-    // 安全兜底：5秒后强制隐藏加载动画（防止某些边缘情况导致永久旋转）
-    const fallbackTimer = setTimeout(() => {
-      if (!cancelled) setIsLoaded(true);
-    }, 5000);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(fallbackTimer);
-    };
-  }, [isInView, getImageSrc, onLoad, useWebP]);
+  const [num] = useState(() => avatarNumber || Math.floor(Math.random() * 4) + 1);
+  const src = getAvatarUrl(characterId, num);
 
   return (
     <div
-      ref={containerRef}
       style={{
         width: size,
         height: size,
         borderRadius: '8px',
         overflow: 'hidden',
-        backgroundColor: 'transparent',
         position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'transparent',
       }}
     >
-      {/* Loading占位符 */}
-      {!isLoaded && !hasError && (
+      {!loaded && !error && (
         <div
           style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'transparent',
+            width: size * 0.3,
+            height: size * 0.3,
+            border: '3px solid rgba(212, 175, 55, 0.2)',
+            borderTopColor: '#d4af37',
+            borderRadius: '50%',
+            animation: 'cg-avatar-spin 1s linear infinite',
           }}
-        >
-          <div
-            style={{
-              width: size * 0.3,
-              height: size * 0.3,
-              border: '3px solid rgba(212, 175, 55, 0.2)',
-              borderTopColor: '#d4af37',
-              borderRadius: '50%',
-              animation: 'avatar-spin 1s linear infinite',
-            }}
-          />
-        </div>
+        />
       )}
-
-      {/* 错误状态 */}
-      {hasError && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'transparent',
-            color: '#dc2626',
-            fontSize: size * 0.2,
-          }}
-        >
-          ?
-        </div>
+      {error && (
+        <span style={{ color: '#666', fontSize: size * 0.3 }}>🎭</span>
       )}
-
-      {/* 实际图片 */}
-      {isInView && (
-        <picture>
-          {/* WebP格式 - 优先加载 */}
-          {checkWebPSupport() && useWebP && <source srcSet={getImageSrc(true)} type="image/webp" />}
-          {/* PNG回退 */}
-          <img
-            ref={imgRef}
-            src={getImageSrc(false)}
-            alt={characterId}
-            loading={priority ? 'eager' : 'lazy'}
-            width={size}
-            height={size}
-            style={{
-              width: size,
-              height: size,
-              objectFit: 'cover',
-              opacity: isLoaded ? 1 : 0,
-              transition: 'opacity 0.3s ease',
-              borderRadius: '8px',
-            }}
-          />
-        </picture>
-      )}
-
-      <style>{`
-        @keyframes avatar-spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+      <img
+        ref={imgRef}
+        src={src}
+        alt={characterId}
+        width={size}
+        height={size}
+        onLoad={() => { setLoaded(true); onLoad?.(); }}
+        onError={() => setError(true)}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          width: size,
+          height: size,
+          objectFit: 'cover',
+          opacity: loaded ? 1 : 0,
+          transition: 'opacity 0.3s',
+          borderRadius: '8px',
+        }}
+      />
+      <style>{`@keyframes cg-avatar-spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 };
 
-// 头像预加载管理器
 export class AvatarPreloader {
-  private static preloadedAvatars = new Set<string>();
-
-  /**
-   * 预加载指定角色的所有头像（所有分辨率）
-   */
-  static preloadCharacter(characterId: 'lelouch' | 'cc' | 'suzaku' | 'kallen'): void {
-    const sizes = ['small', 'medium', 'large'];
-    const webpSupported = checkWebPSupport();
-    const baseUrl = import.meta.env.BASE_URL || '/';
-
-    for (let i = 1; i <= 4; i++) {
-      // 预加载所有尺寸的WebP和PNG
-      sizes.forEach(size => {
-        const webpSrc = `${baseUrl}avatars/${characterId}/${i}-${size}.webp`;
-        const pngSrc = `${baseUrl}avatars/${characterId}/${i}-${size}.png`;
-
-        // 预加载WebP（如果支持）
-        if (webpSupported && !this.preloadedAvatars.has(webpSrc)) {
-          const webpImg = new Image();
-          webpImg.src = webpSrc;
-          this.preloadedAvatars.add(webpSrc);
-        }
-
-        // 预加载PNG（回退）
-        if (!this.preloadedAvatars.has(pngSrc)) {
-          const pngImg = new Image();
-          pngImg.src = pngSrc;
-          this.preloadedAvatars.add(pngSrc);
-        }
-      });
-    }
-  }
-
-  /**
-   * 预加载所有角色头像
-   */
-  static preloadAll(): void {
-    const characters: ('lelouch' | 'cc' | 'suzaku' | 'kallen')[] = [
-      'lelouch',
-      'cc',
-      'suzaku',
-      'kallen',
-    ];
-    characters.forEach(char => this.preloadCharacter(char));
-  }
-
-  /**
-   * 预加载特定头像（指定分辨率）
-   */
-  static preloadAvatar(
-    characterId: string,
-    avatarNumber: number,
-    size: 'small' | 'medium' | 'large' = 'medium'
-  ): void {
-    const webpSupported = checkWebPSupport();
-    const baseUrl = import.meta.env.BASE_URL || '/';
-
-    if (webpSupported) {
-      const webpSrc = `${baseUrl}avatars/${characterId}/${avatarNumber}-${size}.webp`;
-      if (!this.preloadedAvatars.has(webpSrc)) {
-        const img = new Image();
-        img.src = webpSrc;
-        this.preloadedAvatars.add(webpSrc);
-      }
-    }
-
-    const pngSrc = `${baseUrl}avatars/${characterId}/${avatarNumber}-${size}.png`;
-    if (!this.preloadedAvatars.has(pngSrc)) {
-      const img = new Image();
-      img.src = pngSrc;
-      this.preloadedAvatars.add(pngSrc);
-    }
-  }
-
-  /**
-   * 获取已预加载的头像数量
-   */
-  static getPreloadedCount(): number {
-    return this.preloadedAvatars.size;
-  }
-
-  /**
-   * 清除预加载缓存
-   */
-  static clearCache(): void {
-    this.preloadedAvatars.clear();
+  static preloadAvatar(characterId: string, avatarNumber: number): void {
+    const url = getAvatarUrl(characterId, avatarNumber);
+    const img = new Image();
+    img.src = url;
   }
 }
 
