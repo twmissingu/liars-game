@@ -7,8 +7,8 @@
 // 卡牌系统常量
 // ============================================
 
-/** 每点数卡牌数量（4花色 + 4小丑） */
-export const CARDS_PER_RANK = 8;
+/** 每点数卡牌数量（Q/K/A各6张） */
+export const CARDS_PER_RANK = 6;
 
 /** 游戏使用的牌点数 */
 export const GAME_RANKS = ['Q', 'K', 'A'] as const;

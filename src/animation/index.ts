@@ -52,6 +52,7 @@ export {
   getDisplayName,
   getColorTheme,
   getAnimationText,
+  getCharacterIdByDisplayName,
 } from './characterRegistry';
 
 // Hook导出

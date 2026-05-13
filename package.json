@@ -1,7 +1,9 @@
 {
   "name": "code-geass-liars-game",
   "version": "4.0.0",
-  "description": "Code Geass: Liar's Game - Animation System Refactored",
+  "description": "Code Geass: Liar's Game - A browser-based bluffing card game powered by AI",
+  "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",

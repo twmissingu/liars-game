@@ -471,7 +471,7 @@ export class TurnOrderSystem {
       index = this.calculateNextIndex(index);
 
       if (this.skipInactive) {
-        index = this.findNextActiveIndex(this.currentIndex, index);
+        index = this.findNextActiveIndex(index, index);
       }
 
       const slot = this.slots[index];

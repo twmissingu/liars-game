@@ -26,6 +26,16 @@ import {
 /** 动画类型 */
 export type AnimationType = 'play' | 'aiPlay' | 'challenge' | 'dodge' | 'hit' | 'turnTransition';
 
+/** AnimationType 到 ANIMATION_DURATION 键的映射 */
+const ANIMATION_TYPE_TO_KEY: Record<AnimationType, keyof typeof ANIMATION_DURATION> = {
+  play: 'PLAY',
+  aiPlay: 'AI_PLAY',
+  challenge: 'CHALLENGE',
+  dodge: 'DODGE',
+  hit: 'HIT',
+  turnTransition: 'TURN_TRANSITION',
+};
+
 /** 动画状态 */
 interface AnimationState {
   type: AnimationType | null;
@@ -71,7 +81,8 @@ export function useAnimationSync() {
    * @returns 动画ID
    */
   const startAnimation = useCallback((type: AnimationType, customDuration?: number): string => {
-    const duration = customDuration ?? ANIMATION_DURATION[type.toUpperCase() as keyof typeof ANIMATION_DURATION] ?? 500;
+    const key = ANIMATION_TYPE_TO_KEY[type];
+    const duration = customDuration ?? (key ? ANIMATION_DURATION[key] : 500);
     const animationId = `${type}_${Date.now()}`;
 
     setCurrentAnimation({

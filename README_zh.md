@@ -30,6 +30,36 @@
 
 ---
 
+## 🤖 AI Agent 指南
+
+本项目专为 AI agent 无缝交互设计：
+
+```bash
+# 1. 克隆并安装
+git clone https://github.com/twmissingu/liars-game.git
+cd liars-game
+npm install
+
+# 2. 配置 - 无需外部 API key（纯客户端游戏）
+npm run dev
+
+# 3. AI agent 关键入口文件
+# - src/App.tsx                  主组件
+# - src/core/GameEngineV2.ts     游戏逻辑引擎
+# - src/types/index.ts           核心类型定义
+# - src/ai/DynamicAIEngine.ts    AI 决策引擎
+# - tests/unit/                  单元测试（34 个文件）
+# - tests/integration/           集成测试（13 个文件）
+
+# 4. 常用命令
+npm run test           # 运行所有测试
+npm run test:unit      # 运行单元测试
+npm run type-check     # TypeScript 类型检查
+npm run lint           # 代码检查
+```
+
+---
+
 ## 🎯 项目概述
 
 ### 游戏简介
@@ -144,92 +174,98 @@ npm run deploy           # 部署到GitHub Pages
 liars-game/
 ├── public/                    # 静态资源
 │   ├── assets/
-│   │   ├── audio/             # 音效文件
-│   │   │   ├── bgm/          # 背景音乐
-│   │   │   └── sfx/          # 音效
-│   │   └── images/           # 图片资源
+│   │   ├── cards/            # 卡牌图片
+│   │   ├── audio/            # 音效文件
+│   │   └── avatars/          # 角色头像
 │   └── index.html            # HTML模板
 │
 ├── src/                       # 源代码
 │   ├── ai/                    # AI系统
-│   │   ├── AIEngine.ts       # AI引擎
-│   │   └── strategies/       # AI策略实现
+│   │   └── DynamicAIEngine.ts # 动态AI决策引擎
+│   │
+│   ├── animation/             # 动画系统
+│   │   ├── triggers.ts       # 动画触发器
+│   │   ├── useAnimation.ts   # 动画React Hook
+│   │   └── characterRegistry.ts # 角色-动画映射
 │   │
 │   ├── audio/                 # 音效管理
-│   │   └── SoundManager.ts   # 音效管理器
+│   │   ├── EnhancedSoundManager.ts # 生产版音效管理器
+│   │   └── SoundManager.ts   # 旧版音效管理器
 │   │
 │   ├── characters/            # 角色系统
-│   │   ├── types.ts          # 角色类型定义
-│   │   ├── data.ts          # 角色数据
-│   │   └── state.ts         # 角色状态管理
+│   │   ├── types.ts          # 角色类型
+│   │   ├── data.ts           # 角色数据
+│   │   └── state.ts          # 角色状态管理
 │   │
-│   ├── components/            # React组件
-│   │   ├── animations/       # 动画组件
-│   │   ├── characters/      # 角色组件
-│   │   ├── effects/        # 特效组件
-│   │   ├── CharacterSelect.tsx # 角色选择界面
-│   │   ├── GameBoard.tsx    # 游戏主界面
-│   │   └── ...
+│   ├── components/           # 共享组件
+│   │   ├── animations/       # 呼吸/浮动/抖动动画
+│   │   ├── characters/       # ChibiAvatar, OptimizedAvatar
+│   │   └── SkillEffects.tsx  # 角色技能特效
+│   │
+│   ├── constants/            # 游戏常量
+│   │   ├── game.ts           # 卡牌/Geass常量
+│   │   └── animation.ts      # 动画时间常量
 │   │
 │   ├── core/                 # 游戏核心逻辑 ⭐
-│   │   ├── GameEngine.ts    # 游戏引擎
-│   │   ├── GameEngineV2.ts # 优化版游戏引擎
-│   │   ├── CardSystem.ts   # 卡牌系统
-│   │   ├── GeassSystem.ts # Geass判定系统
-│   │   └── index.ts     # 模块导出
+│   │   ├── GameEngineV2.ts   # 游戏引擎（1220行）
+│   │   ├── CardSystem.ts     # 卡牌系统
+│   │   ├── GeassSystem.ts    # Geass判定系统
+│   │   └── PlayerIndexMapper.ts # 玩家索引映射
 │   │
 │   ├── data/                 # 游戏数据
-│   │   └── characters.ts  # 角色配置数据
+│   │   └── characters.ts     # 角色配置
 │   │
-│   ├── effects/              # 特效系统
-│   │   └── EffectManager.ts # 特效管理器
+│   ├── hooks/                # 自定义React Hooks
+│   │   ├── useGeassResult.ts  # Geass结果处理
+│   │   ├── useAnimationSync.ts # 动画同步
+│   │   └── useTurnOrder.ts   # 回合顺序管理
 │   │
 │   ├── store/               # 状态管理
+│   │   └── CharacterStore.ts # Zustand角色存储
 │   │
 │   ├── styles/              # 样式文件
-│   │   ├── theme.ts       # 主题配置
-│   │   └── global.css   # 全局样式
+│   │   ├── global.css       # 全局样式
+│   │   ├── responsive.css   # 响应式设计
+│   │   └── theme.ts         # 主题配置
 │   │
-│   ├── types/                # TypeScript类型定义 ⭐
-│   │   ├── unified.ts    # 统一类型定义
-│   │   ├── game.types.ts # 游戏类型
-│   │   ├── ai.types.ts  # AI类型
-│   │   └── index.ts    # 类型导出
+│   ├── types/               # TypeScript类型 ⭐
+│   │   └── index.ts         # 统一类型定义
 │   │
 │   ├── ui/                  # 页面UI组件
 │   │   ├── MainMenu.tsx     # 主菜单
 │   │   ├── CharacterSelect.tsx # 角色选择
-│   │   ├── GameTable.tsx   # 游戏桌
-│   │   └── ResultScreen.tsx # 结果界面
+│   │   ├── GameTable.tsx    # 游戏桌（1896行）
+│   │   └── ResultScreen.tsx # 结算界面
 │   │
-│   ├── utils/                # 工具函数 ⭐
-│   │   └── index.ts      # 工具函数库
+│   ├── utils/               # 工具函数
+│   │   └── index.ts         # 存储工具
 │   │
-│   ├── App.tsx               # 主应用组件
-│   └── main.tsx             # 应用入口
+│   ├── App.tsx              # 主组件（973行）
+│   └── main.tsx             # 入口
 │
-├── docs/                     # 项目文档 ⭐
-│   ├── PRD.md              # 产品需求文档
-│   ├── SRS.md              # 软件需求规格书
-│   ├── ARCHITECTURE.md    # 架构设计文档
-│   ├── API.md             # API接口文档
-│   ├── CONTRIBUTING.md     # 贡献指南
-│   ├── USER_GUIDE.md     # 用户手册
-│   └── DEV_GUIDE.md      # 开发维护手册
+├── docs/                    # 项目文档 ⭐
+│   ├── PRD.md               # 产品需求
+│   ├── SRS.md               # 软件需求规格
+│   ├── ARCHITECTURE.md      # 架构设计
+│   ├── API.md               # API文档
+│   └── ...（共6篇）
 │
-├── tests/                    # 测试文件
-│   ├── unit/               # 单��测试
-│   ├── integration/        # 集成测试
-│   └── e2e/               # E2E测试
+├── tests/                   # 测试文件
+│   ├── unit/                # 34个单元测试
+│   ├── integration/         # 13个集成测试
+│   └── e2e/                 # Playwright E2E测试
+│
+├── coverage/                # 测试覆盖率报告
+├── dist/                    # 构建输出
 │
 ├── package.json             # 项目配置
-├── tsconfig.json           # TypeScript配置
-├── vite.config.ts         # Vite配置
-├── jest.config.cjs      # Jest配置
-├── playwright.config.ts # Playwright配置
-├── eslint.config.js   # ESLint配置
-├── .prettierrc      # Prettier配置
-└── README.md       # 本文件
+├── tsconfig.json            # TypeScript配置
+├── vite.config.ts           # Vite配置
+├── jest.config.cjs          # Jest配置
+├── eslint.config.js         # ESLint配置
+├── AGENTS.md                # AI agent 指令
+├── CHANGELOG.md             # 变更日志
+└── README.md                # 本文件
 ```
 
 ### 关键目录说明

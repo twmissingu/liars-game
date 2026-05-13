@@ -307,12 +307,13 @@ export function getClockwisePlayerOrder(startIndex: number, excludeIndex?: numbe
   const order: PlayerId[] = [];
   let current = startIndex;
 
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 4; i++) {
     current = getNextPlayerIndex(current);
     if (current !== excludeIndex) {
       const playerId = getPlayerIdByIndex(current);
       if (playerId) {
         order.push(playerId);
+        if (order.length === 3) break;
       }
     }
   }

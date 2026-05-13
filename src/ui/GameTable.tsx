@@ -16,6 +16,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ChibiAvatar, AvatarPreloader } from '../components/characters';
 import type { Card, CardRank, CharacterId, FunnyAction, GameState } from '../types';
 
+const isDev = import.meta.env.DEV;
+
 // 牌背图片路径（使用BASE_URL确保正确加载）
 const getCardBackSrc = () => `${import.meta.env.BASE_URL || '/'}assets/cards/card-back.svg`;
 
@@ -167,12 +169,13 @@ export const GameTable: React.FC<GameTableProps> = ({
     setPlayerChallengeAnimation,
   } = useAnimation();
 
-  // 初始化玩家角色到动画系统
+  // 初始化玩家角色和AI角色到动画系统
   useEffect(() => {
     if (selectedCharacter) {
-      setPlayerCharacter(selectedCharacter);
+      const aiIds = aiCharacters.slice(0, 3) as [CharacterId, CharacterId, CharacterId];
+      setPlayerCharacter(selectedCharacter, aiIds);
     }
-  }, [selectedCharacter]);
+  }, [selectedCharacter, aiCharacters]);
 
   // 自动滚动到最新日志
   useEffect(() => {
@@ -231,24 +234,24 @@ export const GameTable: React.FC<GameTableProps> = ({
 
     const { lastAction, phase, geassResult } = gameState;
 
-    console.log('[GameTable Animation] useEffect triggered:', { lastAction, processedAction: processedActionRef.current, phase });
+    isDev && console.log('[GameTable Animation] useEffect triggered:', { lastAction, processedAction: processedActionRef.current, phase });
 
     // 防止重复处理同一个动作
     if (lastAction && lastAction === processedActionRef.current) {
-      console.log('[GameTable Animation] 跳过重复动作');
+      isDev && console.log('[GameTable Animation] 跳过重复动作');
       return;
     }
 
     // 使用新的触发器系统解析动画
     const animationEvent = parseGameStateForAnimation(gameState);
-    console.log('[GameTable Animation] parseGameStateForAnimation result:', animationEvent);
+    isDev && console.log('[GameTable Animation] parseGameStateForAnimation result:', animationEvent);
 
     if (animationEvent) {
       const { playerId, data } = animationEvent;
       const animType = data?.animationType as AnimationType;
       const text = (data?.text as string) || '';
 
-      console.log('[Animation] 触发:', { playerId, type: animType, text });
+      isDev && console.log('[Animation] 触发:', { playerId, type: animType, text });
 
       // 记录已处理的动作
       if (lastAction) {
@@ -272,7 +275,7 @@ export const GameTable: React.FC<GameTableProps> = ({
         const targetId = data?.targetId as PlayerId | undefined;
         const challengerId = data?.challengerId as PlayerId | undefined;
 
-        console.log('[Animation] 质疑动画:', { playerId, targetId, challengerId, isPlayer: playerId === 'player' });
+        isDev && console.log('[Animation] 质疑动画:', { playerId, targetId, challengerId, isPlayer: playerId === 'player' });
 
         if (playerId === 'player' && targetId) {
           // 玩家质疑时设置持续动画
@@ -359,8 +362,8 @@ export const GameTable: React.FC<GameTableProps> = ({
   const playerName = playerCharacterId ? getCharacterDisplayName(playerCharacterId) : '玩家';
   const playerColor = getCharacterColorTheme(playerCharacterId);
 
-  // 计算最大出牌数量（卡莲可以出4张，其他角色3张）
-  const maxPlayCount = playerCharacterId === 'kallen' ? 4 : 3;
+  // 计算最大出牌数量（卡莲技能可用时可以出4张，其他情况3张）
+  const maxPlayCount = playerCharacterId === 'kallen' && canUseSkill ? 4 : 3;
 
   /**
    * 渲染角色组件 - 使用新的动画系统

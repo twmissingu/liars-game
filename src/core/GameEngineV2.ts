@@ -145,7 +145,7 @@ export class GameEngine {
           name: '朱雀',
           character: 'suzaku',
           hand: [],
-          stats: { hp: 3, maxHp: 3, geassSuccessCount: 0, geassFailCount: 0 },
+          stats: { hp: 4, maxHp: 4, geassSuccessCount: 0, geassFailCount: 0 },
           isActive: true,
         },
         {
@@ -398,7 +398,12 @@ export class GameEngine {
    * @param playerId - 玩家ID
    */
   private handleEmptyHand(playerId: 'player' | 'ai' | 'ai2' | 'ai3'): void {
-    const playerName = playerId === 'player' ? '玩家' : playerId;
+    const getPlayerDisplayName = (pid: string): string => {
+      if (pid === 'player') return '玩家';
+      const ai = this.state.aiPlayers.find(a => a.id === pid);
+      return ai?.name || pid;
+    };
+    const playerName = getPlayerDisplayName(playerId);
     this.state.lastAction = `${playerName}手牌耗尽，获得胜利！`;
 
     // 手牌耗尽直接获得胜利 - 设置正确的获胜者
@@ -543,7 +548,12 @@ export class GameEngine {
           }
         }
       }
-      this.state.lastAction = `${targetId === 'player' ? '玩家' : targetId}发动枢木剑术反击！${challengerId === 'player' ? '玩家' : challengerId}受到反弹伤害！`;
+      const getPlayerNameForMsg = (pid: string): string => {
+        if (pid === 'player') return '玩家';
+        const ai = this.state.aiPlayers.find(a => a.id === pid);
+        return ai?.name || pid;
+      };
+      this.state.lastAction = `${getPlayerNameForMsg(targetId)}发动枢木剑术反击！${getPlayerNameForMsg(challengerId)}受到反弹伤害！`;
       // 反击造成了实际伤害，重置连续闪避次数
       this.state.turnState.geassConsecutiveMisses = 0;
       return;

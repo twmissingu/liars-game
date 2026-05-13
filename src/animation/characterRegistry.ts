@@ -140,6 +140,33 @@ class CharacterAnimationRegistryManager {
   }
 
   /**
+   * 设置AI角色映射（根据实际游戏配置更新）
+   * @param aiCharacters AI角色ID数组，按 [ai, ai2, ai3] 顺序
+   */
+  setAICharacters(aiCharacters: [CharacterId, CharacterId, CharacterId]): void {
+    const aiPlayerIds: PlayerId[] = ['ai', 'ai2', 'ai3'];
+    aiCharacters.forEach((charId, idx) => {
+      const playerId = aiPlayerIds[idx];
+      const baseInfo = CHARACTER_BASE_INFO[charId];
+      if (baseInfo) {
+        this.registry[playerId] = {
+          characterId: charId,
+          displayName: baseInfo.displayName,
+          playerId,
+          animationTexts: { ...DEFAULT_ANIMATION_TEXTS },
+          colorTheme: baseInfo.colorTheme,
+        };
+      }
+    });
+    PLAYER_TO_CHARACTER_MAP.ai = aiCharacters[0];
+    PLAYER_TO_CHARACTER_MAP.ai2 = aiCharacters[1];
+    PLAYER_TO_CHARACTER_MAP.ai3 = aiCharacters[2];
+    CHARACTER_TO_PLAYER_MAP[aiCharacters[0]] = 'ai';
+    CHARACTER_TO_PLAYER_MAP[aiCharacters[1]] = 'ai2';
+    CHARACTER_TO_PLAYER_MAP[aiCharacters[2]] = 'ai3';
+  }
+
+  /**
    * 获取玩家角色ID
    */
   getPlayerCharacterId(): CharacterId | null {
@@ -212,6 +239,18 @@ class CharacterAnimationRegistryManager {
   getRegistry(): CharacterAnimationRegistry {
     return { ...this.registry };
   }
+
+  /**
+   * 通过显示名称查找角色ID（不依赖硬编码名称）
+   */
+  getCharacterIdByDisplayName(displayName: string): CharacterId | null {
+    for (const [charId, info] of Object.entries(CHARACTER_BASE_INFO)) {
+      if (info.displayName === displayName) {
+        return charId as CharacterId;
+      }
+    }
+    return null;
+  }
 }
 
 // ============================================
@@ -224,8 +263,12 @@ export const characterRegistry = new CharacterAnimationRegistryManager();
 // 便捷导出函数
 // ============================================
 
-export const setPlayerCharacter = (characterId: CharacterId): void => 
+export const setPlayerCharacter = (characterId: CharacterId, aiCharacters?: [CharacterId, CharacterId, CharacterId]): void => {
   characterRegistry.setPlayerCharacter(characterId);
+  if (aiCharacters) {
+    characterRegistry.setAICharacters(aiCharacters);
+  }
+};
 
 export const getPlayerCharacterId = (): CharacterId | null => 
   characterRegistry.getPlayerCharacterId();
@@ -247,3 +290,6 @@ export const getColorTheme = (playerId: PlayerId): string =>
 
 export const getAnimationText = (playerId: PlayerId, animationType: AnimationType): string => 
   characterRegistry.getAnimationText(playerId, animationType);
+
+export const getCharacterIdByDisplayName = (displayName: string): CharacterId | null =>
+  characterRegistry.getCharacterIdByDisplayName(displayName);

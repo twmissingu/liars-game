@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.0.0] - 2026-05-13
+
+### Release - Bug Fixes & Animation Refactoring
+
+#### Bug Fixes
+- **Card Back Display**: Fixed incorrect card back rendering when playing 3-4 cards
+- **Result Screen**: Fixed character avatar display and BGM playback on result screen
+- **Turn Order**: Fixed clockwise rotation for first-player handover mechanism
+- **AI Animation**: Fixed AI character interaction animations not showing
+- **Challenge Order**: Fixed incorrect play order when no one challenges
+
+#### Game Engine
+- **PlayerIndexMapper**: Unified player index mapping system for consistent UI layout
+- **GameEngineV2**: Refactored challenge phase flow, fixed edge cases
+- **Empty Hand Victory**: Fixed game-over detection when hand is depleted
+
+#### AI System
+- **DynamicAIEngine**: Probability calculation fix (corrected totalCardsPerRank from 8 to 6)
+- **Player HP Detection**: Fixed `||` to `??` operator so AI correctly reads 0 HP
+- **Character Registry**: Dynamic AI character mapping instead of hardcoded defaults
+
+#### Animation System
+- **Trigger Refactoring**: Independent useEffect for animation to prevent race conditions
+- **AI Animation Sync**: Optimized AI background processing and frontend animation sync
+- **Fixed Animation Type Mapping**: `aiPlay` animation duration correctly resolves to `AI_PLAY`
+- **Play Card Animation**: Correctly distinguishes player (green) vs AI (orange) play animations
+
+#### Audio
+- **BGM System**: Replaced audio files for improved quality
+- **Sound Manager**: Enhanced volume control and audio quality configuration
+
+#### Engineering
+- **Test Coverage**: 784 tests (619 unit + 157 integration + 8 e2e)
+- **Type Safety**: Fixed type inconsistencies across modules
+- **Dead Code Removal**: Cleaned up duplicate utility functions in utils/index.ts
+- **All lint errors are pre-existing ESLint config issues** (NodeJS/process globals)
+
+---
+
 ## [3.0.0] - 2026-03-16
 
 ### Major Update - System Optimization

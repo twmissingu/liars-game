@@ -30,6 +30,37 @@
 
 ---
 
+## 🤖 For AI Agents
+
+This project is designed for seamless AI agent interaction:
+
+```bash
+# 1. Clone and install
+git clone https://github.com/twmissingu/liars-game.git
+cd liars-game
+npm install
+
+# 2. Configure - no external API keys required (fully client-side)
+# Just run the dev server:
+npm run dev
+
+# 3. Key entry points for agents
+# - src/App.tsx                  Main component
+# - src/core/GameEngineV2.ts     Game logic engine
+# - src/types/index.ts           Core type definitions
+# - src/ai/DynamicAIEngine.ts    AI decision engine
+# - tests/unit/                  Unit tests (34 files)
+# - tests/integration/           Integration tests (13 files)
+
+# 4. Common agent tasks
+npm run test           # Run all tests
+npm run test:unit      # Run unit tests only
+npm run type-check     # TypeScript type checking
+npm run lint           # Code linting
+```
+
+---
+
 ## 🎯 Overview
 
 ### Game Introduction
@@ -144,92 +175,98 @@ npm run deploy           # Deploy to GitHub Pages
 liars-game/
 ├── public/                    # Static assets
 │   ├── assets/
-│   │   ├── audio/             # Audio files
-│   │   │   ├── bgm/          # Background music
-│   │   │   └── sfx/          # Sound effects
-│   │   └── images/           # Image assets
+│   │   ├── cards/            # Card images
+│   │   ├── audio/            # Audio files
+│   │   └── avatars/          # Character avatars
 │   └── index.html            # HTML template
 │
 ├── src/                       # Source code
 │   ├── ai/                    # AI system
-│   │   ├── AIEngine.ts       # AI engine
-│   │   └── strategies/       # AI strategies
+│   │   └── DynamicAIEngine.ts # Dynamic AI decision engine
+│   │
+│   ├── animation/             # Animation system
+│   │   ├── triggers.ts       # Animation trigger engine
+│   │   ├── useAnimation.ts   # Animation React hook
+│   │   └── characterRegistry.ts # Character-animation mapping
 │   │
 │   ├── audio/                 # Audio management
-│   │   └── SoundManager.ts   # Sound manager
+│   │   ├── EnhancedSoundManager.ts # Production sound manager
+│   │   └── SoundManager.ts   # Legacy sound manager
 │   │
 │   ├── characters/           # Character system
 │   │   ├── types.ts          # Character types
-│   │   ├── data.ts          # Character data
-│   │   └── state.ts         # Character state
+│   │   ├── data.ts           # Character data
+│   │   └── state.ts          # Character state management
 │   │
-│   ├── components/           # React components
-│   │   ├── animations/      # Animation components
-│   │   ├── characters/     # Character components
-│   │   ├── effects/        # Effect components
-│   │   ├── CharacterSelect.tsx # Character selection
-│   │   ├── GameBoard.tsx   # Game board
-│   │   └── ...
+│   ├── components/           # Shared components
+│   │   ├── animations/      # Breathing, float, shake animations
+│   │   ├── characters/      # ChibiAvatar, OptimizedAvatar
+│   │   └── SkillEffects.tsx  # Character skill VFX
+│   │
+│   ├── constants/            # Game constants
+│   │   ├── game.ts           # Card/Geass constants
+│   │   └── animation.ts      # Animation timing constants
 │   │
 │   ├── core/                 # Game core logic ⭐
-│   │   ├── GameEngine.ts    # Game engine
-│   │   ├── GameEngineV2.ts # Optimized engine
-│   │   ├── CardSystem.ts   # Card system
-│   │   ├── GeassSystem.ts  # Geass system
-│   │   └── index.ts       # Module exports
+│   │   ├── GameEngineV2.ts   # Game engine (1220 lines)
+│   │   ├── CardSystem.ts     # Card deck/shuffle/deal
+│   │   ├── GeassSystem.ts    # Geass judgment system
+│   │   └── PlayerIndexMapper.ts # Player index mapping
 │   │
-│   ├── data/                # Game data
-│   │   └── characters.ts   # Character config
+│   ├── data/                 # Game data
+│   │   └── characters.ts     # Character config data
 │   │
-│   ├── effects/            # Effect system
-│   │   └── EffectManager.ts # Effect manager
+│   ├── hooks/                # Custom React hooks
+│   │   ├── useGeassResult.ts  # Geass result handler
+│   │   ├── useAnimationSync.ts # Animation timing sync
+│   │   └── useTurnOrder.ts   # Turn order management
 │   │
-│   ├── store/              # State management
+│   ├── store/                # State management
+│   │   └── CharacterStore.ts  # Zustand character store
 │   │
-│   ├── styles/            # Styles
-│   │   ├── theme.ts     # Theme config
-│   │   └── global.css   # Global styles
+│   ├── styles/               # Styles
+│   │   ├── global.css        # Global styles
+│   │   ├── responsive.css    # Responsive design
+│   │   └── theme.ts          # Theme configuration
 │   │
-│   ├── types/             # TypeScript types ⭐
-│   │   ├── unified.ts   # Unified types
-│   │   ├── game.types.ts # Game types
-│   │   ├── ai.types.ts # AI types
-│   │   └── index.ts   # Type exports
+│   ├── types/                # TypeScript types ⭐
+│   │   └── index.ts          # Unified type definitions
 │   │
-│   ├── ui/               # UI components
-│   │   ├── MainMenu.tsx # Main menu
-│   │   ├── CharacterSelect.tsx # Character select
-│   │   ├── GameTable.tsx # Game table
-│   │   └── ResultScreen.tsx # Result screen
+│   ├── ui/                   # Screen components
+│   │   ├── MainMenu.tsx      # Main menu screen
+│   │   ├── CharacterSelect.tsx # Character selection
+│   │   ├── GameTable.tsx     # Game table (1896 lines)
+│   │   └── ResultScreen.tsx  # Victory/defeat screen
 │   │
-│   ├── utils/             # Utilities ⭐
-│   │   └── index.ts    # Utility functions
+│   ├── utils/                # Utilities
+│   │   └── index.ts          # Storage utilities
 │   │
-│   ├── App.tsx            # Main component
-│   └── main.tsx          # Entry point
+│   ├── App.tsx               # Main component (973 lines)
+│   └── main.tsx              # Entry point
 │
-├── docs/                  # Documentation ⭐
-│   ├── PRD.md            # Product requirements
-│   ├── SRS.md            # Software requirements
-│   ├── ARCHITECTURE.md   # Architecture design
-│   ├── API.md           # API documentation
-│   ├── CONTRIBUTING.md  # Contributing guide
-│   ├── USER_GUIDE.md    # User manual
-│   └── DEV_GUIDE.md     # Development guide
+├── docs/                     # Documentation ⭐
+│   ├── PRD.md                # Product requirements
+│   ├── SRS.md                # Software requirements
+│   ├── ARCHITECTURE.md       # Architecture design
+│   ├── API.md                # API documentation
+│   └── ... (6 docs total)
 │
-├── tests/                 # Test files
-│   ├── unit/            # Unit tests
-│   ├── integration/     # Integration tests
-│   └── e2e/            # E2E tests
+├── tests/                    # Test files
+│   ├── unit/                 # 34 unit test files
+│   ├── integration/          # 13 integration test files
+│   └── e2e/                  # Playwright E2E tests
 │
-├── package.json          # Project config
-├── tsconfig.json        # TypeScript config
-├── vite.config.ts        # Vite config
-├── jest.config.cjs      # Jest config
-├── playwright.config.ts  # Playwright config
-├── eslint.config.js     # ESLint config
-├── .prettierrc         # Prettier config
-└── README.md           # This file
+├── coverage/                 # Test coverage reports
+├── dist/                     # Build output
+│
+├── package.json              # Project config
+├── tsconfig.json             # TypeScript config
+├── vite.config.ts            # Vite config
+├── jest.config.cjs           # Jest config
+├── eslint.config.js          # ESLint config
+├── AGENTS.md                 # AI agent instructions
+├── CHANGELOG.md              # Release changelog
+└── README.md                 # This file
 ```
 
 ### Key Directories

@@ -177,9 +177,9 @@ const App: React.FC = () => {
   // ============================================
 
   const getPlayerName = useCallback((playerId: string, state: GameState): string => {
-    if (playerId === 'player') return getCharacterName(selectedCharacter!);
+    if (playerId === 'player') return getCharacterName(state.playerCharacter);
     return state.aiPlayers.find(ai => ai.id === playerId)?.name || playerId;
-  }, [selectedCharacter]);
+  }, []);
 
   // ============================================
   // 公共工具：提取公共质疑循环逻辑
@@ -282,6 +282,21 @@ const App: React.FC = () => {
     isDev && console.log('[enterChallengePhase] 进入质疑阶段');
 
     const state = engine.getState();
+
+    if (state.phase === 'game_over') {
+      addLog(state.lastAction || '游戏结束！');
+      setIsProcessing(false);
+      setTimeout(() => {
+        if (state.winner === 'player') {
+          playBGM('victory');
+        } else {
+          playBGM('defeat');
+        }
+        setCurrentScreen('result');
+      }, 1500);
+      return;
+    }
+
     const playedBy = state.turnState.playedCards?.playerId;
     if (!playedBy) {
       isDev && console.error('[enterChallengePhase] 没有出牌记录');
@@ -401,7 +416,14 @@ const App: React.FC = () => {
       if (nextIndex !== 0) {
         setTimeout(() => aiTurnRef.current?.(), AI_DELAY.TURN_SWITCH);
       } else if (state.playerStats.hp <= 0) {
-        setTimeout(() => aiTurnRef.current?.(), AI_DELAY.TURN_SWITCH);
+        state.winner = 'ai';
+        state.phase = 'game_over';
+        setGameState({ ...state });
+        addLog('游戏结束！AI获胜！');
+        setIsProcessing(false);
+      } else {
+        setIsProcessing(false);
+        addLog('轮到玩家出牌');
       }
       return;
     }

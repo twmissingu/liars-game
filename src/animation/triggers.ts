@@ -11,7 +11,9 @@
 
 import type { GameState } from '../types';
 import type { AnimationTrigger, PlayerId, AnimationEvent } from './types';
-import { getPlayerIdByCharacterId } from './characterRegistry';
+import { getPlayerIdByCharacterId, getCharacterIdByDisplayName } from './characterRegistry';
+
+const isDev = import.meta.env.DEV;
 
 // ============================================
 // 游戏状态类型守卫 - 使用交叉类型避免扩展冲突
@@ -45,7 +47,7 @@ function createChallengeTrigger(): AnimationTrigger {
       const lastAction = state.lastAction || '';
       // 匹配 "XXX向YYY发起质疑！" 格式
       const matches = lastAction.includes('发起质疑') && lastAction.includes('向');
-      console.log('[Challenge Trigger] condition check:', { lastAction, matches });
+      isDev && console.log('[Challenge Trigger] condition check:', { lastAction, matches });
       return matches;
     },
     animationType: 'challenge',
@@ -58,7 +60,7 @@ function createChallengeTrigger(): AnimationTrigger {
       const match = lastAction.match(/^(.+?)向/);
       const challengerName = match ? match[1] : '';
       
-      console.log('[Challenge Trigger] getPlayerId:', { lastAction, challengerName });
+      isDev && console.log('[Challenge Trigger] getPlayerId:', { lastAction, challengerName });
       
       // 通过名称查找对应的playerId
       return resolvePlayerIdByName(challengerName, state as GameState);
@@ -78,7 +80,7 @@ function createChallengeTrigger(): AnimationTrigger {
       const targetId = resolvePlayerIdByName(targetName, state as GameState);
       const challengerId = resolvePlayerIdByName(challengerName, state as GameState);
       
-      console.log('[Challenge Trigger] getData:', { targetName, targetId, challengerName, challengerId });
+      isDev && console.log('[Challenge Trigger] getData:', { targetName, targetId, challengerName, challengerId });
       
       return {
         targetId,
@@ -180,8 +182,15 @@ function createPlayCardTrigger(): AnimationTrigger {
     getText: (): string => '出牌',
     getPlayerId: (gameState: unknown): PlayerId => {
       const state = gameState as GameState;
-      // 从turnState获取出牌者
       return state.turnState?.playedCards?.playerId || 'player';
+    },
+    getData: (gameState: unknown): Record<string, unknown> => {
+      const state = gameState as GameState;
+      const playerId = state.turnState?.playedCards?.playerId || 'player';
+      const isPlayer = playerId === 'player';
+      return {
+        animationType: isPlayer ? 'play' : 'aiPlay',
+      };
     },
   };
 }
@@ -212,33 +221,26 @@ function resolvePlayerIdByName(name: string, state: GameState): PlayerId {
 
   // 检查AI角色
   // 通过游戏状态中的AI玩家列表匹配
-  console.log('[resolvePlayerIdByName] 尝试匹配AI:', { trimmedName, aiPlayers: state.aiPlayers?.map((ai: { id: string; name: string }) => ({ id: ai.id, name: ai.name })) });
+  isDev && console.log('[resolvePlayerIdByName] 尝试匹配AI:', { trimmedName });
   for (const ai of state.aiPlayers || []) {
     if (ai.name === trimmedName) {
-      console.log('[resolvePlayerIdByName] 匹配成功:', ai.id);
+      isDev && console.log('[resolvePlayerIdByName] 匹配成功:', ai.id);
       return ai.id as PlayerId;
     }
   }
 
-  // 如果无法匹配，尝试通过角色ID查找
-  // 注意：需要将显示名称转换为角色ID
-  const nameToCharacterId: Record<string, import('../types').CharacterId> = {
-    '鲁鲁修': 'lelouch',
-    'C.C.': 'cc',
-    '朱雀': 'suzaku',
-    '卡莲': 'kallen',
-  };
-  const characterIdFromName = nameToCharacterId[trimmedName];
+  // 通过显示名称动态查找角色ID（不依赖硬编码名称）
+  const characterIdFromName = getCharacterIdByDisplayName(trimmedName);
   if (characterIdFromName) {
     const playerId = getPlayerIdByCharacterId(characterIdFromName);
     if (playerId) {
-      console.log('[resolvePlayerIdByName] 通过角色ID匹配成功:', playerId);
+      isDev && console.log('[resolvePlayerIdByName] 通过显示名称匹配成功:', playerId);
       return playerId;
     }
   }
 
   // 默认返回player
-  console.warn(`[Animation Trigger] Could not resolve player ID for name: ${trimmedName}`);
+  isDev && console.warn(`[Animation Trigger] Could not resolve player ID for name: ${trimmedName}`);
   return 'player';
 }
 
@@ -303,12 +305,12 @@ class AnimationTriggerRegistry {
    */
   parseGameState(gameState: GameState): AnimationEvent | null {
     const lastAction = (gameState as GameStateWithOptionalLastAction).lastAction;
-    console.log('[parseGameState] 开始解析:', { lastAction, phase: gameState.phase });
+    isDev && console.log('[parseGameState] 开始解析:', { lastAction, phase: gameState.phase });
 
     for (const trigger of this.triggers.values()) {
-      console.log('[parseGameState] 检查触发器:', trigger.id);
+      isDev && console.log('[parseGameState] 检查触发器:', trigger.id);
       if (trigger.condition(gameState)) {
-        console.log('[parseGameState] 触发器匹配成功:', trigger.id);
+        isDev && console.log('[parseGameState] 触发器匹配成功:', trigger.id);
 
         // 获取触发器提供的额外数据
         const extraData = trigger.getData ? trigger.getData(gameState) : {};
@@ -325,7 +327,7 @@ class AnimationTriggerRegistry {
         };
       }
     }
-    console.log('[parseGameState] 没有匹配的触发器');
+    isDev && console.log('[parseGameState] 没有匹配的触发器');
     return null;
   }
 

@@ -204,7 +204,7 @@ export class DynamicAIEngine {
       : undefined;
 
     // 获取玩家HP（非AI玩家）
-    const playerHP = gameState.playerStats?.hp || 3;
+    const playerHP = gameState.playerStats?.hp ?? 3;
 
     return {
       liarCard: context.liarCard,
@@ -222,7 +222,7 @@ export class DynamicAIEngine {
    * 基于已出牌和已知信息计算概率
    */
   private estimateRemainingCards(context: StrategyContext): Map<CardRank, number> {
-    const totalCardsPerRank = 8; // 每点数8张牌（4花色 + 4小丑）
+    const totalCardsPerRank = 6;
     const remaining = new Map<CardRank, number>();
 
     // 初始化
