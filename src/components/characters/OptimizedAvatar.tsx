@@ -119,42 +119,47 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
   useEffect(() => {
     if (!isInView) return;
 
-    const tryLoadImage = async () => {
-      // 首先检查WebP支持
-      const webpSupported = checkWebPSupport();
+    const webpSupported = checkWebPSupport();
+    let cancelled = false;
 
-      // 尝试加载WebP
-      if (webpSupported && useWebP) {
-        const webpImg = new Image();
-        webpImg.src = getImageSrc(true);
-
-        webpImg.onload = () => {
+    if (webpSupported && useWebP) {
+      const webpImg = new Image();
+      webpImg.onload = () => {
+        if (!cancelled) {
           setIsLoaded(true);
           onLoad?.();
-        };
-
-        webpImg.onerror = () => {
-          // WebP加载失败，回退到PNG
-          setUseWebP(false);
-        };
-      } else {
-        // 直接加载PNG
-        const pngImg = new Image();
-        pngImg.src = getImageSrc(false);
-
-        pngImg.onload = () => {
+        }
+      };
+      webpImg.onerror = () => {
+        if (!cancelled) setUseWebP(false);
+      };
+      webpImg.src = getImageSrc(true);
+    } else {
+      const pngImg = new Image();
+      pngImg.onload = () => {
+        if (!cancelled) {
           setIsLoaded(true);
           onLoad?.();
-        };
-
-        pngImg.onerror = () => {
+        }
+      };
+      pngImg.onerror = () => {
+        if (!cancelled) {
           console.error(`[OptimizedAvatar] Failed to load image: ${pngImg.src}`);
           setHasError(true);
-        };
-      }
-    };
+        }
+      };
+      pngImg.src = getImageSrc(false);
+    }
 
-    tryLoadImage();
+    // 安全兜底：5秒后强制隐藏加载动画（防止某些边缘情况导致永久旋转）
+    const fallbackTimer = setTimeout(() => {
+      if (!cancelled) setIsLoaded(true);
+    }, 5000);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(fallbackTimer);
+    };
   }, [isInView, getImageSrc, onLoad, useWebP]);
 
   return (
